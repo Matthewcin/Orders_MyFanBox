@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "git add . && git commit -m \"Actualizacion\" && git push && gh-pages -d dist"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.1",
