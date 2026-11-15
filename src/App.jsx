@@ -630,7 +630,6 @@ export default function App() {
       const response = await fetch(parsed.endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Neon-Connection-String': parsed.raw
         },
         body: JSON.stringify({ query, params })
