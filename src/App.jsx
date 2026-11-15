@@ -34,7 +34,19 @@ import {
   FileCode,
   Menu,
   X,
-  Info
+  Info,
+  MapPin,
+  Navigation,
+  FileText,
+  Printer,
+  Share2,
+  Eye,
+  Palette,
+  Sun,
+  Moon,
+  ExternalLink,
+  Compass,
+  Calendar
 } from 'lucide-react';
 
 // ============================================================================
@@ -217,6 +229,248 @@ const CARRIERS = [
 ];
 
 const STORAGE_KEY = 'mfb_react_neondb_v1';
+const THEME_STORAGE_KEY = 'mfb_theme';
+
+// ============================================================================
+// 1.B TEMAS EYE-CARE (PROTECCIÓN VISUAL PARA LARGAS JORNADAS)
+// ============================================================================
+const EYE_CARE_THEMES = [
+  {
+    id: 'light',
+    name: 'Claro Limpio',
+    short: 'Claro',
+    dot: '#FFFFFF',
+    border: '#D4D4D8',
+    desc: 'Blanco papel suave de alto contraste'
+  },
+  {
+    id: 'medium-dark',
+    name: 'Medium Dark (Pizarra)',
+    short: 'Medium Dark',
+    dot: '#262b35',
+    border: '#475569',
+    desc: 'Gris pizarra de bajo contraste para no cansar la vista'
+  },
+  {
+    id: 'dark',
+    name: 'Dark Carbón',
+    short: 'Dark',
+    dot: '#0f1115',
+    border: '#27272a',
+    desc: 'Modo oscuro profundo para ambientes sin luz'
+  },
+  {
+    id: 'yellow-dark',
+    name: 'Yellow-Dark (Ámbar)',
+    short: 'Yellow-Dark',
+    dot: '#eab308',
+    border: '#713f12',
+    desc: 'Filtro cálido nocturno anti-luz azul (lectura prolongada)'
+  },
+  {
+    id: 'pink-dark',
+    name: 'Pink-Dark (Rosa Suave)',
+    short: 'Pink-Dark',
+    dot: '#f472b6',
+    border: '#831843',
+    desc: 'Tonos ciruela y rosa pastel suave sin brillo agresivo'
+  }
+];
+
+// ============================================================================
+// 1.C COORDENADAS GEOGRÁFICAS DE COLOMBIA Y CALCULADORA DE ETA POR SERVICIO
+// ============================================================================
+const COLOMBIA_CITIES_GEO = {
+  'Medellín': { lat: 6.2442, lng: -75.5812, dept: 'Antioquia', zone: 'principal' },
+  'Envigado': { lat: 6.1664, lng: -75.5832, dept: 'Antioquia', zone: 'metro_med' },
+  'Sabaneta': { lat: 6.1515, lng: -75.6166, dept: 'Antioquia', zone: 'metro_med' },
+  'Bello': { lat: 6.3373, lng: -75.5579, dept: 'Antioquia', zone: 'metro_med' },
+  'Bogotá': { lat: 4.6533, lng: -74.0836, dept: 'Cundinamarca', zone: 'principal' },
+  'Cali': { lat: 3.4516, lng: -76.5320, dept: 'Valle del Cauca', zone: 'principal' },
+  'Barranquilla': { lat: 10.9685, lng: -74.7813, dept: 'Atlántico', zone: 'costa' },
+  'Cartagena': { lat: 10.3910, lng: -75.4794, dept: 'Bolívar', zone: 'costa' },
+  'Santa Marta': { lat: 11.2408, lng: -74.1990, dept: 'Magdalena', zone: 'costa' },
+  'Bucaramanga': { lat: 7.1193, lng: -73.1227, dept: 'Santander', zone: 'principal' },
+  'Pereira': { lat: 4.8133, lng: -75.6961, dept: 'Risaralda', zone: 'eje' },
+  'Manizales': { lat: 5.0703, lng: -75.5138, dept: 'Caldas', zone: 'eje' },
+  'Armenia': { lat: 4.5339, lng: -75.6811, dept: 'Quindío', zone: 'eje' },
+  'Ibagué': { lat: 4.4389, lng: -75.2322, dept: 'Tolima', zone: 'centro' },
+  'Villavicencio': { lat: 4.1420, lng: -73.6266, dept: 'Meta', zone: 'llanos' },
+  'Cúcuta': { lat: 7.8939, lng: -72.5078, dept: 'Norte de Santander', zone: 'frontera' },
+  'Neiva': { lat: 2.9273, lng: -75.2819, dept: 'Huila', zone: 'sur' },
+  'Tunja': { lat: 5.5353, lng: -73.3678, dept: 'Boyacá', zone: 'centro' }
+};
+
+// Deterministically jitter street coordinates based on order ID and address string
+function getOrderCoordinates(order) {
+  const rawCity = (order.city || 'Medellín').split('-')[0].trim();
+  const matchedCityKey =
+    Object.keys(COLOMBIA_CITIES_GEO).find(
+      k => k.toLowerCase() === rawCity.toLowerCase() || rawCity.toLowerCase().includes(k.toLowerCase())
+    ) || 'Medellín';
+
+  const base = COLOMBIA_CITIES_GEO[matchedCityKey];
+  const seedStr = `${order.id}-${order.address || ''}-${order.customerName || ''}`;
+  let hash = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    hash = (hash << 5) - hash + seedStr.charCodeAt(i);
+    hash |= 0;
+  }
+  const latOffset = ((hash % 1000) / 1000) * 0.045 - 0.022;
+  const lngOffset = (((hash >> 4) % 1000) / 1000) * 0.045 - 0.022;
+
+  return {
+    cityKey: matchedCityKey,
+    dept: base.dept,
+    zone: base.zone,
+    lat: Number((base.lat + latOffset).toFixed(5)),
+    lng: Number((base.lng + lngOffset).toFixed(5)),
+    baseLat: base.lat,
+    baseLng: base.lng
+  };
+}
+
+// Haversine distance in km
+function calcDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.max(4, Math.round(R * c * 1.28)); // 1.28 road winding factor in Colombia
+}
+
+// Carrier ETA, Service Level & Estimated Cost Calculator
+function calculateOrderETA(order, originHub = 'Medellín') {
+  const coords = getOrderCoordinates(order);
+  const hubGeo = COLOMBIA_CITIES_GEO[originHub] || COLOMBIA_CITIES_GEO['Medellín'];
+  const distanceKm = calcDistanceKm(hubGeo.lat, hubGeo.lng, coords.lat, coords.lng);
+  const isSameMetro =
+    coords.cityKey === originHub ||
+    (originHub === 'Medellín' && coords.zone === 'metro_med');
+
+  const carrier = order.carrier || 'Interrapidísimo';
+  let minDays = 1;
+  let maxDays = 2;
+  let etaLabel = '1 - 2 días hábiles';
+  let serviceType = ' Terrestre / Aéreo Nacional';
+  let estimatedShippingCost = 14500;
+
+  if (carrier === 'Entrega Personal') {
+    minDays = 0;
+    maxDays = 0;
+    etaLabel = isSameMetro ? 'Hoy mismo (2 a 4 horas)' : 'Entrega en punto / Concierto';
+    serviceType = 'Domicilio Directo / Punto de Encuentro';
+    estimatedShippingCost = isSameMetro ? 8000 : 10000;
+  } else if (carrier === 'Interrapidísimo') {
+    if (isSameMetro) {
+      minDays = 1;
+      maxDays = 1;
+      etaLabel = '24 horas (Urbano)';
+      estimatedShippingCost = 9500;
+    } else if (coords.zone === 'principal' || coords.zone === 'eje') {
+      minDays = 1;
+      maxDays = 2;
+      etaLabel = '1 a 2 días hábiles';
+      estimatedShippingCost = 14800;
+    } else {
+      minDays = 2;
+      maxDays = 3;
+      etaLabel = '2 a 3 días hábiles';
+      estimatedShippingCost = 17900;
+    }
+    serviceType = 'Mensajería Expresa Carga';
+  } else if (carrier === 'Coordinadora') {
+    if (isSameMetro) {
+      minDays = 1;
+      maxDays = 1;
+      etaLabel = '1 día hábil (Coorp Urbano)';
+      estimatedShippingCost = 11000;
+    } else if (coords.zone === 'principal' || coords.zone === 'eje') {
+      minDays = 1;
+      maxDays = 2;
+      etaLabel = '1 a 2 días hábiles';
+      estimatedShippingCost = 16500;
+    } else {
+      minDays = 2;
+      maxDays = 3;
+      etaLabel = '2 a 3 días hábiles';
+      estimatedShippingCost = 19800;
+    }
+    serviceType = 'Paqueteo Mercancía Premier';
+  } else if (carrier === 'Envía') {
+    if (isSameMetro) {
+      minDays = 1;
+      maxDays = 2;
+      etaLabel = '1 a 2 días hábiles';
+      estimatedShippingCost = 10000;
+    } else if (coords.zone === 'principal' || coords.zone === 'eje') {
+      minDays = 2;
+      maxDays = 3;
+      etaLabel = '2 a 3 días hábiles';
+      estimatedShippingCost = 13900;
+    } else {
+      minDays = 3;
+      maxDays = 4;
+      etaLabel = '3 a 4 días hábiles';
+      estimatedShippingCost = 16900;
+    }
+    serviceType = ' Terrestre Económico Regional';
+  } else if (carrier === 'Servientrega') {
+    if (isSameMetro) {
+      minDays = 1;
+      maxDays = 1;
+      etaLabel = '24 horas (Premier)';
+      estimatedShippingCost = 11500;
+    } else if (coords.zone === 'principal') {
+      minDays = 1;
+      maxDays = 2;
+      etaLabel = '1 a 2 días hábiles';
+      estimatedShippingCost = 16900;
+    } else {
+      minDays = 2;
+      maxDays = 4;
+      etaLabel = '2 a 4 días hábiles';
+      estimatedShippingCost = 19500;
+    }
+    serviceType = 'Documento / Mercancía Premier';
+  }
+
+  // Add preparation buffer if still in "Por preparar"
+  const prepBufferDays = order.shippingStatus === 'Por preparar' ? 2 : 0;
+  const baseDate = new Date();
+  const minDate = new Date(baseDate);
+  minDate.setDate(baseDate.getDate() + minDays + prepBufferDays);
+  const maxDate = new Date(baseDate);
+  maxDate.setDate(baseDate.getDate() + maxDays + prepBufferDays);
+
+  const fmtDate = (d) =>
+    d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
+
+  const windowDates =
+    minDays === 0 && prepBufferDays === 0
+      ? `Hoy (${fmtDate(baseDate)})`
+      : minDate.toDateString() === maxDate.toDateString()
+      ? fmtDate(minDate)
+      : `${fmtDate(minDate)} – ${fmtDate(maxDate)}`;
+
+  return {
+    coords,
+    originHub,
+    distanceKm,
+    carrier,
+    serviceType,
+    etaLabel,
+    prepBufferDays,
+    windowDates,
+    estimatedShippingCost
+  };
+}
 
 // ============================================================================
 // 2. GENERADOR DE 124 PEDIDOS REALISTAS PARA ESCALA REAL DE MYFANBOX
@@ -461,10 +715,35 @@ CREATE INDEX IF NOT EXISTS idx_mfb_orders_shipping ON mfb_orders(shipping_status
 // ============================================================================
 export default function App() {
   // Navigation & UI state
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'shipping' | 'costs' | 'neondb'
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'shipping' | 'map' | 'costs' | 'neondb' | 'details'
   const [invSubtab, setInvSubtab] = useState('buy'); // 'buy' | 'make' | 'pack'
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Eye-Care Theme State
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY) || 'medium-dark';
+    } catch {
+      return 'medium-dark';
+    }
+  });
+
+  // Map & Routing State
+  const [originHub, setOriginHub] = useState('Medellín');
+  const [mapCarrierFilter, setMapCarrierFilter] = useState('ALL');
+  const [mapStatusFilter, setMapStatusFilter] = useState('ALL');
+  const [mapCityFilter, setMapCityFilter] = useState('ALL');
+  const [selectedMapOrderId, setSelectedMapOrderId] = useState('MFB-1124');
+  const [mapEngine, setMapEngine] = useState('vector'); // 'vector' | 'leaflet'
+  const [mapZoom, setMapZoom] = useState(1);
+  const leafletContainerRef = useRef(null);
+  const leafletMapInstanceRef = useRef(null);
+
+  // Customer Order Details (/details/:orderId) State
+  const [detailOrderId, setDetailOrderId] = useState('MFB-1124');
+  const [sharedOrderPayload, setSharedOrderPayload] = useState(null);
+  const [isPublicCustomerView, setIsPublicCustomerView] = useState(false);
 
   // Core Data State
   const [catalog, setCatalog] = useState(INITIAL_CATALOG);
@@ -574,6 +853,73 @@ export default function App() {
     }
   }, [catalog, orders, boughtSupplies, madeItems, neonConnString, neonAutoSync]);
 
+  // Persist theme choice
+  useEffect(() => {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [theme]);
+
+  // Hash Router for '/details/:orderId' (Works natively on GitHub Pages: #/details/MFB-1124)
+  useEffect(() => {
+    const checkHashRoute = () => {
+      const hash = window.location.hash || '';
+      if (hash.startsWith('#/details/')) {
+        const rawPart = hash.replace('#/details/', '');
+        const [idPart, queryString] = rawPart.split('?');
+        const cleanId = decodeURIComponent(idPart || '').trim();
+        if (cleanId) {
+          setDetailOrderId(cleanId);
+          setActiveTab('details');
+          setIsPublicCustomerView(true);
+        }
+        if (queryString) {
+          try {
+            const params = new URLSearchParams(queryString);
+            const encodedData = params.get('d');
+            if (encodedData) {
+              const decodedJson = decodeURIComponent(atob(encodedData));
+              const parsedOrder = JSON.parse(decodedJson);
+              if (parsedOrder && parsedOrder.id) {
+                setSharedOrderPayload(parsedOrder);
+              }
+            }
+          } catch (err) {
+            console.warn('Could not decode shared order payload:', err);
+          }
+        }
+      }
+    };
+
+    checkHashRoute();
+    window.addEventListener('hashchange', checkHashRoute);
+    return () => window.removeEventListener('hashchange', checkHashRoute);
+  }, []);
+
+  // Open '/details/:orderId' helper
+  const handleOpenOrderDetails = useCallback((orderId, asCustomer = false) => {
+    setDetailOrderId(orderId);
+    setIsPublicCustomerView(asCustomer);
+    setActiveTab('details');
+    try {
+      window.history.replaceState(null, '', `#/details/${orderId}`);
+    } catch {
+      window.location.hash = `/details/${orderId}`;
+    }
+  }, []);
+
+  const handleExitDetailsToAdmin = useCallback((targetTab = 'orders') => {
+    setIsPublicCustomerView(false);
+    setActiveTab(targetTab);
+    try {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    } catch {
+      window.location.hash = '';
+    }
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -587,11 +933,12 @@ export default function App() {
       if (e.key === '/') {
         e.preventDefault();
         searchInputRef.current?.focus();
-      } else if (e.key === '1') setActiveTab('orders');
-      else if (e.key === '2') setActiveTab('inventory');
-      else if (e.key === '3') setActiveTab('shipping');
-      else if (e.key === '4') setActiveTab('costs');
-      else if (e.key === '5') setActiveTab('neondb');
+      } else if (e.key === '1') handleExitDetailsToAdmin('orders');
+      else if (e.key === '2') handleExitDetailsToAdmin('inventory');
+      else if (e.key === '3') handleExitDetailsToAdmin('shipping');
+      else if (e.key === '4') handleExitDetailsToAdmin('map');
+      else if (e.key === '5') handleExitDetailsToAdmin('costs');
+      else if (e.key === '6') handleExitDetailsToAdmin('neondb');
       else if (e.key.toLowerCase() === 'n') {
         e.preventDefault();
         handleOpenOrderModal(null);
@@ -599,10 +946,10 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [handleExitDetailsToAdmin]);
 
   // ============================================================================
-  // 6. EJECUTOR SQL EN NEONDB (SERVERLESS HTTP DRIVER)
+  // 6. EJECUTOR SQL EN NEONDB (SERVERLESS HTTP DRIVER CON FIX CORS)
   // ============================================================================
   const appendSqlLog = useCallback((sql, status = 'OK', durationMs = 12, detail = '') => {
     setSqlLogs(prev => [
@@ -627,10 +974,14 @@ export default function App() {
 
     const start = performance.now();
     try {
+      // IMPORTANT CORS FIX FOR NEONDB HTTP PROXY:
+      // Send ONLY 'Neon-Connection-String' without 'Content-Type: application/json'
+      // so the browser does not fail Neon's strict Access-Control-Allow-Headers check.
+      const cleanConn = parsed.raw.replace(/&channel_binding=require/gi, '');
       const response = await fetch(parsed.endpoint, {
         method: 'POST',
         headers: {
-          'Neon-Connection-String': parsed.raw
+          'Neon-Connection-String': cleanConn
         },
         body: JSON.stringify({ query, params })
       });
@@ -1307,12 +1658,435 @@ ON CONFLICT (id) DO UPDATE SET
   }, [filteredOrders, currentPage, pageSize]);
 
   // ============================================================================
+  // 10.B DATOS PARA EL MAPA DE ENVÍOS Y PÁGINA /details/:orderId
+  // ============================================================================
+  const mapOrdersWithGeo = useMemo(() => {
+    return orders
+      .filter(isOrderActive)
+      .filter(o => {
+        if (mapCarrierFilter !== 'ALL' && o.carrier !== mapCarrierFilter) return false;
+        if (mapStatusFilter !== 'ALL' && o.shippingStatus !== mapStatusFilter) return false;
+        if (mapCityFilter !== 'ALL' && (o.city || '').toLowerCase() !== mapCityFilter.toLowerCase()) return false;
+        return true;
+      })
+      .map(order => ({
+        order,
+        eta: calculateOrderETA(order, originHub)
+      }));
+  }, [orders, originHub, mapCarrierFilter, mapStatusFilter, mapCityFilter]);
+
+  const selectedMapEntry = useMemo(() => {
+    if (!mapOrdersWithGeo.length) return null;
+    return (
+      mapOrdersWithGeo.find(item => item.order.id === selectedMapOrderId) ||
+      mapOrdersWithGeo[0]
+    );
+  }, [mapOrdersWithGeo, selectedMapOrderId]);
+
+  const currentDetailOrder = useMemo(() => {
+    const found = orders.find(o => o.id.toLowerCase() === (detailOrderId || '').toLowerCase());
+    if (found) return found;
+    if (sharedOrderPayload && sharedOrderPayload.id?.toLowerCase() === (detailOrderId || '').toLowerCase()) {
+      return sharedOrderPayload;
+    }
+    return orders[0] || null;
+  }, [orders, detailOrderId, sharedOrderPayload]);
+
+  // Build shareable customer tracking link with embedded base64 order snapshot
+  const getCustomerTrackingUrl = useCallback((order) => {
+    if (!order) return window.location.href;
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    try {
+      const compactPayload = {
+        id: order.id,
+        customerName: order.customerName,
+        instagram: order.instagram,
+        phone: order.phone,
+        city: order.city,
+        address: order.address,
+        carrier: order.carrier,
+        trackingNumber: order.trackingNumber,
+        paymentStatus: order.paymentStatus,
+        shippingStatus: order.shippingStatus,
+        items: order.items,
+        discount: order.discount,
+        total: order.total,
+        notes: order.notes,
+        createdAt: order.createdAt
+      };
+      const encoded = btoa(encodeURIComponent(JSON.stringify(compactPayload)));
+      return `${baseUrl}#/details/${order.id}?d=${encoded}`;
+    } catch {
+      return `${baseUrl}#/details/${order.id}`;
+    }
+  }, []);
+
+  // Optional OpenStreetMap Leaflet initializer when user switches mapEngine === 'leaflet'
+  useEffect(() => {
+    if (activeTab !== 'map' || mapEngine !== 'leaflet') return;
+
+    let cancelled = false;
+    const ensureLeaflet = async () => {
+      if (!document.getElementById('leaflet-css-cdn')) {
+        const link = document.createElement('link');
+        link.id = 'leaflet-css-cdn';
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+      }
+      if (!window.L) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.body.appendChild(script);
+        });
+      }
+      if (cancelled || !leafletContainerRef.current || !window.L) return;
+
+      const L = window.L;
+      if (leafletMapInstanceRef.current) {
+        leafletMapInstanceRef.current.remove();
+        leafletMapInstanceRef.current = null;
+      }
+
+      const map = L.map(leafletContainerRef.current).setView([5.6, -74.8], 6);
+      leafletMapInstanceRef.current = map;
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const hubGeo = COLOMBIA_CITIES_GEO[originHub] || COLOMBIA_CITIES_GEO['Medellín'];
+      L.circleMarker([hubGeo.lat, hubGeo.lng], {
+        radius: 9,
+        fillColor: '#18181b',
+        color: '#ffffff',
+        weight: 2,
+        fillOpacity: 1
+      })
+        .addTo(map)
+        .bindPopup(`<b>Centro de Despacho MyFanBox (${originHub})</b>`);
+
+      mapOrdersWithGeo.forEach(({ order, eta }) => {
+        const pinColor =
+          order.shippingStatus === 'Enviado'
+            ? '#10b981'
+            : order.shippingStatus === 'Por enviar'
+            ? '#0ea5e9'
+            : '#f59e0b';
+
+        const marker = L.circleMarker([eta.coords.lat, eta.coords.lng], {
+          radius: selectedMapEntry?.order.id === order.id ? 9 : 6,
+          fillColor: pinColor,
+          color: '#ffffff',
+          weight: 1.5,
+          fillOpacity: 0.92
+        }).addTo(map);
+
+        marker.bindPopup(
+          `<div style="font-family:sans-serif;font-size:12px;">
+            <strong>${order.id} · ${order.customerName}</strong><br/>
+            <span>${order.city} — ${order.address || 'Sin dirección'}</span><br/>
+            <span><b>${order.carrier}</b>: ${eta.etaLabel}</span><br/>
+            <span>Llegada est.: ${eta.windowDates}</span>
+          </div>`
+        );
+        marker.on('click', () => setSelectedMapOrderId(order.id));
+      });
+    };
+
+    ensureLeaflet().catch(err => console.warn('Leaflet fallback error:', err));
+
+    return () => {
+      cancelled = true;
+      if (leafletMapInstanceRef.current) {
+        leafletMapInstanceRef.current.remove();
+        leafletMapInstanceRef.current = null;
+      }
+    };
+  }, [activeTab, mapEngine, mapOrdersWithGeo, originHub, selectedMapEntry]);
+
+  // ============================================================================
   // RENDERIZADO PRINCIPAL
   // ============================================================================
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-zinc-900 flex flex-col lg:flex-row font-sans antialiased selection:bg-zinc-900 selection:text-white">
+    <div
+      data-theme={theme}
+      className="mfb-theme-root min-h-screen bg-[#FAFAFA] text-zinc-900 flex flex-col lg:flex-row font-sans antialiased selection:bg-zinc-900 selection:text-white transition-colors duration-200"
+    >
+      {/* Dynamic Eye-Care Theme Styles + Clean Print Invoice Styles */}
+      <style>{`
+        /* 1. MEDIUM DARK (Gris Pizarra Suave - Descanso Visual) */
+        [data-theme="medium-dark"] {
+          background-color: #1b1f27 !important;
+          color: #e2e8f0 !important;
+        }
+        [data-theme="medium-dark"] .bg-white,
+        [data-theme="medium-dark"] .bg-white\\/90 {
+          background-color: #242933 !important;
+          color: #e2e8f0 !important;
+        }
+        [data-theme="medium-dark"] .bg-zinc-50,
+        [data-theme="medium-dark"] .bg-zinc-50\\/70,
+        [data-theme="medium-dark"] .bg-zinc-50\\/80,
+        [data-theme="medium-dark"] .bg-zinc-50\\/60,
+        [data-theme="medium-dark"] .bg-zinc-100 {
+          background-color: #1e232c !important;
+          color: #cbd5e1 !important;
+        }
+        [data-theme="medium-dark"] .border-zinc-200,
+        [data-theme="medium-dark"] .border-zinc-100,
+        [data-theme="medium-dark"] .border-zinc-300,
+        [data-theme="medium-dark"] .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
+          border-color: #333b49 !important;
+        }
+        [data-theme="medium-dark"] .text-zinc-900,
+        [data-theme="medium-dark"] .text-zinc-800 {
+          color: #f1f5f9 !important;
+        }
+        [data-theme="medium-dark"] .text-zinc-700,
+        [data-theme="medium-dark"] .text-zinc-600,
+        [data-theme="medium-dark"] .text-zinc-500 {
+          color: #94a3b8 !important;
+        }
+        [data-theme="medium-dark"] .bg-zinc-900 {
+          background-color: #38bdf8 !important;
+          color: #0f172a !important;
+          border-color: #38bdf8 !important;
+        }
+        [data-theme="medium-dark"] .bg-zinc-900 .text-zinc-200,
+        [data-theme="medium-dark"] .bg-zinc-900 .text-zinc-100 {
+          background-color: #0284c7 !important;
+          color: #ffffff !important;
+        }
+        [data-theme="medium-dark"] input,
+        [data-theme="medium-dark"] select,
+        [data-theme="medium-dark"] textarea {
+          background-color: #1b1f27 !important;
+          color: #f1f5f9 !important;
+          border-color: #3b4454 !important;
+        }
+
+        /* 2. DARK OLED (Carbón Profundo) */
+        [data-theme="dark"] {
+          background-color: #0b0d10 !important;
+          color: #e4e4e7 !important;
+        }
+        [data-theme="dark"] .bg-white,
+        [data-theme="dark"] .bg-white\\/90 {
+          background-color: #13161b !important;
+          color: #e4e4e7 !important;
+        }
+        [data-theme="dark"] .bg-zinc-50,
+        [data-theme="dark"] .bg-zinc-50\\/70,
+        [data-theme="dark"] .bg-zinc-50\\/80,
+        [data-theme="dark"] .bg-zinc-50\\/60,
+        [data-theme="dark"] .bg-zinc-100 {
+          background-color: #1a1e25 !important;
+          color: #a1a1aa !important;
+        }
+        [data-theme="dark"] .border-zinc-200,
+        [data-theme="dark"] .border-zinc-100,
+        [data-theme="dark"] .border-zinc-300,
+        [data-theme="dark"] .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
+          border-color: #262930 !important;
+        }
+        [data-theme="dark"] .text-zinc-900,
+        [data-theme="dark"] .text-zinc-800 {
+          color: #fafafa !important;
+        }
+        [data-theme="dark"] .text-zinc-700,
+        [data-theme="dark"] .text-zinc-600,
+        [data-theme="dark"] .text-zinc-500 {
+          color: #a1a1aa !important;
+        }
+        [data-theme="dark"] .bg-zinc-900 {
+          background-color: #e4e4e7 !important;
+          color: #09090b !important;
+          border-color: #e4e4e7 !important;
+        }
+        [data-theme="dark"] input,
+        [data-theme="dark"] select,
+        [data-theme="dark"] textarea {
+          background-color: #0f1216 !important;
+          color: #fafafa !important;
+          border-color: #2e323b !important;
+        }
+
+        /* 3. YELLOW-DARK (Ámbar Cálido Nocturno Anti-Luz Azul) */
+        [data-theme="yellow-dark"] {
+          background-color: #191611 !important;
+          color: #f4ebd9 !important;
+        }
+        [data-theme="yellow-dark"] .bg-white,
+        [data-theme="yellow-dark"] .bg-white\\/90 {
+          background-color: #231e17 !important;
+          color: #f4ebd9 !important;
+        }
+        [data-theme="yellow-dark"] .bg-zinc-50,
+        [data-theme="yellow-dark"] .bg-zinc-50\\/70,
+        [data-theme="yellow-dark"] .bg-zinc-50\\/80,
+        [data-theme="yellow-dark"] .bg-zinc-50\\/60,
+        [data-theme="yellow-dark"] .bg-zinc-100 {
+          background-color: #2c261d !important;
+          color: #d6c7b2 !important;
+        }
+        [data-theme="yellow-dark"] .border-zinc-200,
+        [data-theme="yellow-dark"] .border-zinc-100,
+        [data-theme="yellow-dark"] .border-zinc-300,
+        [data-theme="yellow-dark"] .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
+          border-color: #3d3427 !important;
+        }
+        [data-theme="yellow-dark"] .text-zinc-900,
+        [data-theme="yellow-dark"] .text-zinc-800 {
+          color: #fef3c7 !important;
+        }
+        [data-theme="yellow-dark"] .text-zinc-700,
+        [data-theme="yellow-dark"] .text-zinc-600,
+        [data-theme="yellow-dark"] .text-zinc-500 {
+          color: #cbb89d !important;
+        }
+        [data-theme="yellow-dark"] .bg-zinc-900 {
+          background-color: #eab308 !important;
+          color: #1c1917 !important;
+          border-color: #eab308 !important;
+        }
+        [data-theme="yellow-dark"] .bg-zinc-900 .text-zinc-200,
+        [data-theme="yellow-dark"] .bg-zinc-900 .text-zinc-100 {
+          background-color: #a16207 !important;
+          color: #fef9c3 !important;
+        }
+        [data-theme="yellow-dark"] input,
+        [data-theme="yellow-dark"] select,
+        [data-theme="yellow-dark"] textarea {
+          background-color: #16130e !important;
+          color: #fef3c7 !important;
+          border-color: #4a3f2f !important;
+        }
+
+        /* 4. PINK-DARK (Rosa Nocturno Suave - Karol G Vibe sin fatiga visual) */
+        [data-theme="pink-dark"] {
+          background-color: #1b1218 !important;
+          color: #fce7f3 !important;
+        }
+        [data-theme="pink-dark"] .bg-white,
+        [data-theme="pink-dark"] .bg-white\\/90 {
+          background-color: #261922 !important;
+          color: #fce7f3 !important;
+        }
+        [data-theme="pink-dark"] .bg-zinc-50,
+        [data-theme="pink-dark"] .bg-zinc-50\\/70,
+        [data-theme="pink-dark"] .bg-zinc-50\\/80,
+        [data-theme="pink-dark"] .bg-zinc-50\\/60,
+        [data-theme="pink-dark"] .bg-zinc-100 {
+          background-color: #32202c !important;
+          color: #f9a8d4 !important;
+        }
+        [data-theme="pink-dark"] .border-zinc-200,
+        [data-theme="pink-dark"] .border-zinc-100,
+        [data-theme="pink-dark"] .border-zinc-300,
+        [data-theme="pink-dark"] .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
+          border-color: #472d3f !important;
+        }
+        [data-theme="pink-dark"] .text-zinc-900,
+        [data-theme="pink-dark"] .text-zinc-800 {
+          color: #fdf2f8 !important;
+        }
+        [data-theme="pink-dark"] .text-zinc-700,
+        [data-theme="pink-dark"] .text-zinc-600,
+        [data-theme="pink-dark"] .text-zinc-500 {
+          color: #e2adc8 !important;
+        }
+        [data-theme="pink-dark"] .bg-zinc-900 {
+          background-color: #f472b6 !important;
+          color: #1f121b !important;
+          border-color: #f472b6 !important;
+        }
+        [data-theme="pink-dark"] .bg-zinc-900 .text-zinc-200,
+        [data-theme="pink-dark"] .bg-zinc-900 .text-zinc-100 {
+          background-color: #be185d !important;
+          color: #fdf2f8 !important;
+        }
+        [data-theme="pink-dark"] input,
+        [data-theme="pink-dark"] select,
+        [data-theme="pink-dark"] textarea {
+          background-color: #170f14 !important;
+          color: #fdf2f8 !important;
+          border-color: #56364c !important;
+        }
+
+        /* Status Badges legibility in dark themes */
+        [data-theme="medium-dark"] .bg-emerald-50,
+        [data-theme="dark"] .bg-emerald-50,
+        [data-theme="yellow-dark"] .bg-emerald-50,
+        [data-theme="pink-dark"] .bg-emerald-50 {
+          background-color: rgba(16, 185, 129, 0.16) !important;
+          color: #6ee7b7 !important;
+          border-color: rgba(16, 185, 129, 0.35) !important;
+        }
+        [data-theme="medium-dark"] .bg-amber-50,
+        [data-theme="dark"] .bg-amber-50,
+        [data-theme="yellow-dark"] .bg-amber-50,
+        [data-theme="pink-dark"] .bg-amber-50,
+        [data-theme="medium-dark"] .bg-amber-100,
+        [data-theme="dark"] .bg-amber-100,
+        [data-theme="yellow-dark"] .bg-amber-100,
+        [data-theme="pink-dark"] .bg-amber-100 {
+          background-color: rgba(245, 158, 11, 0.18) !important;
+          color: #fcd34d !important;
+          border-color: rgba(245, 158, 11, 0.4) !important;
+        }
+        [data-theme="medium-dark"] .bg-rose-50,
+        [data-theme="dark"] .bg-rose-50,
+        [data-theme="yellow-dark"] .bg-rose-50,
+        [data-theme="pink-dark"] .bg-rose-50 {
+          background-color: rgba(244, 63, 94, 0.18) !important;
+          color: #fda4af !important;
+          border-color: rgba(244, 63, 94, 0.4) !important;
+        }
+        [data-theme="medium-dark"] .bg-sky-50,
+        [data-theme="dark"] .bg-sky-50,
+        [data-theme="yellow-dark"] .bg-sky-50,
+        [data-theme="pink-dark"] .bg-sky-50 {
+          background-color: rgba(14, 165, 233, 0.18) !important;
+          color: #7dd3fc !important;
+          border-color: rgba(14, 165, 233, 0.4) !important;
+        }
+        [data-theme="medium-dark"] .text-emerald-700,
+        [data-theme="dark"] .text-emerald-700,
+        [data-theme="yellow-dark"] .text-emerald-700,
+        [data-theme="pink-dark"] .text-emerald-700 {
+          color: #34d399 !important;
+        }
+        [data-theme="medium-dark"] .text-amber-700,
+        [data-theme="dark"] .text-amber-700,
+        [data-theme="yellow-dark"] .text-amber-700,
+        [data-theme="pink-dark"] .text-amber-700 {
+          color: #fbbf24 !important;
+        }
+        [data-theme="medium-dark"] .text-sky-700,
+        [data-theme="dark"] .text-sky-700,
+        [data-theme="yellow-dark"] .text-sky-700,
+        [data-theme="pink-dark"] .text-sky-700 {
+          color: #38bdf8 !important;
+        }
+
+        /* Print Invoice cleanly on paper */
+        @media print {
+          aside, header, .no-print {
+            display: none !important;
+          }
+          body, .mfb-theme-root {
+            background: #ffffff !important;
+            color: #000000 !important;
+          }
+        }
+      `}</style>
+
       {/* Mobile Backdrop */}
-      {mobileMenuOpen && (
+      {mobileMenuOpen && !isPublicCustomerView && (
         <div
           onClick={() => setMobileMenuOpen(false)}
           className="fixed inset-0 bg-zinc-950/30 backdrop-blur-[1px] z-30 lg:hidden"
@@ -1320,8 +2094,9 @@ ON CONFLICT (id) DO UPDATE SET
       )}
 
       {/* ===================================================================== */}
-      {/* SIDEBAR LATERAL MINIMALISTA (ESTILO LINEAR / NOTION)                  */}
+      {/* SIDEBAR LATERAL MINIMALISTA (OCULTO EN MODO VISTA CLIENTE PÚBLICA)    */}
       {/* ===================================================================== */}
+      {!isPublicCustomerView && (
       <aside
         className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-white border-r border-zinc-200 flex flex-col justify-between transition-transform duration-200 ease-out shrink-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -1338,7 +2113,7 @@ ON CONFLICT (id) DO UPDATE SET
                 <div className="text-xs font-semibold tracking-tight text-zinc-900 leading-none flex items-center gap-1.5">
                   <span>MyFanBox Ops</span>
                   <span className="px-1.5 py-0.5 text-[9px] font-mono bg-zinc-100 text-zinc-600 rounded border border-zinc-200">
-                    v2.4
+                    v3.0
                   </span>
                 </div>
                 <div className="text-[11px] text-zinc-500 mt-0.5 truncate max-w-[145px]">
@@ -1361,7 +2136,7 @@ ON CONFLICT (id) DO UPDATE SET
             </div>
 
             <button
-              onClick={() => { setActiveTab('orders'); setMobileMenuOpen(false); }}
+              onClick={() => { handleExitDetailsToAdmin('orders'); setMobileMenuOpen(false); }}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
                 activeTab === 'orders'
                   ? 'bg-zinc-900 text-white'
@@ -1382,7 +2157,7 @@ ON CONFLICT (id) DO UPDATE SET
             </button>
 
             <button
-              onClick={() => { setActiveTab('inventory'); setMobileMenuOpen(false); }}
+              onClick={() => { handleExitDetailsToAdmin('inventory'); setMobileMenuOpen(false); }}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
                 activeTab === 'inventory'
                   ? 'bg-zinc-900 text-white'
@@ -1405,7 +2180,7 @@ ON CONFLICT (id) DO UPDATE SET
             </button>
 
             <button
-              onClick={() => { setActiveTab('shipping'); setMobileMenuOpen(false); }}
+              onClick={() => { handleExitDetailsToAdmin('shipping'); setMobileMenuOpen(false); }}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
                 activeTab === 'shipping'
                   ? 'bg-zinc-900 text-white'
@@ -1428,7 +2203,30 @@ ON CONFLICT (id) DO UPDATE SET
             </button>
 
             <button
-              onClick={() => { setActiveTab('costs'); setMobileMenuOpen(false); }}
+              onClick={() => { handleExitDetailsToAdmin('map'); setMobileMenuOpen(false); }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                activeTab === 'map'
+                  ? 'bg-zinc-900 text-white'
+                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>4. Mapa de Envíos y ETA</span>
+              </span>
+              <span
+                className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                  activeTab === 'map'
+                    ? 'bg-zinc-800 text-emerald-300'
+                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                }`}
+              >
+                Rutas
+              </span>
+            </button>
+
+            <button
+              onClick={() => { handleExitDetailsToAdmin('costs'); setMobileMenuOpen(false); }}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
                 activeTab === 'costs'
                   ? 'bg-zinc-900 text-white'
@@ -1437,7 +2235,7 @@ ON CONFLICT (id) DO UPDATE SET
             >
               <span className="flex items-center gap-2">
                 <Calculator className="w-3.5 h-3.5" />
-                <span>4. Catálogo y Costos</span>
+                <span>5. Catálogo y Costos</span>
               </span>
               <span
                 className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
@@ -1448,12 +2246,32 @@ ON CONFLICT (id) DO UPDATE SET
               </span>
             </button>
 
-            <div className="pt-3 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-              Infraestructura Cloud
+            <div className="pt-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+              Cliente & Cloud
             </div>
 
             <button
-              onClick={() => { setActiveTab('neondb'); setMobileMenuOpen(false); }}
+              onClick={() => {
+                handleOpenOrderDetails(detailOrderId || orders[0]?.id || 'MFB-1124', false);
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                activeTab === 'details'
+                  ? 'bg-zinc-900 text-white'
+                  : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5" />
+                <span>Portal /details/ & Invoice</span>
+              </span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">
+                Público
+              </span>
+            </button>
+
+            <button
+              onClick={() => { handleExitDetailsToAdmin('neondb'); setMobileMenuOpen(false); }}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
                 activeTab === 'neondb'
                   ? 'bg-zinc-900 text-white'
@@ -1462,7 +2280,7 @@ ON CONFLICT (id) DO UPDATE SET
             >
               <span className="flex items-center gap-2">
                 <Database className="w-3.5 h-3.5" />
-                <span>5. Base de Datos NeonDB</span>
+                <span>6. Base de Datos NeonDB</span>
               </span>
               <span className="flex items-center gap-1 text-[10px]">
                 <span
@@ -1477,31 +2295,31 @@ ON CONFLICT (id) DO UPDATE SET
               </span>
             </button>
 
-            {/* Quick Sub-Links for Inventory */}
-            <div className="pt-3 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-              Atajos de Taller
+            {/* Selector de Temas Eye-Care en Sidebar */}
+            <div className="pt-3 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <Palette className="w-3 h-3" />
+              <span>Temas Descanso Visual</span>
             </div>
-            <button
-              onClick={() => { setActiveTab('inventory'); setInvSubtab('buy'); setMobileMenuOpen(false); }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-            >
-              <span>• ¿Qué toca comprar?</span>
-              <span className="font-mono text-[11px] text-zinc-500">{shoppingNeeds.totalMissingToBuy} uds</span>
-            </button>
-            <button
-              onClick={() => { setActiveTab('inventory'); setInvSubtab('make'); setMobileMenuOpen(false); }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-            >
-              <span>• ¿Qué toca estampar?</span>
-              <span className="font-mono text-[11px] text-zinc-500">{productionMatrix.totalMissingToMake} uds</span>
-            </button>
-            <button
-              onClick={() => { setActiveTab('inventory'); setInvSubtab('pack'); setMobileMenuOpen(false); }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-            >
-              <span>• ¿Qué toca empacar?</span>
-              <span className="font-mono text-[11px] text-zinc-500">{metrics.countPorPreparar} ped</span>
-            </button>
+            <div className="grid grid-cols-2 gap-1 px-2">
+              {EYE_CARE_THEMES.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id)}
+                  title={t.desc}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
+                    theme === t.id
+                      ? 'bg-zinc-900 text-white border-zinc-900'
+                      : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:text-zinc-900'
+                  }`}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 border"
+                    style={{ backgroundColor: t.dot, borderColor: t.border }}
+                  />
+                  <span className="truncate">{t.short}</span>
+                </button>
+              ))}
+            </div>
           </nav>
         </div>
 
@@ -1527,16 +2345,18 @@ ON CONFLICT (id) DO UPDATE SET
               <span className={`w-1.5 h-1.5 rounded-full ${neonStatus === 'connected' ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
               {neonStatus === 'connected' ? 'NeonDB Online' : 'Local + Neon SQL'}
             </span>
-            <span className="font-mono">Atajos: 1–5, N, /</span>
+            <span className="font-mono">Atajos: 1–6, N, /</span>
           </div>
         </div>
       </aside>
+      )}
 
       {/* ===================================================================== */}
       {/* CONTENEDOR PRINCIPAL + BARRA SUPERIOR FLOTANTE                        */}
       {/* ===================================================================== */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Sticky Floating Top Bar */}
+        {!isPublicCustomerView && (
         <header className="sticky top-0 z-20 h-14 bg-white/90 backdrop-blur-md border-b border-zinc-200 px-4 sm:px-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <button
@@ -1578,15 +2398,23 @@ ON CONFLICT (id) DO UPDATE SET
             <div className="hidden xl:flex items-center bg-zinc-100 p-0.5 rounded-lg border border-zinc-200">
               {[
                 { id: 'orders', label: 'Ventas' },
-                { id: 'inventory', label: 'Inventario por Hacer' },
+                { id: 'inventory', label: 'Inventario' },
                 { id: 'shipping', label: 'Envíos' },
+                { id: 'map', label: 'Mapa & ETA' },
+                { id: 'details', label: 'Factura /details/' },
                 { id: 'costs', label: 'Costos' },
                 { id: 'neondb', label: 'NeonDB' }
               ].map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  onClick={() => {
+                    if (tab.id === 'details') {
+                      handleOpenOrderDetails(detailOrderId || orders[0]?.id || 'MFB-1124', false);
+                    } else {
+                      handleExitDetailsToAdmin(tab.id);
+                    }
+                  }}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
                     activeTab === tab.id
                       ? 'bg-white text-zinc-900 shadow-2xs'
                       : 'text-zinc-600 hover:text-zinc-900'
@@ -1598,11 +2426,28 @@ ON CONFLICT (id) DO UPDATE SET
             </div>
           </div>
 
-          {/* Right Action Buttons */}
+          {/* Right Action Buttons + Theme Selector */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Eye-Care Quick Theme Switcher */}
+            <div className="flex items-center gap-1 bg-zinc-100 px-1.5 py-1 rounded-lg border border-zinc-200">
+              <Palette className="w-3.5 h-3.5 text-zinc-500 hidden sm:inline" />
+              <select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                aria-label="Cambiar tema visual"
+                className="h-6 px-1.5 text-[11px] font-medium bg-transparent text-zinc-800 focus:outline-none cursor-pointer"
+              >
+                {EYE_CARE_THEMES.map(t => (
+                  <option key={t.id} value={t.id}>
+                    Tema: {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
-              onClick={() => setActiveTab('neondb')}
-              className={`hidden sm:inline-flex h-8 px-2.5 rounded-lg border text-xs font-medium items-center gap-1.5 transition-colors ${
+              onClick={() => handleExitDetailsToAdmin('neondb')}
+              className={`hidden md:inline-flex h-8 px-2.5 rounded-lg border text-xs font-medium items-center gap-1.5 transition-colors ${
                 neonStatus === 'connected'
                   ? 'border-emerald-200 bg-emerald-50/60 text-emerald-800'
                   : 'border-zinc-200 bg-white text-zinc-600 hover:text-zinc-900'
@@ -1610,7 +2455,7 @@ ON CONFLICT (id) DO UPDATE SET
               title="Estado de Base de Datos NeonDB"
             >
               <Database className="w-3.5 h-3.5" />
-              <span>{neonStatus === 'connected' ? 'NeonDB Conectado' : 'Conectar NeonDB'}</span>
+              <span>{neonStatus === 'connected' ? 'NeonDB Conectado' : 'NeonDB'}</span>
             </button>
 
             <button
@@ -1618,10 +2463,11 @@ ON CONFLICT (id) DO UPDATE SET
               className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 active:scale-[0.99] transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Nuevo Pedido</span>
+              <span className="hidden sm:inline">Nuevo Pedido</span>
             </button>
           </div>
         </header>
+        )}
 
         {/* Main View Area */}
         <main className="flex-1 p-4 sm:p-6 max-w-[1440px] w-full mx-auto space-y-5">
@@ -2040,6 +2886,14 @@ ON CONFLICT (id) DO UPDATE SET
 
                             <td className="py-3 px-3 align-top text-right">
                               <div className="inline-flex items-center gap-1">
+                                <button
+                                  onClick={() => handleOpenOrderDetails(order.id, false)}
+                                  className="h-7 px-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 font-medium inline-flex items-center gap-1"
+                                  title="Ver página /details/, seguimiento y factura PDF"
+                                >
+                                  <FileText className="w-3.5 h-3.5 text-sky-600" />
+                                  <span>/details/</span>
+                                </button>
                                 <button
                                   onClick={() => handleOpenWhatsApp(order)}
                                   className="h-7 px-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 font-medium inline-flex items-center gap-1"
@@ -2699,12 +3553,21 @@ ON CONFLICT (id) DO UPDATE SET
                                 </select>
                               </td>
                               <td className="py-3 px-4 text-right">
-                                <button
-                                  onClick={() => handleOpenWhatsApp(order)}
-                                  className="h-7 px-2.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-800"
-                                >
-                                  Enviar WA
-                                </button>
+                                <div className="inline-flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleOpenOrderDetails(order.id, false)}
+                                    className="h-7 px-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-800"
+                                    title="Abrir factura y seguimiento /details/"
+                                  >
+                                    /details/
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenWhatsApp(order)}
+                                    className="h-7 px-2.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-800"
+                                  >
+                                    Enviar WA
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -2713,6 +3576,847 @@ ON CONFLICT (id) DO UPDATE SET
                   </table>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* VISTA 3.B: MAPA INTERACTIVO DE ENVÍOS Y CALCULADORA DE ETA        */}
+          {/* ================================================================= */}
+          {activeTab === 'map' && (
+            <div className="space-y-4">
+              <div className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-sky-600" />
+                    <h1 className="text-base sm:text-lg font-semibold text-zinc-900">
+                      Mapa de Direcciones de Envío y Tiempo Estimado (ETA)
+                    </h1>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Visualiza dónde viven las clientas de los {mapOrdersWithGeo.length} envíos activos, calcula el tiempo estimado según la transportadora elegida y abre su seguimiento <code className="font-mono">/details/</code>.
+                  </p>
+                </div>
+
+                {/* Controles del Mapa y Centro de Despacho */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-1 text-xs">
+                    <Compass className="w-3.5 h-3.5 text-zinc-500" />
+                    <span className="text-zinc-500">Despacho desde:</span>
+                    <select
+                      value={originHub}
+                      onChange={(e) => setOriginHub(e.target.value)}
+                      className="font-semibold bg-transparent text-zinc-900 focus:outline-none cursor-pointer"
+                    >
+                      <option value="Medellín">Medellín (Hub Principal)</option>
+                      <option value="Bogotá">Bogotá (Hub Central)</option>
+                    </select>
+                  </div>
+
+                  <select
+                    value={mapCarrierFilter}
+                    onChange={(e) => setMapCarrierFilter(e.target.value)}
+                    className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800"
+                  >
+                    <option value="ALL">Transportadora: Todas</option>
+                    {CARRIERS.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={mapStatusFilter}
+                    onChange={(e) => setMapStatusFilter(e.target.value)}
+                    className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800"
+                  >
+                    <option value="ALL">Estado Envío: Todos</option>
+                    {SHIPPING_STATUSES.map(st => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={mapCityFilter}
+                    onChange={(e) => setMapCityFilter(e.target.value)}
+                    className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800"
+                  >
+                    <option value="ALL">Ciudad: Todas</option>
+                    {Object.keys(COLOMBIA_CITIES_GEO).map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+
+                  <div className="inline-flex p-0.5 rounded-lg bg-zinc-100 border border-zinc-200 text-xs">
+                    <button
+                      onClick={() => setMapEngine('vector')}
+                      className={`px-2.5 py-1 rounded-md font-medium cursor-pointer ${
+                        mapEngine === 'vector' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'
+                      }`}
+                    >
+                      Mapa Rutas
+                    </button>
+                    <button
+                      onClick={() => setMapEngine('leaflet')}
+                      className={`px-2.5 py-1 rounded-md font-medium cursor-pointer ${
+                        mapEngine === 'leaflet' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'
+                      }`}
+                    >
+                      Callejero OSM
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Resumen de Tiempos por Transportadora */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                {[
+                  { name: 'Entrega Personal', desc: 'Hoy mismo (2 - 4h)', badge: 'Domicilio / Concierto' },
+                  { name: 'Interrapidísimo', desc: '1–2 días (Principales)', badge: '2–3 días resto país' },
+                  { name: 'Coordinadora', desc: '1–2 días (Expreso)', badge: 'Mercancía Premier' },
+                  { name: 'Envía', desc: '2–3 días hábiles', badge: 'Terrestre Regional' },
+                  { name: 'Servientrega', desc: '1–3 días hábiles', badge: 'Cobertura Nacional' }
+                ].map(srv => {
+                  const count = mapOrdersWithGeo.filter(x => x.order.carrier === srv.name).length;
+                  return (
+                    <div
+                      key={srv.name}
+                      onClick={() => setMapCarrierFilter(mapCarrierFilter === srv.name ? 'ALL' : srv.name)}
+                      className={`bg-white border rounded-xl p-3 cursor-pointer transition-all ${
+                        mapCarrierFilter === srv.name ? 'border-zinc-900 ring-1 ring-zinc-900' : 'border-zinc-200 hover:border-zinc-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs font-semibold text-zinc-900">
+                        <span>{srv.name}</span>
+                        <span className="font-mono text-[11px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-700">
+                          {count}
+                        </span>
+                      </div>
+                      <div className="text-xs font-medium text-sky-700 mt-1">{srv.desc}</div>
+                      <div className="text-[10px] text-zinc-400 mt-0.5">{srv.badge}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Contenedor Principal: Mapa Interactivo + Inspector de Dirección y ETA */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                {/* Columna Izquierda (7 cols): Lienzo del Mapa */}
+                <div className="lg:col-span-7 bg-white border border-zinc-200 rounded-xl overflow-hidden flex flex-col">
+                  <div className="px-4 py-2.5 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-zinc-900">
+                        Rutas Activas desde {originHub} ({mapOrdersWithGeo.length} pines)
+                      </span>
+                      <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" /> Por preparar
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-sky-500" /> Por enviar
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" /> Enviado
+                        </span>
+                      </div>
+                    </div>
+                    {mapEngine === 'vector' && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setMapZoom(z => Math.max(1, Number((z - 0.25).toFixed(2))))}
+                          className="px-2 py-0.5 rounded border border-zinc-200 bg-zinc-50 text-xs font-bold"
+                        >
+                          -
+                        </button>
+                        <span className="font-mono text-[11px] px-1">{Math.round(mapZoom * 100)}%</span>
+                        <button
+                          onClick={() => setMapZoom(z => Math.min(2.2, Number((z + 0.25).toFixed(2))))}
+                          className="px-2 py-0.5 rounded border border-zinc-200 bg-zinc-50 text-xs font-bold"
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Vista Mapa Vectorial de Rutas de Colombia */}
+                  {mapEngine === 'vector' ? (
+                    <div className="relative w-full h-[470px] bg-[#131822] overflow-hidden select-none flex items-center justify-center">
+                      <svg
+                        viewBox="0 0 600 660"
+                        className="w-full h-full transition-transform duration-200"
+                        style={{ transform: `scale(${mapZoom})` }}
+                      >
+                        <defs>
+                          <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
+                            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+                          </radialGradient>
+                        </defs>
+
+                        {/* Retícula Geográfica */}
+                        {[100, 200, 300, 400, 500].map(y => (
+                          <line key={`gy-${y}`} x1="0" y1={y} x2="600" y2={y} stroke="#1e293b" strokeDasharray="3 3" strokeWidth="1" />
+                        ))}
+                        {[120, 240, 360, 480].map(x => (
+                          <line key={`gx-${x}`} x1={x} y1="0" x2={x} y2="660" stroke="#1e293b" strokeDasharray="3 3" strokeWidth="1" />
+                        ))}
+
+                        {/* Silueta Estilizada de Colombia */}
+                        <path
+                          d="M205,42 L265,24 L315,32 L330,68 L295,105 L312,155 L358,195 L415,245 L475,270 L495,335 L455,395 L445,485 L395,575 L335,625 L265,585 L205,515 L125,445 L110,365 L145,280 L140,190 L165,115 Z"
+                          fill="#1a2230"
+                          stroke="#334155"
+                          strokeWidth="2"
+                        />
+
+                        {/* Conversión Lat/Lng a X/Y en el SVG de Colombia */}
+                        {(() => {
+                          const project = (lat, lng) => {
+                            // Colombia bounds approx: lat 1.5 to 12.0, lng -78.5 to -71.0
+                            const x = ((lng - -78.5) / (-71.0 - -78.5)) * 420 + 85;
+                            const y = ((12.0 - lat) / (12.0 - 1.5)) * 540 + 45;
+                            return { x, y };
+                          };
+
+                          const hubGeo = COLOMBIA_CITIES_GEO[originHub] || COLOMBIA_CITIES_GEO['Medellín'];
+                          const hubPt = project(hubGeo.lat, hubGeo.lng);
+
+                          return (
+                            <>
+                              {/* Arcos de Ruta desde el Hub hasta cada dirección */}
+                              {mapOrdersWithGeo.map(({ order, eta }) => {
+                                const pt = project(eta.coords.lat, eta.coords.lng);
+                                const isSel = selectedMapEntry?.order.id === order.id;
+                                const midX = (hubPt.x + pt.x) / 2 - (pt.y - hubPt.y) * 0.14;
+                                const midY = (hubPt.y + pt.y) / 2 - 18;
+                                const strokeColor =
+                                  order.shippingStatus === 'Enviado'
+                                    ? '#10b981'
+                                    : order.shippingStatus === 'Por enviar'
+                                    ? '#38bdf8'
+                                    : '#f59e0b';
+
+                                return (
+                                  <path
+                                    key={`arc-${order.id}`}
+                                    d={`M ${hubPt.x} ${hubPt.y} Q ${midX} ${midY} ${pt.x} ${pt.y}`}
+                                    fill="none"
+                                    stroke={strokeColor}
+                                    strokeWidth={isSel ? 2.4 : 0.9}
+                                    strokeOpacity={isSel ? 0.95 : 0.28}
+                                    strokeDasharray={order.shippingStatus === 'Por preparar' ? '3 3' : undefined}
+                                  />
+                                );
+                              })}
+
+                              {/* Etiquetas de Ciudades Principales */}
+                              {Object.entries(COLOMBIA_CITIES_GEO).map(([cityName, geo]) => {
+                                if (geo.zone === 'metro_med') return null;
+                                const pt = project(geo.lat, geo.lng);
+                                return (
+                                  <g key={`city-${cityName}`}>
+                                    <circle cx={pt.x} cy={pt.y} r="2.2" fill="#64748b" />
+                                    <text
+                                      x={pt.x + 6}
+                                      y={pt.y + 3}
+                                      fill="#94a3b8"
+                                      fontSize="9.5"
+                                      fontWeight="500"
+                                    >
+                                      {cityName}
+                                    </text>
+                                  </g>
+                                );
+                              })}
+
+                              {/* Pines de cada pedido / dirección */}
+                              {mapOrdersWithGeo.map(({ order, eta }) => {
+                                const pt = project(eta.coords.lat, eta.coords.lng);
+                                const isSel = selectedMapEntry?.order.id === order.id;
+                                const fill =
+                                  order.shippingStatus === 'Enviado'
+                                    ? '#10b981'
+                                    : order.shippingStatus === 'Por enviar'
+                                    ? '#0ea5e9'
+                                    : '#f59e0b';
+
+                                return (
+                                  <g
+                                    key={`pin-${order.id}`}
+                                    onClick={() => setSelectedMapOrderId(order.id)}
+                                    className="cursor-pointer"
+                                  >
+                                    {isSel && (
+                                      <circle
+                                        cx={pt.x}
+                                        cy={pt.y}
+                                        r="13"
+                                        fill={fill}
+                                        fillOpacity="0.25"
+                                      />
+                                    )}
+                                    <circle
+                                      cx={pt.x}
+                                      cy={pt.y}
+                                      r={isSel ? 6.5 : 4.2}
+                                      fill={fill}
+                                      stroke="#ffffff"
+                                      strokeWidth={isSel ? 2 : 1}
+                                    />
+                                  </g>
+                                );
+                              })}
+
+                              {/* Pin del Hub de Despacho */}
+                              <circle cx={hubPt.x} cy={hubPt.y} r="20" fill="url(#hubGlow)" />
+                              <circle
+                                cx={hubPt.x}
+                                cy={hubPt.y}
+                                r="7"
+                                fill="#ffffff"
+                                stroke="#0ea5e9"
+                                strokeWidth="3"
+                              />
+                              <text
+                                x={hubPt.x - 28}
+                                y={hubPt.y - 12}
+                                fill="#ffffff"
+                                fontSize="10"
+                                fontWeight="700"
+                              >
+                                HUB {originHub.toUpperCase()}
+                              </text>
+                            </>
+                          );
+                        })()}
+                      </svg>
+
+                      {/* Leyenda Flotante */}
+                      <div className="absolute bottom-3 left-3 bg-zinc-900/90 backdrop-blur-xs border border-zinc-700 text-zinc-200 rounded-xl px-3 py-2 text-[11px] space-y-0.5">
+                        <div className="font-semibold text-white">Haz clic en cualquier punto del mapa</div>
+                        <div className="text-zinc-400">
+                          Cada punto representa la dirección exacta de una clienta y su ruta activa.
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div ref={leafletContainerRef} className="w-full h-[470px] z-0" />
+                  )}
+                </div>
+
+                {/* Columna Derecha (5 cols): Tarjeta de Ruta Seleccionada + Lista de Direcciones */}
+                <div className="lg:col-span-5 flex flex-col gap-3">
+                  {selectedMapEntry ? (
+                    <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-zinc-100 text-zinc-900">
+                              {selectedMapEntry.order.id}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded border text-[10px] font-medium ${getShipStatusBadgeClass(
+                                selectedMapEntry.order.shippingStatus
+                              )}`}
+                            >
+                              {selectedMapEntry.order.shippingStatus}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded border text-[10px] font-medium ${getPayStatusBadgeClass(
+                                selectedMapEntry.order.paymentStatus
+                              )}`}
+                            >
+                              {selectedMapEntry.order.paymentStatus}
+                            </span>
+                          </div>
+                          <h3 className="text-sm font-semibold text-zinc-900 mt-1.5">
+                            {selectedMapEntry.order.customerName}
+                          </h3>
+                          <p className="text-xs text-zinc-500">
+                            {selectedMapEntry.order.instagram} · Tel: {selectedMapEntry.order.phone}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => handleOpenOrderDetails(selectedMapEntry.order.id, false)}
+                          className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Abrir /details/</span>
+                        </button>
+                      </div>
+
+                      {/* Dirección y Coordenadas */}
+                      <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between text-zinc-500">
+                          <span className="font-medium text-zinc-800 flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                            {selectedMapEntry.order.city} ({selectedMapEntry.eta.coords.dept})
+                          </span>
+                          <span className="font-mono text-[10px]">
+                            ~{selectedMapEntry.eta.distanceKm} km desde {originHub}
+                          </span>
+                        </div>
+                        <div className="text-zinc-900 font-semibold">
+                          Dirección: {selectedMapEntry.order.address || 'Pendiente confirmar nomenclatura'}
+                        </div>
+                        <div className="text-[11px] font-mono text-zinc-400">
+                          GPS est.: {selectedMapEntry.eta.coords.lat}, {selectedMapEntry.eta.coords.lng}
+                        </div>
+                      </div>
+
+                      {/* Estimado de Tiempo (ETA) según Servicio Elegido */}
+                      <div className="p-3 rounded-xl bg-sky-50/70 border border-sky-200 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-sky-900 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-sky-700" />
+                            Tiempo Estimado de Entrega (ETA)
+                          </span>
+                          <select
+                            value={selectedMapEntry.order.carrier}
+                            onChange={(e) =>
+                              handleUpdateOrderField(selectedMapEntry.order.id, 'carrier', e.target.value)
+                            }
+                            className="h-6 px-2 rounded bg-white border border-sky-300 text-[11px] font-semibold text-zinc-900"
+                          >
+                            {CARRIERS.map(c => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <div>
+                            <div className="text-[10px] text-zinc-500">Promesa del servicio</div>
+                            <div className="font-bold text-zinc-900 text-sm">
+                              {selectedMapEntry.eta.etaLabel}
+                            </div>
+                            <div className="text-[10px] text-zinc-500">
+                              {selectedMapEntry.eta.serviceType}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-zinc-500">Fecha estimada llegada</div>
+                            <div className="font-bold text-emerald-700 text-sm">
+                              {selectedMapEntry.eta.windowDates}
+                            </div>
+                            <div className="text-[10px] text-zinc-500">
+                              Flete est.: {formatCOP(selectedMapEntry.eta.estimatedShippingCost)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {selectedMapEntry.eta.prepBufferDays > 0 && (
+                          <div className="text-[11px] text-amber-800 pt-1 border-t border-sky-200/60">
+                            * Incluye +{selectedMapEntry.eta.prepBufferDays} días hábiles porque el pedido aún está en estado <strong>"Por preparar"</strong>.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Acciones rápidas desde el inspector */}
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        <button
+                          onClick={() => {
+                            const url = getCustomerTrackingUrl(selectedMapEntry.order);
+                            copyToClipboard(url, `Link /details/${selectedMapEntry.order.id} copiado`);
+                          }}
+                          className="h-8 px-3 rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-800 hover:bg-zinc-50 flex-1 inline-flex items-center justify-center gap-1.5"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                          <span>Copiar link /details/</span>
+                        </button>
+                        <button
+                          onClick={() => handleOpenWhatsApp(selectedMapEntry.order)}
+                          className="h-8 px-3 rounded-lg border border-zinc-200 bg-white text-xs font-medium text-emerald-700 hover:bg-zinc-50 flex-1 inline-flex items-center justify-center gap-1.5"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>WhatsApp ETA</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Lista Rápida de Direcciones Mapeadas */}
+                  <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden flex-1 flex flex-col max-h-[225px]">
+                    <div className="px-3.5 py-2 border-b border-zinc-200 bg-zinc-50 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                      Direcciones en el Mapa ({mapOrdersWithGeo.length})
+                    </div>
+                    <div className="divide-y divide-zinc-200 overflow-y-auto text-xs">
+                      {mapOrdersWithGeo.slice(0, 60).map(({ order, eta }) => (
+                        <button
+                          key={order.id}
+                          onClick={() => setSelectedMapOrderId(order.id)}
+                          className={`w-full px-3.5 py-2 text-left flex items-center justify-between gap-2 hover:bg-zinc-50 transition-colors cursor-pointer ${
+                            selectedMapEntry?.order.id === order.id ? 'bg-zinc-100 font-semibold' : ''
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="text-zinc-900 truncate">
+                              <span className="font-mono font-semibold">{order.id}</span> · {order.customerName}
+                            </div>
+                            <div className="text-[11px] text-zinc-500 truncate">
+                              {order.city} — {order.address}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-[11px] font-medium text-sky-700">{order.carrier}</div>
+                            <div className="text-[10px] text-zinc-400">{eta.etaLabel}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* VISTA 3.C: PORTAL DE SEGUIMIENTO Y FACTURA (/details/:orderId)    */}
+          {/* ================================================================= */}
+          {activeTab === 'details' && currentDetailOrder && (
+            <div className="space-y-4 max-w-4xl mx-auto">
+              {/* Barra de Control Admin / Selector de Pedido (No se imprime en PDF) */}
+              <div className="no-print bg-white border border-zinc-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  {isPublicCustomerView ? (
+                    <button
+                      onClick={() => handleExitDetailsToAdmin('orders')}
+                      className="h-8 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700 hover:text-zinc-900 font-medium inline-flex items-center gap-1.5"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Ir al Panel Admin</span>
+                    </button>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-zinc-700">Ver /details/ del pedido:</span>
+                      <select
+                        value={currentDetailOrder.id}
+                        onChange={(e) => handleOpenOrderDetails(e.target.value, false)}
+                        className="h-8 px-2.5 rounded-lg bg-zinc-50 border border-zinc-200 font-mono font-semibold text-zinc-900"
+                      >
+                        {orders.map(o => (
+                          <option key={o.id} value={o.id}>
+                            {o.id} — {o.customerName} ({o.city})
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+                  <span className="hidden sm:inline-block font-mono text-[11px] text-zinc-400">
+                    Ruta: #/details/{currentDetailOrder.id}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    onClick={() => setIsPublicCustomerView(v => !v)}
+                    className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 inline-flex items-center gap-1"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{isPublicCustomerView ? 'Mostrar Menú Admin' : 'Simular Vista Cliente'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const url = getCustomerTrackingUrl(currentDetailOrder);
+                      copyToClipboard(url, `Enlace público #/details/${currentDetailOrder.id} copiado`);
+                    }}
+                    className="h-8 px-3 rounded-lg border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 font-medium inline-flex items-center gap-1.5"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copiar Link Cliente</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const url = getCustomerTrackingUrl(currentDetailOrder);
+                      const cleanPhone = (currentDetailOrder.phone || '').replace(/\D/g, '');
+                      const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+                      const etaInfo = calculateOrderETA(currentDetailOrder, originHub);
+                      const text = `¡Hola ${currentDetailOrder.customerName.split(' ')[0]}! ✨ Aquí puedes ver el estado en vivo, tiempo estimado de entrega (${etaInfo.etaLabel}) y la factura oficial de tu pedido *${currentDetailOrder.id}* en *MyFanBox*:\n\n🔗 ${url}`;
+                      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+                    }}
+                    className="h-8 px-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 font-medium inline-flex items-center gap-1.5"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Enviar Link por WA</span>
+                  </button>
+
+                  <button
+                    onClick={() => window.print()}
+                    className="h-8 px-3 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Imprimir / PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Tarjeta Principal de Factura Digital (Invoice) + Seguimiento en Vivo */}
+              {(() => {
+                const o = currentDetailOrder;
+                const paid = getPaidAmount(o);
+                const pending = getPendingAmount(o);
+                const eta = calculateOrderETA(o, originHub);
+                const subtotal = o.items.reduce((acc, it) => acc + it.unitPrice * it.qty, 0);
+
+                // 4-step progress calculation
+                const currentStep =
+                  !isOrderActive(o)
+                    ? 0
+                    : o.shippingStatus === 'Enviado'
+                    ? 4
+                    : o.shippingStatus === 'Por enviar'
+                    ? 3
+                    : o.paymentStatus === 'Pagado' || o.paymentStatus === 'Semi-pagado (50%)'
+                    ? 2
+                    : 1;
+
+                return (
+                  <div className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-8 shadow-xs space-y-6">
+                    {/* Encabezado Oficial de la Factura / Orden */}
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-5 border-b border-zinc-200">
+                      <div className="flex items-start gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm tracking-tight shrink-0">
+                          MFB
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h1 className="text-lg font-bold tracking-tight text-zinc-900">
+                              MYFANBOX OFFICIAL MERCH
+                            </h1>
+                            <span className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-zinc-100 border border-zinc-200 rounded text-zinc-700">
+                              INVOICE & TRACKING
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-500 mt-0.5">
+                            Colección Exclusiva: Viajando por el Mundo — Karol G
+                          </p>
+                          <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
+                            Comprobante Digital #{o.id} · Emitido: {o.createdAt}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="sm:text-right space-y-1">
+                        <div className="inline-flex flex-wrap items-center gap-1.5">
+                          <span
+                            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPayStatusBadgeClass(
+                              o.paymentStatus
+                            )}`}
+                          >
+                            Pago: {o.paymentStatus}
+                          </span>
+                          <span
+                            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getShipStatusBadgeClass(
+                              o.shippingStatus
+                            )}`}
+                          >
+                            Envío: {o.shippingStatus}
+                          </span>
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          Transportadora: <strong className="text-zinc-900">{o.carrier}</strong>
+                        </div>
+                        {o.trackingNumber && (
+                          <div className="text-xs font-mono font-semibold text-emerald-700">
+                            Guía #{o.trackingNumber}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Barra de Progreso Visual de 4 Etapas */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-zinc-900">Estado de tu Pedido en Tiempo Real</span>
+                        <span className="text-sky-700 font-medium">
+                          ETA estimado: {eta.etaLabel} ({eta.windowDates})
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 pt-1">
+                        {[
+                          { step: 1, title: '1. Pedido Registrado', sub: `Orden ${o.id} creada` },
+                          { step: 2, title: '2. En Taller / Estampado', sub: 'Preparando tus prendas' },
+                          { step: 3, title: '3. Empacado (Por enviar)', sub: 'Listo para transportadora' },
+                          {
+                            step: 4,
+                            title: '4. Enviado con Guía',
+                            sub: o.trackingNumber ? `Guía: ${o.trackingNumber}` : `Vía ${o.carrier}`
+                          }
+                        ].map(s => {
+                          const done = currentStep >= s.step;
+                          const isCurrent = currentStep === s.step;
+                          return (
+                            <div
+                              key={s.step}
+                              className={`p-3 rounded-xl border text-xs transition-all ${
+                                isCurrent
+                                  ? 'border-zinc-900 bg-zinc-50 ring-1 ring-zinc-900'
+                                  : done
+                                  ? 'border-emerald-200 bg-emerald-50/40'
+                                  : 'border-zinc-200 bg-zinc-50/40 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between font-semibold text-zinc-900">
+                                <span>{s.title}</span>
+                                {done && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                              </div>
+                              <div className="text-[11px] text-zinc-500 mt-0.5">{s.sub}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Datos del Cliente + Mapa de Ruta e Información de Entrega */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2 text-xs">
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                          Datos del Cliente y Destino
+                        </div>
+                        <div className="text-sm font-semibold text-zinc-900">{o.customerName}</div>
+                        <div className="text-zinc-600">
+                          Instagram: <span className="font-medium text-zinc-900">{o.instagram || '—'}</span> · Tel:{' '}
+                          <span className="font-mono font-medium text-zinc-900">{o.phone || '—'}</span>
+                        </div>
+                        <div className="pt-1 border-t border-zinc-200/80">
+                          <div className="font-medium text-zinc-900">
+                            📍 {o.city} ({eta.coords.dept})
+                          </div>
+                          <div className="text-zinc-600 mt-0.5">
+                            Dirección: <strong className="text-zinc-900">{o.address || 'Confirmar dirección'}</strong>
+                          </div>
+                        </div>
+                        {o.notes && (
+                          <div className="pt-1 text-[11px] italic text-zinc-500">
+                            Nota del pedido: "{o.notes}"
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mini-Mapa de Ruta y Calculadora ETA para el Cliente */}
+                      <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex flex-col justify-between space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                            Logística y Tiempo Estimado ({o.carrier})
+                          </span>
+                          <span className="font-mono text-[11px] text-zinc-500">
+                            {originHub} → {o.city} (~{eta.distanceKm} km)
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 my-1">
+                          <div className="p-2.5 rounded-lg bg-white border border-zinc-200">
+                            <div className="text-[10px] text-zinc-400">Tiempo de tránsito</div>
+                            <div className="font-bold text-zinc-900 text-xs sm:text-sm mt-0.5">
+                              {eta.etaLabel}
+                            </div>
+                          </div>
+                          <div className="p-2.5 rounded-lg bg-white border border-zinc-200">
+                            <div className="text-[10px] text-zinc-400">Entrega estimada</div>
+                            <div className="font-bold text-emerald-700 text-xs sm:text-sm mt-0.5">
+                              {eta.windowDates}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-zinc-500 pt-1 border-t border-zinc-200/80">
+                          <span>Modalidad: {eta.serviceType}</span>
+                          <span>
+                            {o.trackingNumber ? `Guía: ${o.trackingNumber}` : 'Guía pendiente de asignación'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tabla Detallada de Prendas (Invoice Table) */}
+                    <div className="border border-zinc-200 rounded-xl overflow-hidden">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-zinc-200 bg-zinc-50 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                            <th className="py-2.5 px-4">Prenda / Referencia</th>
+                            <th className="py-2.5 px-4">Variante / Personalización</th>
+                            <th className="py-2.5 px-4 text-center">Talla</th>
+                            <th className="py-2.5 px-4 text-center">Cant.</th>
+                            <th className="py-2.5 px-4 text-right">Precio Unit.</th>
+                            <th className="py-2.5 px-4 text-right">Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200 tabular-nums">
+                          {o.items.map((it, idx) => (
+                            <tr key={idx}>
+                              <td className="py-3 px-4 font-semibold text-zinc-900">{it.productName}</td>
+                              <td className="py-3 px-4 text-zinc-600">{it.variantName}</td>
+                              <td className="py-3 px-4 text-center">
+                                <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
+                                  {it.size}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-center font-semibold text-zinc-900">{it.qty}</td>
+                              <td className="py-3 px-4 text-right text-zinc-600">{formatCOP(it.unitPrice)}</td>
+                              <td className="py-3 px-4 text-right font-semibold text-zinc-900">
+                                {formatCOP(it.unitPrice * it.qty)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Totales, Abono del 50% y Saldo Pendiente */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 pt-2">
+                      <div className="max-w-md space-y-2">
+                        {pending > 0 && isOrderActive(o) ? (
+                          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-xs text-amber-950 space-y-1">
+                            <div className="font-bold flex items-center gap-1.5">
+                              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                              <span>Saldo pendiente por cancelar: {formatCOP(pending)}</span>
+                            </div>
+                            <p className="text-[11px] text-amber-800 leading-relaxed">
+                              Recuerda que para despachar tu paquete con <strong>{o.carrier}</strong> debe estar cancelado el 100% del pedido. Envíanos el comprobante por WhatsApp para actualizar tu factura a <strong>Pagado</strong>.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>
+                              <strong>¡Gracias por tu compra!</strong> Tu pedido se encuentra 100% pago y verificado por MyFanBox.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="w-full sm:w-72 bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-2 text-xs tabular-nums">
+                        <div className="flex justify-between text-zinc-600">
+                          <span>Subtotal Prendas</span>
+                          <span className="font-medium text-zinc-900">{formatCOP(subtotal)}</span>
+                        </div>
+                        {(o.discount || 0) > 0 && (
+                          <div className="flex justify-between text-emerald-700">
+                            <span>Descuento Combo Llavero</span>
+                            <span className="font-medium">-{formatCOP(o.discount)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm font-bold text-zinc-900 pt-2 border-t border-zinc-200">
+                          <span>Total Orden</span>
+                          <span>{formatCOP(o.total)}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700 font-semibold pt-1">
+                          <span>Abonado / Pagado</span>
+                          <span>{formatCOP(paid)}</span>
+                        </div>
+                        <div className="flex justify-between text-amber-700 font-bold pt-1 border-t border-zinc-200">
+                          <span>Saldo Pendiente</span>
+                          <span>{formatCOP(pending)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
