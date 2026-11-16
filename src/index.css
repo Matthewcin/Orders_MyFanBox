@@ -2,9 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-* { box-sizing: border-box; }
-html, body, #root { min-height: 100%; margin: 0; }
-body { min-width: 320px; }
-button, input, select, textarea { font: inherit; }
-button { -webkit-tap-highlight-color: transparent; }
+:root,
+[data-theme="light"] {
+  --bg-app: #F8F8F7;          /* Blanco hueso editorial */
+  --bg-surface: #FFFFFF;      /* Tarjetas limpias */
+  --bg-elevated: #F1F1EF;     /* Inputs y cabeceras de tabla */
+  --bg-hover: #EAEAE7;
+  --border-subtle: #E5E5E1;   /* Borde piedra casi invisible */
+  --text-primary: #18181B;    /* Grafito profundo */
+  --text-secondary: #52525B;  /* Gris medio */
+  --text-muted: #8E8E96;      /* Texto secundario suave */
+  --accent-bg: #18181B;       /* Botón principal monocromático */
+  --accent-text: #FFFFFF;
+}
+
+/* Medium Dark: Gris Pizarra Neutro (Sin azul saturado) */
+[data-theme="medium-dark"] {
+  --bg-app: #161618;
+  --bg-surface: #1E1E21;
+  --bg-elevated: #26262A;
+  --bg-hover: #2E2E33;
+  --border-subtle: #2C2C31;
+  --text-primary: #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --accent-bg: #F4F4F5;
+  --accent-text: #161618;
+}
+
+/* Dark Puro: Carbón OLED */
+[data-theme="dark"] {
+  --bg-app: #0A0A0B;
+  --bg-surface: #121214;
+  --bg-elevated: #1A1A1E;
+  --bg-hover: #222227;
+  --border-subtle: #232328;
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #63636B;
+  --accent-bg: #FAFAFA;
+  --accent-text: #0A0A0B;
+}
+
+/* Yellow-Dark Recalibrado: Arena Cálida / Espresso (Descanso visual sin amarillo chillón) */
+[data-theme="yellow-dark"] {
+  --bg-app: #161513;          /* Espresso piedra cálido */
+  --bg-surface: #1F1D1A;      /* Superficie arena oscura */
+  --bg-elevated: #282521;     /* Input cálido */
+  --bg-hover: #322E29;
+  --border-subtle: #2E2B26;   /* Borde bronce apagado */
+  --text-primary: #EDE9E2;    /* Crema suave anti-luz azul */
+  --text-secondary: #B0A89C;  /* Taupe cálido */
+  --text-muted: #7D766C;
+  --accent-bg: #DFD5C5;       /* Champán arena elegante */
+  --accent-text: #161513;
+}
+
+/* Pink-Dark Recalibrado: Cuarzo Ahumado / Malva Neutro (Suave y elegante) */
+[data-theme="pink-dark"] {
+  --bg-app: #161315;          /* Carbón malva muy sutil */
+  --bg-surface: #1F1B1E;      /* Superficie cuarzo oscuro */
+  --bg-elevated: #292327;     /* Input malva apagado */
+  --bg-hover: #332C31;
+  --border-subtle: #30292D;   /* Borde rosa ceniza */
+  --text-primary: #F0EAEF;    /* Blanco perla rosado */
+  --text-secondary: #B3A5AE;  /* Gris malva */
+  --text-muted: #7E7079;
+  --accent-bg: #E2C6D3;       /* Rosa cuarzo empolvado */
+  --accent-text: #161315;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100dvh;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

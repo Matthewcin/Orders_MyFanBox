@@ -62,17 +62,17 @@ import {
 
 // Exact required statuses
 const PAYMENT_STATUSES = [
-  'Pendiente',
-  'Semi-pagado (50%)',
-  'Pagado',
-  'Cancelado',
-  'Reembolsado'
+  { id: 'Pendiente', label: 'Pendiente', badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20', dot: 'bg-rose-400' },
+  { id: 'Semi-pagado (50%)', label: 'Semi-pagado (50%)', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20', dot: 'bg-amber-400' },
+  { id: 'Pagado', label: 'Pagado', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-400' },
+  { id: 'Cancelado', label: 'Cancelado', badge: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20 line-through', dot: 'bg-zinc-400' },
+  { id: 'Reembolsado', label: 'Reembolsado', badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20', dot: 'bg-purple-400' }
 ];
 
 const SHIPPING_STATUSES = [
-  'Por preparar',
-  'Por enviar',
-  'Enviado'
+  { id: 'Por preparar', label: 'Por preparar', badge: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20', dot: 'bg-zinc-400' },
+  { id: 'Por enviar', label: 'Por enviar', badge: 'bg-sky-500/10 text-sky-400 border-sky-500/20', dot: 'bg-sky-400' },
+  { id: 'Enviado', label: 'Enviado', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-400' }
 ];
 
 const CARRIERS = [
