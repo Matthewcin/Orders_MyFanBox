@@ -62,17 +62,17 @@ import {
 
 // Exact required statuses
 const PAYMENT_STATUSES = [
-  { id: 'Pendiente', label: 'Pendiente' },
-  { id: 'Semi-pagado (50%)', label: 'Semi-pagado (50%)' },
-  { id: 'Pagado', label: 'Pagado' },
-  { id: 'Cancelado', label: 'Cancelado' },
-  { id: 'Reembolsado', label: 'Reembolsado' }
+  'Pendiente',
+  'Semi-pagado (50%)',
+  'Pagado',
+  'Cancelado',
+  'Reembolsado'
 ];
 
 const SHIPPING_STATUSES = [
-  { id: 'Por preparar', label: 'Por preparar' },
-  { id: 'Por enviar', label: 'Por enviar' },
-  { id: 'Enviado', label: 'Enviado' }
+  'Por preparar',
+  'Por enviar',
+  'Enviado'
 ];
 
 const CARRIERS = [
