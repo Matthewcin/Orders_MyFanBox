@@ -1,0 +1,400 @@
+[
+  {
+    "id": "cat-1",
+    "code": "TROPICOQUETA",
+    "name": "Hoodie Tropicoqueta",
+    "category": "Prenda",
+    "basePrice": 140000,
+    "unitCost": 66000,
+    "blankName": "Hoodie Base Beige (Sin estampar)",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "variants": [
+      {
+        "id": "v1-std",
+        "name": "Estándar",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": false,
+        "needsGlitterVinyl": false
+      },
+      {
+        "id": "v1-brillos",
+        "name": "Con Brillos (+$10.000)",
+        "extraPrice": 10000,
+        "extraCost": 3500,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": false
+      }
+    ]
+  },
+  {
+    "id": "cat-2",
+    "code": "STAR-HOODIE",
+    "name": "Star Hoodie",
+    "category": "Prenda",
+    "basePrice": 140000,
+    "unitCost": 68000,
+    "blankName": "Hoodie Base Negro (Sin estampar)",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "variants": [
+      {
+        "id": "v2-std",
+        "name": "Estrella de Brillos (Estándar)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": false
+      },
+      {
+        "id": "v2-extra",
+        "name": "Con Brillos Extra (+$10.000)",
+        "extraPrice": 10000,
+        "extraCost": 3500,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": false
+      }
+    ]
+  },
+  {
+    "id": "cat-3",
+    "code": "LATINA-CROP",
+    "name": "Latina Croptop",
+    "category": "Prenda",
+    "basePrice": 80000,
+    "unitCost": 32000,
+    "blankName": "Croptop Base",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "variants": [
+      {
+        "id": "v3-crema",
+        "name": "Blanco/Crema (Congas)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Blanco/Crema",
+        "needsRhinestones": false,
+        "needsGlitterVinyl": false
+      },
+      {
+        "id": "v3-negro",
+        "name": "Negro (Latina Foreva)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Negro",
+        "needsRhinestones": false,
+        "needsGlitterVinyl": false
+      }
+    ]
+  },
+  {
+    "id": "cat-4",
+    "code": "NMADST",
+    "name": "NMADST (Raglan \"No me arrepiento de sentir tanto\")",
+    "category": "Prenda",
+    "basePrice": 90000,
+    "unitCost": 41000,
+    "blankName": "Camiseta Raglan Blanca / Mangas Negras",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v4-azul",
+        "name": "Pedrería Mangas + Vinilo Escarchado Azul",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v4-negro",
+        "name": "Pedrería Mangas + Vinilo Escarchado Negro",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Negro Escarchado"
+      }
+    ]
+  },
+  {
+    "id": "cat-5",
+    "code": "SPARKLY",
+    "name": "Sparkly Oversized Unisex",
+    "category": "Prenda",
+    "basePrice": 90000,
+    "unitCost": 43000,
+    "blankName": "Camiseta Oversized Unisex Negra",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "variants": [
+      {
+        "id": "v5-mun-neg",
+        "name": "Muñeca + Pedrería Negra (Vinilo Azul)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v5-mun-pla",
+        "name": "Muñeca + Pedrería Plateada (Vinilo Azul)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v5-fir-neg",
+        "name": "Firma Karol G + Pedrería Negra (Vinilo Azul)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v5-fir-pla",
+        "name": "Firma Karol G + Pedrería Plateada (Vinilo Azul)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      }
+    ]
+  },
+  {
+    "id": "cat-6",
+    "code": "CANTAR-CORA",
+    "name": "Cantar con Cora Croptop",
+    "category": "Prenda",
+    "basePrice": 85000,
+    "unitCost": 35000,
+    "blankName": "Croptop Base",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL"
+    ],
+    "variants": [
+      {
+        "id": "v6-celeste",
+        "name": "Celeste (\"Still love you\")",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Celeste",
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v6-blanco",
+        "name": "Blanco (\"Matadora\")",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Blanco",
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v6-negro",
+        "name": "Negro (\"Bby Wow\")",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Negro",
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      }
+    ]
+  },
+  {
+    "id": "cat-7",
+    "code": "CD-NFC",
+    "name": "Llavero Mini CD (Con NFC)",
+    "category": "Accesorio",
+    "basePrice": 30000,
+    "unitCost": 9500,
+    "blankName": "Caja Acrílica Mini CD + Herraje Estrella",
+    "sizes": [
+      "Única"
+    ],
+    "variants": [
+      {
+        "id": "v7-msb",
+        "name": "Mañana Será Bonito (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-bs",
+        "name": "Bichota Season (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-kg",
+        "name": "KG0516 (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-ocean",
+        "name": "Ocean (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-unstop",
+        "name": "Unstoppable (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-tropi",
+        "name": "Tropicoqueta (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      }
+    ]
+  },
+  {
+    "id": "cat-8",
+    "code": "CD-QR",
+    "name": "Llavero Mini CD (Sin NFC / QR)",
+    "category": "Accesorio",
+    "basePrice": 28000,
+    "unitCost": 7200,
+    "blankName": "Caja Acrílica Mini CD + Herraje Estrella",
+    "sizes": [
+      "Única"
+    ],
+    "variants": [
+      {
+        "id": "v8-msb",
+        "name": "Mañana Será Bonito (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-bs",
+        "name": "Bichota Season (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-kg",
+        "name": "KG0516 (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-ocean",
+        "name": "Ocean (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-unstop",
+        "name": "Unstoppable (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-tropi",
+        "name": "Tropicoqueta (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      }
+    ]
+  },
+  {
+    "id": "cat-9",
+    "code": "DTF-FANBOX",
+    "name": "Nueva DTF Fanbox (Kit Personaliza tú mismx)",
+    "category": "Accesorio",
+    "basePrice": 30000,
+    "unitCost": 11000,
+    "blankName": "Cajita Fanbox + Plancha Parches DTF",
+    "sizes": [
+      "Única"
+    ],
+    "variants": [
+      {
+        "id": "v9-kit",
+        "name": "Kit Parches DTF para Planchar",
+        "extraPrice": 0,
+        "extraCost": 0
+      }
+    ]
+  },
+  {
+    "id": "cat-10",
+    "code": "CUSTOM",
+    "name": "Prenda Personalizada (\"Idea en mente\")",
+    "category": "Prenda",
+    "basePrice": 110000,
+    "unitCost": 52000,
+    "blankName": "Prenda Base Custom (Según diseño)",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v10-tee",
+        "name": "Camiseta Personalizada desde cero",
+        "extraPrice": 0,
+        "extraCost": 0
+      },
+      {
+        "id": "v10-hoodie",
+        "name": "Hoodie Personalizado desde cero (+$35.000)",
+        "extraPrice": 35000,
+        "extraCost": 18000
+      }
+    ]
+  }
+]

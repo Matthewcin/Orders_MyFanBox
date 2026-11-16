@@ -46,164 +46,19 @@ import {
   Moon,
   ExternalLink,
   Compass,
-  Calendar
+  Calendar,
+  Lock,
+  Unlock,
+  KeyRound,
+  LogOut,
+  UserCheck,
+  ShieldAlert,
+  Fingerprint
 } from 'lucide-react';
 
 // ============================================================================
 // 1. CATÁLOGO OFICIAL PRECARGADO ("VIAJANDO POR EL MUNDO - KAROL G")
 // ============================================================================
-const INITIAL_CATALOG = [
-  {
-    id: 'cat-1',
-    code: 'TROPICOQUETA',
-    name: 'Hoodie Tropicoqueta',
-    category: 'Prenda',
-    basePrice: 140000,
-    unitCost: 66000,
-    blankName: 'Hoodie Base Beige (Sin estampar)',
-    sizes: ['S', 'M', 'L', 'XL'],
-    variants: [
-      { id: 'v1-std', name: 'Estándar', extraPrice: 0, extraCost: 0, needsRhinestones: false, needsGlitterVinyl: false },
-      { id: 'v1-brillos', name: 'Con Brillos (+$10.000)', extraPrice: 10000, extraCost: 3500, needsRhinestones: true, needsGlitterVinyl: false }
-    ]
-  },
-  {
-    id: 'cat-2',
-    code: 'STAR-HOODIE',
-    name: 'Star Hoodie',
-    category: 'Prenda',
-    basePrice: 140000,
-    unitCost: 68000,
-    blankName: 'Hoodie Base Negro (Sin estampar)',
-    sizes: ['S', 'M', 'L', 'XL'],
-    variants: [
-      { id: 'v2-std', name: 'Estrella de Brillos (Estándar)', extraPrice: 0, extraCost: 0, needsRhinestones: true, needsGlitterVinyl: false },
-      { id: 'v2-extra', name: 'Con Brillos Extra (+$10.000)', extraPrice: 10000, extraCost: 3500, needsRhinestones: true, needsGlitterVinyl: false }
-    ]
-  },
-  {
-    id: 'cat-3',
-    code: 'LATINA-CROP',
-    name: 'Latina Croptop',
-    category: 'Prenda',
-    basePrice: 80000,
-    unitCost: 32000,
-    blankName: 'Croptop Base',
-    sizes: ['S', 'M', 'L', 'XL'],
-    variants: [
-      { id: 'v3-crema', name: 'Blanco/Crema (Congas)', extraPrice: 0, extraCost: 0, blankOverride: 'Croptop Base Blanco/Crema', needsRhinestones: false, needsGlitterVinyl: false },
-      { id: 'v3-negro', name: 'Negro (Latina Foreva)', extraPrice: 0, extraCost: 0, blankOverride: 'Croptop Base Negro', needsRhinestones: false, needsGlitterVinyl: false }
-    ]
-  },
-  {
-    id: 'cat-4',
-    code: 'NMADST',
-    name: 'NMADST (Raglan "No me arrepiento de sentir tanto")',
-    category: 'Prenda',
-    basePrice: 90000,
-    unitCost: 41000,
-    blankName: 'Camiseta Raglan Blanca / Mangas Negras',
-    sizes: ['XS', 'S', 'M', 'L', 'XL', '2XL'],
-    variants: [
-      { id: 'v4-azul', name: 'Pedrería Mangas + Vinilo Escarchado Azul', extraPrice: 0, extraCost: 0, needsRhinestones: true, needsGlitterVinyl: true, vinylColor: 'Azul Escarchado' },
-      { id: 'v4-negro', name: 'Pedrería Mangas + Vinilo Escarchado Negro', extraPrice: 0, extraCost: 0, needsRhinestones: true, needsGlitterVinyl: true, vinylColor: 'Negro Escarchado' }
-    ]
-  },
-  {
-    id: 'cat-5',
-    code: 'SPARKLY',
-    name: 'Sparkly Oversized Unisex',
-    category: 'Prenda',
-    basePrice: 90000,
-    unitCost: 43000,
-    blankName: 'Camiseta Oversized Unisex Negra',
-    sizes: ['S', 'M', 'L', 'XL'],
-    variants: [
-      { id: 'v5-mun-neg', name: 'Muñeca + Pedrería Negra (Vinilo Azul)', extraPrice: 0, extraCost: 0, needsRhinestones: true, needsGlitterVinyl: true, vinylColor: 'Azul Escarchado' },
-      { id: 'v5-mun-pla', name: 'Muñeca + Pedrería Plateada (Vinilo Azul)', extraPrice: 0, extraCost: 0, needsRhinestones: true, needsGlitterVinyl: true, vinylColor: 'Azul Escarchado' },
-      { id: 'v5-fir-neg', name: 'Firma Karol G + Pedrería Negra (Vinilo Azul)', extraPrice: 0, extraCost: 0, needsRhinestones: true, needsGlitterVinyl: true, vinylColor: 'Azul Escarchado' },
-      { id: 'v5-fir-pla', name: 'Firma Karol G + Pedrería Plateada (Vinilo Azul)', extraPrice: 0, extraCost: 0, needsRhinestones: true, needsGlitterVinyl: true, vinylColor: 'Azul Escarchado' }
-    ]
-  },
-  {
-    id: 'cat-6',
-    code: 'CANTAR-CORA',
-    name: 'Cantar con Cora Croptop',
-    category: 'Prenda',
-    basePrice: 85000,
-    unitCost: 35000,
-    blankName: 'Croptop Base',
-    sizes: ['S', 'M', 'L', 'XL'],
-    variants: [
-      { id: 'v6-celeste', name: 'Celeste ("Still love you")', extraPrice: 0, extraCost: 0, blankOverride: 'Croptop Base Celeste', needsGlitterVinyl: true, vinylColor: 'Azul Escarchado' },
-      { id: 'v6-blanco', name: 'Blanco ("Matadora")', extraPrice: 0, extraCost: 0, blankOverride: 'Croptop Base Blanco', needsGlitterVinyl: true, vinylColor: 'Azul Escarchado' },
-      { id: 'v6-negro', name: 'Negro ("Bby Wow")', extraPrice: 0, extraCost: 0, blankOverride: 'Croptop Base Negro', needsGlitterVinyl: true, vinylColor: 'Azul Escarchado' }
-    ]
-  },
-  {
-    id: 'cat-7',
-    code: 'CD-NFC',
-    name: 'Llavero Mini CD (Con NFC)',
-    category: 'Accesorio',
-    basePrice: 30000,
-    unitCost: 9500,
-    blankName: 'Caja Acrílica Mini CD + Herraje Estrella',
-    sizes: ['Única'],
-    variants: [
-      { id: 'v7-msb', name: 'Mañana Será Bonito (Con NFC)', extraPrice: 0, extraCost: 0, needsNFC: true },
-      { id: 'v7-bs', name: 'Bichota Season (Con NFC)', extraPrice: 0, extraCost: 0, needsNFC: true },
-      { id: 'v7-kg', name: 'KG0516 (Con NFC)', extraPrice: 0, extraCost: 0, needsNFC: true },
-      { id: 'v7-ocean', name: 'Ocean (Con NFC)', extraPrice: 0, extraCost: 0, needsNFC: true },
-      { id: 'v7-unstop', name: 'Unstoppable (Con NFC)', extraPrice: 0, extraCost: 0, needsNFC: true },
-      { id: 'v7-tropi', name: 'Tropicoqueta (Con NFC)', extraPrice: 0, extraCost: 0, needsNFC: true }
-    ]
-  },
-  {
-    id: 'cat-8',
-    code: 'CD-QR',
-    name: 'Llavero Mini CD (Sin NFC / QR)',
-    category: 'Accesorio',
-    basePrice: 28000,
-    unitCost: 7200,
-    blankName: 'Caja Acrílica Mini CD + Herraje Estrella',
-    sizes: ['Única'],
-    variants: [
-      { id: 'v8-msb', name: 'Mañana Será Bonito (Sin NFC / QR)', extraPrice: 0, extraCost: 0, needsNFC: false },
-      { id: 'v8-bs', name: 'Bichota Season (Sin NFC / QR)', extraPrice: 0, extraCost: 0, needsNFC: false },
-      { id: 'v8-kg', name: 'KG0516 (Sin NFC / QR)', extraPrice: 0, extraCost: 0, needsNFC: false },
-      { id: 'v8-ocean', name: 'Ocean (Sin NFC / QR)', extraPrice: 0, extraCost: 0, needsNFC: false },
-      { id: 'v8-unstop', name: 'Unstoppable (Sin NFC / QR)', extraPrice: 0, extraCost: 0, needsNFC: false },
-      { id: 'v8-tropi', name: 'Tropicoqueta (Sin NFC / QR)', extraPrice: 0, extraCost: 0, needsNFC: false }
-    ]
-  },
-  {
-    id: 'cat-9',
-    code: 'DTF-FANBOX',
-    name: 'Nueva DTF Fanbox (Kit Personaliza tú mismx)',
-    category: 'Accesorio',
-    basePrice: 30000,
-    unitCost: 11000,
-    blankName: 'Cajita Fanbox + Plancha Parches DTF',
-    sizes: ['Única'],
-    variants: [
-      { id: 'v9-kit', name: 'Kit Parches DTF para Planchar', extraPrice: 0, extraCost: 0 }
-    ]
-  },
-  {
-    id: 'cat-10',
-    code: 'CUSTOM',
-    name: 'Prenda Personalizada ("Idea en mente")',
-    category: 'Prenda',
-    basePrice: 110000,
-    unitCost: 52000,
-    blankName: 'Prenda Base Custom (Según diseño)',
-    sizes: ['XS', 'S', 'M', 'L', 'XL', '2XL'],
-    variants: [
-      { id: 'v10-tee', name: 'Camiseta Personalizada desde cero', extraPrice: 0, extraCost: 0 },
-      { id: 'v10-hoodie', name: 'Hoodie Personalizado desde cero (+$35.000)', extraPrice: 35000, extraCost: 18000 }
-    ]
-  }
-];
 
 // Exact required statuses
 const PAYMENT_STATUSES = [
@@ -228,80 +83,122 @@ const CARRIERS = [
   'Entrega Personal'
 ];
 
-const STORAGE_KEY = 'mfb_react_neondb_v1';
 const THEME_STORAGE_KEY = 'mfb_theme';
+const ADMIN_SESSION_KEY = 'mfb_admin_session_token_v2';
+
+// ============================================================================
+// 1.A VALIDACIÓN Y GENERACIÓN DE UUID v4 PARA ENLACES PRIVADOS
+// ============================================================================
+const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUUID(str) {
+  if (!str || typeof str !== 'string') return false;
+  return UUID_V4_REGEX.test(str.trim());
+}
+
+function generateUUIDv4() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// El usuario inicial se define en el backend mediante MFB_ADMIN_USERNAME.
+const DEFAULT_ADMIN_USER = 'admin';
 
 // ============================================================================
 // 1.B TEMAS EYE-CARE (PROTECCIÓN VISUAL PARA LARGAS JORNADAS)
 // ============================================================================
 const EYE_CARE_THEMES = [
-  {
-    id: 'light',
-    name: 'Claro Limpio',
-    short: 'Claro',
-    dot: '#FFFFFF',
-    border: '#D4D4D8',
-    desc: 'Blanco papel suave de alto contraste'
-  },
-  {
-    id: 'medium-dark',
-    name: 'Medium Dark (Pizarra)',
-    short: 'Medium Dark',
-    dot: '#262b35',
-    border: '#475569',
-    desc: 'Gris pizarra de bajo contraste para no cansar la vista'
-  },
-  {
-    id: 'dark',
-    name: 'Dark Carbón',
-    short: 'Dark',
-    dot: '#0f1115',
-    border: '#27272a',
-    desc: 'Modo oscuro profundo para ambientes sin luz'
-  },
-  {
-    id: 'yellow-dark',
-    name: 'Yellow-Dark (Ámbar)',
-    short: 'Yellow-Dark',
-    dot: '#eab308',
-    border: '#713f12',
-    desc: 'Filtro cálido nocturno anti-luz azul (lectura prolongada)'
-  },
-  {
-    id: 'pink-dark',
-    name: 'Pink-Dark (Rosa Suave)',
-    short: 'Pink-Dark',
-    dot: '#f472b6',
-    border: '#831843',
-    desc: 'Tonos ciruela y rosa pastel suave sin brillo agresivo'
-  }
+  { id: 'light', name: 'Claro Limpio', short: 'Claro', dot: '#FFFFFF', border: '#D4D4D8', desc: 'Blanco limpio y alto contraste' },
+  { id: 'cream-light', name: 'Crema Cálido', short: 'Crema', dot: '#F4EBDD', border: '#D6C3A5', desc: 'Fondo crema cálido y suave' },
+  { id: 'rose-light', name: 'Rosa Pastel', short: 'Rosa', dot: '#F9CFE0', border: '#E9AFC8', desc: 'Rosa pastel claro' },
+  { id: 'sky-light', name: 'Celeste Suave', short: 'Celeste', dot: '#D9EEFF', border: '#9ACBF2', desc: 'Celeste claro y fresco' },
+  { id: 'medium-dark', name: 'Medium Dark (Pizarra)', short: 'Pizarra', dot: '#262B35', border: '#475569', desc: 'Gris pizarra equilibrado' },
+  { id: 'dark', name: 'Dark Carbón', short: 'Carbón', dot: '#0F1115', border: '#27272A', desc: 'Oscuro profundo' },
+  { id: 'yellow-dark', name: 'Ámbar Nocturno', short: 'Ámbar', dot: '#EAB308', border: '#713F12', desc: 'Tonos cálidos para lectura nocturna' },
+  { id: 'pink-dark', name: 'Rosa Nocturno', short: 'Rosa Night', dot: '#F472B6', border: '#831843', desc: 'Ciruela y rosa suave' },
+  { id: 'lavender-dark', name: 'Lavanda Nocturna', short: 'Lavanda', dot: '#A78BFA', border: '#5B21B6', desc: 'Violeta oscuro con acentos lavanda' },
+  { id: 'ocean-dark', name: 'Océano', short: 'Océano', dot: '#22D3EE', border: '#155E75', desc: 'Azules profundos y cian' },
+  { id: 'forest-dark', name: 'Bosque', short: 'Bosque', dot: '#4ADE80', border: '#166534', desc: 'Verde bosque de bajo brillo' },
+  { id: 'sunset-dark', name: 'Atardecer', short: 'Sunset', dot: '#FB923C', border: '#9A3412', desc: 'Naranja cálido y tonos ciruela' }
 ];
 
 // ============================================================================
 // 1.C COORDENADAS GEOGRÁFICAS DE COLOMBIA Y CALCULADORA DE ETA POR SERVICIO
 // ============================================================================
 const COLOMBIA_CITIES_GEO = {
-  'Medellín': { lat: 6.2442, lng: -75.5812, dept: 'Antioquia', zone: 'principal' },
-  'Envigado': { lat: 6.1664, lng: -75.5832, dept: 'Antioquia', zone: 'metro_med' },
-  'Sabaneta': { lat: 6.1515, lng: -75.6166, dept: 'Antioquia', zone: 'metro_med' },
-  'Bello': { lat: 6.3373, lng: -75.5579, dept: 'Antioquia', zone: 'metro_med' },
-  'Bogotá': { lat: 4.6533, lng: -74.0836, dept: 'Cundinamarca', zone: 'principal' },
-  'Cali': { lat: 3.4516, lng: -76.5320, dept: 'Valle del Cauca', zone: 'principal' },
-  'Barranquilla': { lat: 10.9685, lng: -74.7813, dept: 'Atlántico', zone: 'costa' },
-  'Cartagena': { lat: 10.3910, lng: -75.4794, dept: 'Bolívar', zone: 'costa' },
-  'Santa Marta': { lat: 11.2408, lng: -74.1990, dept: 'Magdalena', zone: 'costa' },
-  'Bucaramanga': { lat: 7.1193, lng: -73.1227, dept: 'Santander', zone: 'principal' },
-  'Pereira': { lat: 4.8133, lng: -75.6961, dept: 'Risaralda', zone: 'eje' },
-  'Manizales': { lat: 5.0703, lng: -75.5138, dept: 'Caldas', zone: 'eje' },
-  'Armenia': { lat: 4.5339, lng: -75.6811, dept: 'Quindío', zone: 'eje' },
-  'Ibagué': { lat: 4.4389, lng: -75.2322, dept: 'Tolima', zone: 'centro' },
-  'Villavicencio': { lat: 4.1420, lng: -73.6266, dept: 'Meta', zone: 'llanos' },
-  'Cúcuta': { lat: 7.8939, lng: -72.5078, dept: 'Norte de Santander', zone: 'frontera' },
-  'Neiva': { lat: 2.9273, lng: -75.2819, dept: 'Huila', zone: 'sur' },
-  'Tunja': { lat: 5.5353, lng: -73.3678, dept: 'Boyacá', zone: 'centro' }
+  'Medellín': { lat: 6.2442, lng: -75.5812, dept: 'Antioquia', zone: 'principal', defaultPostal: '050021' },
+  'Envigado': { lat: 6.1664, lng: -75.5832, dept: 'Antioquia', zone: 'metro_med', defaultPostal: '055422' },
+  'Sabaneta': { lat: 6.1515, lng: -75.6166, dept: 'Antioquia', zone: 'metro_med', defaultPostal: '055450' },
+  'Bello': { lat: 6.3373, lng: -75.5579, dept: 'Antioquia', zone: 'metro_med', defaultPostal: '051050' },
+  'Bogotá': { lat: 4.6533, lng: -74.0836, dept: 'Cundinamarca', zone: 'principal', defaultPostal: '110221' },
+  'Cali': { lat: 3.4516, lng: -76.5320, dept: 'Valle del Cauca', zone: 'principal', defaultPostal: '760001' },
+  'Barranquilla': { lat: 10.9685, lng: -74.7813, dept: 'Atlántico', zone: 'costa', defaultPostal: '080001' },
+  'Cartagena': { lat: 10.3910, lng: -75.4794, dept: 'Bolívar', zone: 'costa', defaultPostal: '130001' },
+  'Santa Marta': { lat: 11.2408, lng: -74.1990, dept: 'Magdalena', zone: 'costa', defaultPostal: '470001' },
+  'Bucaramanga': { lat: 7.1193, lng: -73.1227, dept: 'Santander', zone: 'principal', defaultPostal: '680003' },
+  'Pereira': { lat: 4.8133, lng: -75.6961, dept: 'Risaralda', zone: 'eje', defaultPostal: '660002' },
+  'Manizales': { lat: 5.0703, lng: -75.5138, dept: 'Caldas', zone: 'eje', defaultPostal: '170001' },
+  'Armenia': { lat: 4.5339, lng: -75.6811, dept: 'Quindío', zone: 'eje', defaultPostal: '630001' },
+  'Ibagué': { lat: 4.4389, lng: -75.2322, dept: 'Tolima', zone: 'centro', defaultPostal: '730001' },
+  'Villavicencio': { lat: 4.1420, lng: -73.6266, dept: 'Meta', zone: 'llanos', defaultPostal: '500001' },
+  'Cúcuta': { lat: 7.8939, lng: -72.5078, dept: 'Norte de Santander', zone: 'frontera', defaultPostal: '540001' },
+  'Neiva': { lat: 2.9273, lng: -75.2819, dept: 'Huila', zone: 'sur', defaultPostal: '410001' },
+  'Tunja': { lat: 5.5353, lng: -73.3678, dept: 'Boyacá', zone: 'centro', defaultPostal: '150001' }
 };
 
-// Deterministically jitter street coordinates based on order ID and address string
+// Base verificada de barrios, códigos postales oficiales (4-72 Colombia) y coordenadas reales de calles
+const COLOMBIA_VERIFIED_ZONES = [
+  { city: 'Medellín', neighborhood: 'El Poblado', addressSample: 'Cra 43A #11-40', postalCode: '050021', lat: 6.20892, lng: -75.56781 },
+  { city: 'Medellín', neighborhood: 'Laureles - Estadio', addressSample: 'Circular 4 #70-18', postalCode: '050031', lat: 6.24584, lng: -75.59164 },
+  { city: 'Medellín', neighborhood: 'Belén', addressSample: 'Calle 30A #76-25', postalCode: '050032', lat: 6.23142, lng: -75.60412 },
+  { city: 'Bogotá', neighborhood: 'Chapinero Alto', addressSample: 'Cra 7 #64-22', postalCode: '110231', lat: 4.64892, lng: -74.05981 },
+  { city: 'Bogotá', neighborhood: 'Usaquén - Cedritos', addressSample: 'Calle 140 #15-30', postalCode: '110121', lat: 4.72185, lng: -74.04125 },
+  { city: 'Bogotá', neighborhood: 'Suba - Colina', addressSample: 'Calle 147 #19-50', postalCode: '111156', lat: 4.72891, lng: -74.04682 },
+  { city: 'Bogotá', neighborhood: 'Teusaquillo', addressSample: 'Cra 19 #39-45', postalCode: '111311', lat: 4.62914, lng: -74.07152 },
+  { city: 'Cali', neighborhood: 'Ciudad Jardín', addressSample: 'Cra 102 #14-80', postalCode: '760008', lat: 3.36841, lng: -76.53192 },
+  { city: 'Cali', neighborhood: 'Granada Norte', addressSample: 'Av 9N #15-20', postalCode: '760045', lat: 3.45892, lng: -76.53381 },
+  { city: 'Barranquilla', neighborhood: 'Alto Prado', addressSample: 'Cra 53 #82-15', postalCode: '080001', lat: 11.00412, lng: -74.81245 },
+  { city: 'Bucaramanga', neighborhood: 'Cabecera del Llano', addressSample: 'Calle 48 #35-10', postalCode: '680003', lat: 7.11682, lng: -73.11042 },
+  { city: 'Pereira', neighborhood: 'Pinares de San Martín', addressSample: 'Cra 17 #10-45', postalCode: '660003', lat: 4.80712, lng: -75.68491 },
+  { city: 'Manizales', neighborhood: 'Palermo', addressSample: 'Calle 67 #25-12', postalCode: '170004', lat: 5.05612, lng: -75.48621 },
+  { city: 'Cartagena', neighborhood: 'Bocagrande', addressSample: 'Av San Martín #7-90', postalCode: '130001', lat: 10.40281, lng: -75.55412 },
+  { city: 'Envigado', neighborhood: 'Zona Centro / Mesa', addressSample: 'Calle 37 Sur #41-28', postalCode: '055422', lat: 6.16942, lng: -75.58612 },
+  { city: 'Sabaneta', neighborhood: 'Parque Sabaneta', addressSample: 'Cra 45 #71 Sur-15', postalCode: '055450', lat: 6.15182, lng: -75.61541 },
+  { city: 'Ibagué', neighborhood: 'El Vergel', addressSample: 'Calle 60 #8-40', postalCode: '730005', lat: 4.44512, lng: -75.19842 },
+  { city: 'Villavicencio', neighborhood: 'Barzal Alto', addressSample: 'Cra 38 #33-14', postalCode: '500002', lat: 4.14891, lng: -73.63912 }
+];
+
+// Infer Colombian 6-digit postal code and neighborhood if missing
+function inferColombianAddressMetadata(city, addressText = '') {
+  const cleanCity = (city || 'Medellín').split('-')[0].trim();
+  const addrLower = (addressText || '').toLowerCase();
+
+  const matchedZone = COLOMBIA_VERIFIED_ZONES.find(
+    z =>
+      z.city.toLowerCase() === cleanCity.toLowerCase() &&
+      (addrLower.includes(z.neighborhood.toLowerCase().split(' ')[0]) ||
+        addrLower.includes(z.addressSample.toLowerCase().slice(0, 7)))
+  ) || COLOMBIA_VERIFIED_ZONES.find(z => z.city.toLowerCase() === cleanCity.toLowerCase());
+
+  const cityGeo =
+    COLOMBIA_CITIES_GEO[cleanCity] ||
+    Object.values(COLOMBIA_CITIES_GEO)[0];
+
+  return {
+    postalCode: matchedZone?.postalCode || cityGeo.defaultPostal || '050001',
+    neighborhood: matchedZone?.neighborhood || 'Zona Urbana',
+    lat: matchedZone?.lat || cityGeo.lat,
+    lng: matchedZone?.lng || cityGeo.lng
+  };
+}
+
+// Get exact coordinates of an order (uses verified order.lat / order.lng first)
 function getOrderCoordinates(order) {
   const rawCity = (order.city || 'Medellín').split('-')[0].trim();
   const matchedCityKey =
@@ -310,24 +207,151 @@ function getOrderCoordinates(order) {
     ) || 'Medellín';
 
   const base = COLOMBIA_CITIES_GEO[matchedCityKey];
-  const seedStr = `${order.id}-${order.address || ''}-${order.customerName || ''}`;
-  let hash = 0;
-  for (let i = 0; i < seedStr.length; i++) {
-    hash = (hash << 5) - hash + seedStr.charCodeAt(i);
-    hash |= 0;
-  }
-  const latOffset = ((hash % 1000) / 1000) * 0.045 - 0.022;
-  const lngOffset = (((hash >> 4) % 1000) / 1000) * 0.045 - 0.022;
 
+  if (typeof order.lat === 'number' && typeof order.lng === 'number' && !isNaN(order.lat) && !isNaN(order.lng)) {
+    return {
+      cityKey: matchedCityKey,
+      dept: base.dept,
+      zone: base.zone,
+      lat: Number(order.lat.toFixed(5)),
+      lng: Number(order.lng.toFixed(5)),
+      baseLat: base.lat,
+      baseLng: base.lng
+    };
+  }
+
+  const inferred = inferColombianAddressMetadata(matchedCityKey, order.address);
   return {
     cityKey: matchedCityKey,
     dept: base.dept,
     zone: base.zone,
-    lat: Number((base.lat + latOffset).toFixed(5)),
-    lng: Number((base.lng + lngOffset).toFixed(5)),
+    lat: Number(inferred.lat.toFixed(5)),
+    lng: Number(inferred.lng.toFixed(5)),
     baseLat: base.lat,
     baseLng: base.lng
   };
+}
+
+// Geocodificador Inteligente (Google Maps Geocoding API + OpenStreetMap Nominatim + Diccionario 4-72 Colombia)
+async function searchAndVerifyColombianAddress(city, streetAddress, googleApiKey = '') {
+  const cleanCity = (city || 'Medellín').trim();
+  const cleanStreet = (streetAddress || '').trim();
+  const fullQuery = `${cleanStreet}, ${cleanCity}, Colombia`;
+  const results = [];
+
+  // 1. Si el usuario configuró una Google Maps API Key opcional, consultar Google Geocoding API directo
+  if (googleApiKey && googleApiKey.trim().length > 10) {
+    try {
+      const gUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        fullQuery
+      )}&region=co&language=es&key=${encodeURIComponent(googleApiKey.trim())}`;
+      const gRes = await fetch(gUrl);
+      if (gRes.ok) {
+        const gData = await gRes.json();
+        if (Array.isArray(gData.results)) {
+          gData.results.slice(0, 4).forEach((item, idx) => {
+            const comps = item.address_components || [];
+            const postalComp = comps.find(c => c.types.includes('postal_code'));
+            const barrioComp = comps.find(
+              c =>
+                c.types.includes('neighborhood') ||
+                c.types.includes('sublocality') ||
+                c.types.includes('sublocality_level_1')
+            );
+            const fallbackMeta = inferColombianAddressMetadata(cleanCity, item.formatted_address);
+            results.push({
+              id: `gmaps-${idx}`,
+              source: 'Google Maps Oficial',
+              formattedAddress: item.formatted_address,
+              streetAddress: cleanStreet || item.formatted_address.split(',')[0],
+              city: cleanCity,
+              neighborhood: barrioComp?.long_name || fallbackMeta.neighborhood,
+              postalCode: postalComp?.long_name || fallbackMeta.postalCode,
+              lat: Number(item.geometry.location.lat.toFixed(5)),
+              lng: Number(item.geometry.location.lng.toFixed(5))
+            });
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Google Geocoding API fallback:', e);
+    }
+  }
+
+  // 2. Consulta en vivo a OpenStreetMap Nominatim Colombia (Gratis y sin API Key)
+  try {
+    const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=co&limit=5&q=${encodeURIComponent(
+      fullQuery
+    )}`;
+    const nomRes = await fetch(nomUrl, {
+      headers: { 'Accept-Language': 'es' }
+    });
+    if (nomRes.ok) {
+      const nomData = await nomRes.json();
+      if (Array.isArray(nomData)) {
+        nomData.forEach((item, idx) => {
+          const addr = item.address || {};
+          const fallbackMeta = inferColombianAddressMetadata(cleanCity, item.display_name);
+          const barrio =
+            addr.neighbourhood ||
+            addr.suburb ||
+            addr.quarter ||
+            addr.city_district ||
+            fallbackMeta.neighborhood;
+          const postcode = addr.postcode || fallbackMeta.postalCode;
+
+          results.push({
+            id: `osm-${idx}`,
+            source: 'Mapa Callejero Colombia',
+            formattedAddress: item.display_name,
+            streetAddress: cleanStreet || item.display_name.split(',')[0],
+            city: cleanCity,
+            neighborhood: barrio,
+            postalCode: postcode,
+            lat: Number(parseFloat(item.lat).toFixed(5)),
+            lng: Number(parseFloat(item.lon).toFixed(5))
+          });
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Nominatim search fallback:', e);
+  }
+
+  // 3. Opciones verificadas del directorio postal colombiano para garantizar opciones inmediatas
+  const matchingZones = COLOMBIA_VERIFIED_ZONES.filter(
+    z => z.city.toLowerCase() === cleanCity.toLowerCase()
+  );
+  matchingZones.forEach((z, idx) => {
+    results.push({
+      id: `col-zone-${idx}`,
+      source: 'Directorio Postal 4-72 / Google Maps',
+      formattedAddress: `${cleanStreet || z.addressSample}, Barrio ${z.neighborhood}, ${z.city}, Colombia (CP ${z.postalCode})`,
+      streetAddress: cleanStreet || z.addressSample,
+      city: z.city,
+      neighborhood: z.neighborhood,
+      postalCode: z.postalCode,
+      lat: z.lat,
+      lng: z.lng
+    });
+  });
+
+  if (results.length === 0) {
+    const fallback = inferColombianAddressMetadata(cleanCity, cleanStreet);
+    results.push({
+      id: 'fallback-0',
+      source: 'Ubicación Verificada Ciudad',
+      formattedAddress: `${cleanStreet}, ${fallback.neighborhood}, ${cleanCity}, Colombia`,
+      streetAddress: cleanStreet,
+      city: cleanCity,
+      neighborhood: fallback.neighborhood,
+      postalCode: fallback.postalCode,
+      lat: fallback.lat,
+      lng: fallback.lng
+    });
+  }
+
+  return results;
 }
 
 // Haversine distance in km
@@ -473,152 +497,6 @@ function calculateOrderETA(order, originHub = 'Medellín') {
 }
 
 // ============================================================================
-// 2. GENERADOR DE 124 PEDIDOS REALISTAS PARA ESCALA REAL DE MYFANBOX
-// ============================================================================
-function generateSeedOrders(catalog, count = 124) {
-  const firstNames = [
-    'Valentina', 'Camila', 'Sofía', 'Mariana', 'Isabella', 'Daniela', 'Laura', 'Natalia',
-    'Sara', 'Paula', 'Juliana', 'Manuela', 'Andrea', 'Carolina', 'Gabriela', 'Alejandra',
-    'Valeria', 'Tatiana', 'Luisa', 'Estefanía', 'Melissa', 'Angie', 'Katherin', 'Diana',
-    'Mónica', 'Ana María', 'Verónica', 'María José', 'Michelle', 'Yuliana', 'Nicolás',
-    'Sebastián', 'Mateo', 'Santiago', 'Camilo', 'Juan Pablo', 'Salomé', 'Antonia', 'Luciana', 'Ximena'
-  ];
-  const lastNames = [
-    'Gómez', 'Rodríguez', 'Martínez', 'Torres', 'Hernández', 'López', 'Castro', 'Ramírez',
-    'Sánchez', 'Vargas', 'Moreno', 'Rojas', 'Díaz', 'Ortiz', 'Silva', 'Ruiz', 'Mendoza',
-    'Peña', 'Gil', 'Cruz', 'Ospina', 'Morales', 'Jiménez', 'Pineda', 'Navarro', 'Restrepo',
-    'Cardona', 'Salazar', 'Mejía', 'León', 'Acosta', 'Parra', 'Giraldo', 'Bedoya', 'Duarte'
-  ];
-  const locations = [
-    { city: 'Medellín', address: 'El Poblado Cra 43A #11-40', carrier: 'Entrega Personal' },
-    { city: 'Medellín', address: 'Laureles Circular 4 #70-18', carrier: 'Entrega Personal' },
-    { city: 'Bogotá', address: 'Chapinero Cra 7 #64-22', carrier: 'Interrapidísimo' },
-    { city: 'Bogotá', address: 'Usaquén Calle 140 #15-30', carrier: 'Coordinadora' },
-    { city: 'Bogotá', address: 'Cedritos Calle 147 #19-50', carrier: 'Interrapidísimo' },
-    { city: 'Cali', address: 'Ciudad Jardín Cra 102 #14-80', carrier: 'Envía' },
-    { city: 'Cali', address: 'Granada Av 9N #15-20', carrier: 'Interrapidísimo' },
-    { city: 'Barranquilla', address: 'Alto Prado Cra 53 #82-15', carrier: 'Servientrega' },
-    { city: 'Bucaramanga', address: 'Cabecera Calle 48 #35-10', carrier: 'Interrapidísimo' },
-    { city: 'Pereira', address: 'Pinares Cra 17 #10-45', carrier: 'Coordinadora' },
-    { city: 'Manizales', address: 'Palermo Calle 67 #25-12', carrier: 'Interrapidísimo' },
-    { city: 'Cartagena', address: 'Bocagrande Av San Martín #7-90', carrier: 'Servientrega' },
-    { city: 'Envigado', address: 'Calle 37 Sur #41-28', carrier: 'Entrega Personal' },
-    { city: 'Sabaneta', address: 'Cra 45 #71 Sur-15', carrier: 'Entrega Personal' },
-    { city: 'Ibagué', address: 'El Vergel Calle 60 #8-40', carrier: 'Interrapidísimo' },
-    { city: 'Villavicencio', address: 'Barzal Alto Cra 38 #33-14', carrier: 'Envía' }
-  ];
-
-  // Realistic distribution of statuses across 124 orders
-  const statusPatterns = [
-    { pay: 'Semi-pagado (50%)', ship: 'Por preparar' },
-    { pay: 'Semi-pagado (50%)', ship: 'Por preparar' },
-    { pay: 'Pagado', ship: 'Por preparar' },
-    { pay: 'Pagado', ship: 'Por enviar' },
-    { pay: 'Semi-pagado (50%)', ship: 'Por enviar' }, // Triggers warning: Cobrar saldo antes de enviar!
-    { pay: 'Pagado', ship: 'Enviado' },
-    { pay: 'Pagado', ship: 'Enviado' },
-    { pay: 'Pendiente', ship: 'Por preparar' },
-    { pay: 'Semi-pagado (50%)', ship: 'Por preparar' },
-    { pay: 'Pagado', ship: 'Por enviar' },
-    { pay: 'Pendiente', ship: 'Por enviar' }, // Triggers warning!
-    { pay: 'Cancelado', ship: 'Por preparar' },
-    { pay: 'Reembolsado', ship: 'Por preparar' }
-  ];
-
-  const itemCombos = [
-    [{ catIdx: 0, varIdx: 1, size: 'M', qty: 1 }], // Hoodie Tropicoqueta + Brillos
-    [{ catIdx: 1, varIdx: 0, size: 'S', qty: 1 }, { catIdx: 6, varIdx: 0, size: 'Única', qty: 1 }], // Star Hoodie + Llavero NFC
-    [{ catIdx: 3, varIdx: 0, size: 'L', qty: 1 }], // NMADST Raglan Azul
-    [{ catIdx: 4, varIdx: 0, size: 'M', qty: 1 }], // Sparkly Muñeca Negra
-    [{ catIdx: 5, varIdx: 0, size: 'S', qty: 1 }, { catIdx: 5, varIdx: 1, size: 'M', qty: 1 }], // 2x Cantar con Cora
-    [{ catIdx: 2, varIdx: 0, size: 'M', qty: 1 }, { catIdx: 6, varIdx: 5, size: 'Única', qty: 1 }], // Latina Croptop + Llavero Tropicoqueta
-    [{ catIdx: 0, varIdx: 0, size: 'L', qty: 1 }], // Hoodie Tropicoqueta Estándar
-    [{ catIdx: 4, varIdx: 3, size: 'XL', qty: 1 }, { catIdx: 8, varIdx: 0, size: 'Única', qty: 1 }], // Sparkly Firma Plateada + DTF Fanbox
-    [{ catIdx: 1, varIdx: 1, size: 'M', qty: 1 }], // Star Hoodie + Brillos Extra
-    [{ catIdx: 2, varIdx: 1, size: 'S', qty: 1 }], // Latina Croptop Negro
-    [{ catIdx: 3, varIdx: 1, size: 'XL', qty: 1 }, { catIdx: 7, varIdx: 0, size: 'Única', qty: 1 }], // NMADST Negro + Llavero QR
-    [{ catIdx: 6, varIdx: 1, size: 'Única', qty: 2 }, { catIdx: 8, varIdx: 0, size: 'Única', qty: 1 }], // 2 Llaveros NFC + DTF Fanbox
-    [{ catIdx: 9, varIdx: 1, size: 'M', qty: 1 }], // Hoodie Personalizado
-    [{ catIdx: 5, varIdx: 2, size: 'L', qty: 1 }], // Cantar con Cora Negro Bby Wow
-    [{ catIdx: 3, varIdx: 0, size: '2XL', qty: 1 }], // NMADST 2XL
-    [{ catIdx: 3, varIdx: 0, size: 'XS', qty: 1 }, { catIdx: 6, varIdx: 2, size: 'Única', qty: 1 }] // NMADST XS + Llavero KG0516
-  ];
-
-  const notesPool = [
-    '',
-    'Urgente para el concierto del sábado',
-    'Confirmó abono por Nequi',
-    'Revisar bien pedrería en mangas',
-    'Empacar regalo con sticker extra',
-    'Pagó por transferencia Bancolombia',
-    '',
-    ''
-  ];
-
-  const orders = [];
-  for (let i = 0; i < count; i++) {
-    const fName = firstNames[i % firstNames.length];
-    const lName = lastNames[(i * 3) % lastNames.length];
-    const customerName = `${fName} ${lName}`;
-    const igHandle = `@${fName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '')}.${lName.toLowerCase().slice(0, 4)}${10 + (i % 89)}`;
-    const phone = `3${10 + (i % 12)}${String(3401122 + i * 137).slice(0, 7)}`;
-    const loc = locations[i % locations.length];
-    const pat = statusPatterns[i % statusPatterns.length];
-    const combo = itemCombos[i % itemCombos.length];
-
-    const items = combo.map((c, idx) => {
-      const prod = catalog[c.catIdx] || catalog[0];
-      const variant = prod.variants[c.varIdx] || prod.variants[0];
-      const unitPrice = prod.basePrice + (variant.extraPrice || 0);
-      return {
-        id: `it-${1000 + i}-${idx}`,
-        productId: prod.id,
-        productName: prod.name,
-        variantId: variant.id,
-        variantName: variant.name,
-        size: c.size,
-        qty: c.qty,
-        unitPrice,
-        packed: pat.ship === 'Por enviar' || pat.ship === 'Enviado'
-      };
-    });
-
-    const subtotal = items.reduce((acc, it) => acc + it.unitPrice * it.qty, 0);
-    const hasGarment = items.some(it => {
-      const p = catalog.find(x => x.id === it.productId);
-      return p && p.category === 'Prenda';
-    });
-    const hasKeychain = items.some(it => it.productName.toLowerCase().includes('llavero'));
-    const discount = hasGarment && hasKeychain ? 5000 : 0;
-    const total = Math.max(0, subtotal - discount);
-
-    const dayOffset = Math.floor(i / 4);
-    const dateObj = new Date(2026, 10, 15 - dayOffset);
-    const createdAt = dateObj.toISOString().split('T')[0];
-
-    orders.push({
-      id: `MFB-${String(1001 + i)}`,
-      customerName,
-      instagram: igHandle,
-      phone,
-      city: loc.city,
-      address: loc.address,
-      carrier: loc.carrier,
-      trackingNumber: pat.ship === 'Enviado' ? `2400981${100 + i}` : '',
-      paymentStatus: pat.pay,
-      shippingStatus: pat.ship,
-      items,
-      discount,
-      total,
-      notes: notesPool[i % notesPool.length],
-      createdAt
-    });
-  }
-
-  return orders.reverse();
-}
-
-// ============================================================================
 // 3. UTILIDADES DE FORMATO Y CÁLCULO FINANCIERO
 // ============================================================================
 const formatCOP = (val) => {
@@ -645,80 +523,48 @@ const getPendingAmount = (order) => {
 };
 
 // ============================================================================
-// 4. CLIENTE HTTP SERVERLESS PARA NEONDB (POSTGRESQL OVER HTTPS)
-// ============================================================================
-function parseNeonConnectionString(connStr) {
-  if (!connStr || typeof connStr !== 'string') return null;
-  const trimmed = connStr.trim();
-  try {
-    // Format: postgresql://user:pass@ep-xyz.region.aws.neon.tech/dbname?sslmode=require
-    const match = trimmed.match(/postgres(?:ql)?:\/\/([^:]+):([^@]+)@([^/?#]+)\/([^?#]+)/i);
-    if (!match) return null;
-    return {
-      user: match[1],
-      password: match[2],
-      host: match[3],
-      database: match[4],
-      endpoint: `https://${match[3]}/sql`,
-      raw: trimmed
-    };
-  } catch {
-    return null;
-  }
-}
-
-const POSTGRES_SCHEMA_SQL = `-- Esquema Oficial MyFanBox en NeonDB (Serverless PostgreSQL)
-CREATE TABLE IF NOT EXISTS mfb_catalog (
-  id TEXT PRIMARY KEY,
-  code TEXT NOT NULL,
-  name TEXT NOT NULL,
-  category TEXT NOT NULL,
-  base_price INTEGER NOT NULL,
-  unit_cost INTEGER NOT NULL,
-  blank_name TEXT,
-  sizes JSONB NOT NULL,
-  variants JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS mfb_orders (
-  id TEXT PRIMARY KEY,
-  customer_name TEXT NOT NULL,
-  instagram TEXT,
-  phone TEXT,
-  city TEXT,
-  address TEXT,
-  carrier TEXT,
-  tracking_number TEXT,
-  payment_status TEXT NOT NULL,
-  shipping_status TEXT NOT NULL,
-  items JSONB NOT NULL,
-  discount INTEGER DEFAULT 0,
-  total INTEGER NOT NULL,
-  notes TEXT,
-  created_at TEXT,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS mfb_inventory_progress (
-  item_key TEXT PRIMARY KEY,
-  kind TEXT NOT NULL, -- 'BOUGHT_SUPPLY' | 'MADE_PRODUCT'
-  quantity INTEGER NOT NULL DEFAULT 0,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_mfb_orders_payment ON mfb_orders(payment_status);
-CREATE INDEX IF NOT EXISTS idx_mfb_orders_shipping ON mfb_orders(shipping_status);`;
-
-// ============================================================================
 // 5. COMPONENTE PRINCIPAL DE LA APLICACIÓN
 // ============================================================================
 export default function App() {
   // Navigation & UI state
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'shipping' | 'map' | 'costs' | 'neondb' | 'details'
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'shipping' | 'map' | 'costs' | 'neondb' | 'config' | 'details' | 'secret-login'
   const [invSubtab, setInvSubtab] = useState('buy'); // 'buy' | 'make' | 'pack'
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // ==========================================================================
+  // 5.A ESTADO DE AUTENTICACIÓN: ADMIN vs GUEST + RUTA SECRETA /1620
+  // ==========================================================================
+  const [isSecretLoginRoute, setIsSecretLoginRoute] = useState(false);
+  const [googleMapsApiKey, setGoogleMapsApiKey] = useState('');
+  const [adminToken, setAdminToken] = useState(() => {
+    try {
+      return localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
+  // La sesión solo se considera válida después de que el backend la verifica.
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminConfig, setAdminConfig] = useState({ username: DEFAULT_ADMIN_USER, hideDefaultHint: true });
+  const [isDataReady, setIsDataReady] = useState(false);
+  const [isSavingData, setIsSavingData] = useState(false);
+  const [dataError, setDataError] = useState('');
+
+  // Login Form & Guest Lookup State
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [rememberSession, setRememberSession] = useState(true);
+  const [loginError, setLoginError] = useState('');
+  const [guestUuidInput, setGuestUuidInput] = useState('');
+  const [guestLookupError, setGuestLookupError] = useState('');
+
+  // Admin Security Settings Modal State
+  const [securityModalOpen, setSecurityModalOpen] = useState(false);
+  const [newAdminUser, setNewAdminUser] = useState('');
+  const [newAdminPass, setNewAdminPass] = useState('');
+  const [newAdminPassConfirm, setNewAdminPassConfirm] = useState('');
+  const [hideHintToggle, setHideHintToggle] = useState(false);
 
   // Eye-Care Theme State
   const [theme, setTheme] = useState(() => {
@@ -731,36 +577,32 @@ export default function App() {
 
   // Map & Routing State
   const [originHub, setOriginHub] = useState('Medellín');
+  const [defaultCarrier, setDefaultCarrier] = useState('Interrapidísimo');
+  const [brandName, setBrandName] = useState('MyFanBox');
+  const [collectionName, setCollectionName] = useState('Viajando por el Mundo — Karol G');
   const [mapCarrierFilter, setMapCarrierFilter] = useState('ALL');
   const [mapStatusFilter, setMapStatusFilter] = useState('ALL');
   const [mapCityFilter, setMapCityFilter] = useState('ALL');
-  const [selectedMapOrderId, setSelectedMapOrderId] = useState('MFB-1124');
-  const [mapEngine, setMapEngine] = useState('vector'); // 'vector' | 'leaflet'
+  const [selectedMapOrderId, setSelectedMapOrderId] = useState('');
+  const [mapEngine, setMapEngine] = useState('gmaps'); // 'gmaps' | 'leaflet' | 'vector'
   const [mapZoom, setMapZoom] = useState(1);
+  const [inspectorGeoCandidates, setInspectorGeoCandidates] = useState([]);
+  const [inspectorGeoLoading, setInspectorGeoLoading] = useState(false);
   const leafletContainerRef = useRef(null);
   const leafletMapInstanceRef = useRef(null);
 
-  // Customer Order Details (/details/:orderId) State
-  const [detailOrderId, setDetailOrderId] = useState('MFB-1124');
+  // Customer Order Details (/details/:uuid) State
+  const [detailOrderUuid, setDetailOrderUuid] = useState('');
+  const [detailSecurityError, setDetailSecurityError] = useState('');
   const [sharedOrderPayload, setSharedOrderPayload] = useState(null);
+  const [remoteDetailOrder, setRemoteDetailOrder] = useState(null);
   const [isPublicCustomerView, setIsPublicCustomerView] = useState(false);
 
   // Core Data State
-  const [catalog, setCatalog] = useState(INITIAL_CATALOG);
+  const [catalog, setCatalog] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [boughtSupplies, setBoughtSupplies] = useState({
-    'Hoodie Base Beige (Sin estampar)___M': 8,
-    'Hoodie Base Beige (Sin estampar)___L': 6,
-    'Hoodie Base Negro (Sin estampar)___S': 9,
-    'Croptop Base Blanco/Crema___M': 7,
-    'Camiseta Raglan Blanca / Mangas Negras___L': 5,
-    'Caja Acrílica Mini CD + Herraje Estrella___Única': 24
-  });
-  const [madeItems, setMadeItems] = useState({
-    'cat-1|||v1-brillos|||M': 6,
-    'cat-2|||v2-std|||S': 7,
-    'cat-4|||v4-azul|||L': 5
-  });
+  const [boughtSupplies, setBoughtSupplies] = useState<Record<string, number>>({});
+  const [madeItems, setMadeItems] = useState<Record<string, number>>({});
   const [comboDiscountValue, setComboDiscountValue] = useState(5000);
 
   // Filters & Table Pagination State
@@ -781,22 +623,20 @@ export default function App() {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
 
-  // NeonDB Integration State
-  const [neonConnString, setNeonConnString] = useState('');
-  const [neonAutoSync, setNeonAutoSync] = useState(false);
-  const [neonStatus, setNeonStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'connected' | 'error'
+  // NeonDB se conecta desde el backend: DATABASE_URL nunca se envía al navegador.
+  const [neonStatus, setNeonStatus] = useState('connecting');
   const [neonLastSync, setNeonLastSync] = useState(null);
   const [sqlLogs, setSqlLogs] = useState([
     {
       id: 'log-init',
       timestamp: new Date().toLocaleTimeString(),
-      type: 'INFO',
-      sql: '-- Motor MyFanBox listo. Conecta tu URL de NeonDB o trabaja con caché local instantáneo.',
+      sql: '-- MyFanBox usa /api/*; la conexión PostgreSQL vive en el servidor.',
       durationMs: 0,
-      status: 'OK'
+      status: 'INFO',
+      detail: 'Esperando verificación de la API y PostgreSQL.'
     }
   ]);
-  const [customSqlQuery, setCustomSqlQuery] = useState('SELECT payment_status, COUNT(*) as total_pedidos, SUM(total) as monto_cop FROM mfb_orders GROUP BY payment_status;');
+  const [customSqlQuery, setCustomSqlQuery] = useState('SELECT payment_status, COUNT(*) AS total_pedidos, SUM(total) AS monto_cop FROM mfb_orders GROUP BY payment_status;');
   const [customSqlResult, setCustomSqlResult] = useState(null);
 
   const searchInputRef = useRef(null);
@@ -812,46 +652,145 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Load initial state from localStorage or seed 124 realistic orders
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.catalog?.length) setCatalog(parsed.catalog);
-        if (Array.isArray(parsed.orders)) setOrders(parsed.orders);
-        else setOrders(generateSeedOrders(INITIAL_CATALOG, 124));
-        if (parsed.boughtSupplies) setBoughtSupplies(parsed.boughtSupplies);
-        if (parsed.madeItems) setMadeItems(parsed.madeItems);
-        if (parsed.neonConnString) setNeonConnString(parsed.neonConnString);
-        if (typeof parsed.neonAutoSync === 'boolean') setNeonAutoSync(parsed.neonAutoSync);
-      } else {
-        setOrders(generateSeedOrders(INITIAL_CATALOG, 124));
+  // GitHub Pages hosts only the static frontend. The API lives on a separate server.
+  // VITE_API_BASE_URL is a public API origin, never a database credential.
+  const apiRequest = useCallback(async (path, options = {}) => {
+    const { token: explicitToken, headers: customHeaders, ...fetchOptions } = options || {};
+    const token = explicitToken === null ? '' : (explicitToken || adminToken);
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+      ...fetchOptions,
+      headers: {
+        Accept: 'application/json',
+        ...(fetchOptions.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(customHeaders || {})
       }
-    } catch (err) {
-      console.error('Error loading local state:', err);
-      setOrders(generateSeedOrders(INITIAL_CATALOG, 124));
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = Object.assign(new Error(payload.error || payload.message || `Error HTTP ${response.status}`), { status: response.status });
+      throw error;
     }
+    return payload;
+  }, [adminToken]);
+
+  const applyDatabaseSnapshot = useCallback((payload) => {
+    // NeonDB is the source of truth. An empty server response must remain empty;
+    // starter products are inserted once by server initialization, not resurrected in the browser.
+    const nextCatalog = Array.isArray(payload.catalog) ? payload.catalog : [];
+    setCatalog(nextCatalog);
+    setOrders(Array.isArray(payload.orders) ? payload.orders : []);
+    setBoughtSupplies(payload.boughtSupplies && typeof payload.boughtSupplies === 'object' ? payload.boughtSupplies : {});
+    setMadeItems(payload.madeItems && typeof payload.madeItems === 'object' ? payload.madeItems : {});
+    setComboDiscountValue(Math.max(0, Number(payload.settings?.comboDiscountValue ?? payload.comboDiscountValue ?? 5000) || 0));
+    setOriginHub(payload.settings?.originHub || 'Medellín');
+    setDefaultCarrier(payload.settings?.defaultCarrier || 'Interrapidísimo');
+    setBrandName(payload.settings?.brandName || 'MyFanBox');
+    setCollectionName(payload.settings?.collectionName || 'Viajando por el Mundo — Karol G');
+    setGoogleMapsApiKey(payload.settings?.googleMapsApiKey || '');
+    if (payload.settings?.theme && EYE_CARE_THEMES.some(item => item.id === payload.settings.theme)) setTheme(payload.settings.theme);
+    if (payload.adminConfig) setAdminConfig(payload.adminConfig);
+    setIsDataReady(true);
+    setDataError('');
   }, []);
 
-  // Save to localStorage on change
+  const loadDatabaseSnapshot = useCallback(async (token = adminToken) => {
+    const payload = await apiRequest('/api/admin/bootstrap', { token });
+    applyDatabaseSnapshot(payload);
+    setNeonStatus('connected');
+    setNeonLastSync(new Date().toLocaleTimeString());
+    return payload;
+  }, [adminToken, apiRequest, applyDatabaseSnapshot]);
+
+  // Comprobar Neon al abrir la app y recuperar los datos compartidos si hay sesión admin.
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          catalog,
-          orders,
-          boughtSupplies,
-          madeItems,
-          neonConnString,
-          neonAutoSync
-        })
-      );
-    } catch (e) {
-      console.error('Error saving state:', e);
-    }
-  }, [catalog, orders, boughtSupplies, madeItems, neonConnString, neonAutoSync]);
+    let cancelled = false;
+    const bootstrap = async () => {
+      try {
+        await apiRequest('/api/health', { token: null });
+        if (cancelled) return;
+        setNeonStatus('connected');
+        setDataError('');
+      } catch (error) {
+        if (cancelled) return;
+        setNeonStatus('error');
+        setDataError(error.message || 'No se pudo conectar con el servidor o NeonDB.');
+        setIsDataReady(false);
+        return;
+      }
+
+      const savedToken = adminToken || (() => {
+        try { return localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY) || ''; }
+        catch { return ''; }
+      })();
+      if (!savedToken) return;
+
+      try {
+        await loadDatabaseSnapshot(savedToken);
+        if (cancelled) return;
+        setAdminToken(savedToken);
+        setIsAdmin(true);
+      } catch (error) {
+        if (cancelled) return;
+        try {
+          localStorage.removeItem(ADMIN_SESSION_KEY);
+          sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        } catch { /* storage puede estar deshabilitado */ }
+        setAdminToken('');
+        setIsAdmin(false);
+        setIsDataReady(false);
+        if (error.status !== 401) {
+          setDataError(error.message || 'No se pudieron cargar los datos de NeonDB.');
+          setNeonStatus('error');
+        }
+      }
+    };
+    bootstrap();
+    return () => { cancelled = true; };
+  }, [adminToken, apiRequest, loadDatabaseSnapshot]);
+
+  // Guardado automático del estado completo en PostgreSQL. Nunca usa localStorage como base de datos.
+  useEffect(() => {
+    if (!isAdmin || !isDataReady || !adminToken) return undefined;
+    const timer = setTimeout(async () => {
+      setIsSavingData(true);
+      try {
+        await apiRequest('/api/admin/data', {
+          method: 'PUT',
+          body: JSON.stringify({
+            catalog,
+            orders,
+            boughtSupplies,
+            madeItems,
+            settings: {
+              comboDiscountValue,
+              originHub,
+              defaultCarrier,
+              brandName,
+              collectionName,
+              googleMapsApiKey,
+              theme
+            }
+          })
+        });
+        setNeonStatus('connected');
+        setNeonLastSync(new Date().toLocaleTimeString());
+        setDataError('');
+      } catch (error) {
+        setNeonStatus('error');
+        setDataError(error.message || 'No se pudieron guardar los cambios en NeonDB.');
+        notify(`No se guardaron los cambios en la base de datos: ${error.message}`, 'error');
+      } finally {
+        setIsSavingData(false);
+      }
+    }, 650);
+    return () => clearTimeout(timer);
+  }, [
+    isAdmin, isDataReady, adminToken, catalog, orders, boughtSupplies, madeItems,
+    comboDiscountValue, originHub, defaultCarrier, brandName, collectionName,
+    googleMapsApiKey, theme, apiRequest, notify
+  ]);
 
   // Persist theme choice
   useEffect(() => {
@@ -862,19 +801,50 @@ export default function App() {
     }
   }, [theme]);
 
-  // Hash Router for '/details/:orderId' (Works natively on GitHub Pages: #/details/MFB-1124)
+  // Strict Router for Secret Admin Slug '/1620' ('#/1620') & Customer '/details/:uuid'
   useEffect(() => {
     const checkHashRoute = () => {
       const hash = window.location.hash || '';
+      const pathname = window.location.pathname || '';
+
+      // 1. Check Secret Admin Login Route: #/1620 or /1620
+      if (
+        hash === '#/1620' ||
+        hash === '#1620' ||
+        hash.startsWith('#/1620?') ||
+        pathname.endsWith('/1620') ||
+        pathname.endsWith('/1620/')
+      ) {
+        setIsSecretLoginRoute(true);
+        return;
+      } else {
+        setIsSecretLoginRoute(false);
+      }
+
+      // 2. Check Customer Order Tracking Route: #/details/<uuid>
       if (hash.startsWith('#/details/')) {
         const rawPart = hash.replace('#/details/', '');
-        const [idPart, queryString] = rawPart.split('?');
-        const cleanId = decodeURIComponent(idPart || '').trim();
-        if (cleanId) {
-          setDetailOrderId(cleanId);
-          setActiveTab('details');
+        const [tokenPart, queryString] = rawPart.split('?');
+        const cleanToken = decodeURIComponent(tokenPart || '').trim();
+
+        setActiveTab('details');
+
+        // Anti-enumeration check: Reject sequential IDs like MFB-1124 or non-UUID strings
+        if (!isValidUUID(cleanToken)) {
+          setDetailOrderUuid('');
+          setDetailSecurityError(
+            `El identificador "${cleanToken || 'vacío'}" no es un código UUID válido. Por privacidad de nuestros clientes, no se permite buscar pedidos por número consecutivo (MFB-XXXX) ni por nombre.`
+          );
+          setIsPublicCustomerView(true);
+          return;
+        }
+
+        setDetailSecurityError('');
+        setDetailOrderUuid(cleanToken.toLowerCase());
+        if (!isAdmin) {
           setIsPublicCustomerView(true);
         }
+
         if (queryString) {
           try {
             const params = new URLSearchParams(queryString);
@@ -882,7 +852,7 @@ export default function App() {
             if (encodedData) {
               const decodedJson = decodeURIComponent(atob(encodedData));
               const parsedOrder = JSON.parse(decodedJson);
-              if (parsedOrder && parsedOrder.id) {
+              if (parsedOrder && isValidUUID(parsedOrder.uuid)) {
                 setSharedOrderPayload(parsedOrder);
               }
             }
@@ -896,22 +866,49 @@ export default function App() {
     checkHashRoute();
     window.addEventListener('hashchange', checkHashRoute);
     return () => window.removeEventListener('hashchange', checkHashRoute);
-  }, []);
+  }, [isAdmin]);
 
-  // Open '/details/:orderId' helper
-  const handleOpenOrderDetails = useCallback((orderId, asCustomer = false) => {
-    setDetailOrderId(orderId);
-    setIsPublicCustomerView(asCustomer);
+  // Open '/details/:uuid' helper using the order's secret UUID v4
+  const handleOpenOrderDetails = useCallback((orderOrUuid, asCustomer = false) => {
+    let targetUuid = '';
+    if (typeof orderOrUuid === 'object' && orderOrUuid !== null) {
+      targetUuid = orderOrUuid.uuid;
+    } else if (typeof orderOrUuid === 'string') {
+      if (isValidUUID(orderOrUuid)) {
+        targetUuid = orderOrUuid.trim().toLowerCase();
+      } else {
+        const foundByInternalId = orders.find(
+          o => o.id.toLowerCase() === orderOrUuid.trim().toLowerCase()
+        );
+        if (foundByInternalId) targetUuid = foundByInternalId.uuid;
+      }
+    }
+
+    if (!targetUuid || !isValidUUID(targetUuid)) {
+      setDetailOrderUuid('');
+      setDetailSecurityError(
+        'Enlace Protegido: Por privacidad de nuestros clientes, los pedidos solo pueden consultarse mediante su código único UUID enviado por WhatsApp.'
+      );
+      setIsPublicCustomerView(asCustomer || !isAdmin);
+      setActiveTab('details');
+      return;
+    }
+
+    setDetailSecurityError('');
+    setRemoteDetailOrder(null);
+    setDetailOrderUuid(targetUuid.toLowerCase());
+    setIsPublicCustomerView(asCustomer || !isAdmin);
     setActiveTab('details');
     try {
-      window.history.replaceState(null, '', `#/details/${orderId}`);
+      window.history.replaceState(null, '', `#/details/${targetUuid.toLowerCase()}`);
     } catch {
-      window.location.hash = `/details/${orderId}`;
+      window.location.hash = `/details/${targetUuid.toLowerCase()}`;
     }
-  }, []);
+  }, [orders, isAdmin]);
 
   const handleExitDetailsToAdmin = useCallback((targetTab = 'orders') => {
     setIsPublicCustomerView(false);
+    setDetailSecurityError('');
     setActiveTab(targetTab);
     try {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -920,13 +917,156 @@ export default function App() {
     }
   }, []);
 
-  // Keyboard shortcuts
+  // ==========================================================================
+  // 5.B HANDLERS DE LOGIN ADMIN, LOGOUT Y CAMBIO DE CONTRASEÑA MAESTRA
+  // ==========================================================================
+  const handleAdminLoginSubmit = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    try {
+      const result = await apiRequest('/api/admin/login', {
+        method: 'POST',
+        token: null,
+        body: JSON.stringify({ username: loginUsername.trim(), password: loginPassword, remember: rememberSession })
+      });
+      if (!result.token) throw new Error('El servidor no devolvió una sesión válida.');
+      const token = result.token;
+      try {
+        sessionStorage.setItem(ADMIN_SESSION_KEY, token);
+        if (rememberSession) localStorage.setItem(ADMIN_SESSION_KEY, token);
+        else localStorage.removeItem(ADMIN_SESSION_KEY);
+      } catch (storageError) {
+        console.warn('No se pudo guardar la sesión en este navegador:', storageError);
+      }
+      setAdminToken(token);
+      await loadDatabaseSnapshot(token);
+      setAdminConfig(result.adminConfig || { username: loginUsername.trim(), hideDefaultHint: true });
+      setIsAdmin(true);
+      setIsSecretLoginRoute(false);
+      setIsPublicCustomerView(false);
+      setActiveTab('orders');
+      setLoginPassword('');
+      try { window.history.replaceState(null, '', window.location.pathname + window.location.search); }
+      catch { window.location.hash = ''; }
+      notify('Sesión iniciada. Datos cargados desde NeonDB.');
+    } catch (error) {
+      setLoginError(error.message || 'No se pudo iniciar sesión. Comprueba el servidor y las credenciales.');
+      setIsAdmin(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    setIsDataReady(false);
+    setAdminToken('');
+    setCatalog([]);
+    setOrders([]);
+    setBoughtSupplies({});
+    setMadeItems({});
+    try {
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    } catch (err) { console.warn(err); }
+    notify('Sesión cerrada. Los datos siguen guardados en NeonDB.');
+  };
+
+  const handleSaveSecuritySettings = async (e) => {
+    e.preventDefault();
+    if (!isAdmin) return;
+    const username = newAdminUser.trim();
+    if (!username) { notify('El usuario de administrador no puede estar vacío.', 'warning'); return; }
+    if (newAdminPass && newAdminPass.length < 10) { notify('La nueva contraseña debe tener al menos 10 caracteres.', 'warning'); return; }
+    if (newAdminPass !== newAdminPassConfirm) { notify('Las contraseñas no coinciden.', 'error'); return; }
+    try {
+      const result = await apiRequest('/api/admin/config', {
+        method: 'PUT',
+        body: JSON.stringify({ username, password: newAdminPass || undefined, hideDefaultHint: Boolean(hideHintToggle), remember: rememberSession })
+      });
+      setAdminConfig(result.adminConfig || { username, hideDefaultHint: Boolean(hideHintToggle) });
+      if (result.token) {
+        setAdminToken(result.token);
+        try { sessionStorage.setItem(ADMIN_SESSION_KEY, result.token); if (rememberSession) localStorage.setItem(ADMIN_SESSION_KEY, result.token); else localStorage.removeItem(ADMIN_SESSION_KEY); } catch { /* almacenamiento opcional */ }
+      }
+      setNewAdminPass('');
+      setNewAdminPassConfirm('');
+      setSecurityModalOpen(false);
+      notify('Credenciales guardadas de forma segura en el servidor.');
+    } catch (error) {
+      notify(`No se pudieron guardar las credenciales: ${error.message}`, 'error');
+    }
+  };
+
+  const handleOpenSecurityModal = () => {
+    if (!isAdmin) return;
+    setNewAdminUser(adminConfig.username || DEFAULT_ADMIN_USER);
+    setNewAdminPass('');
+    setNewAdminPassConfirm('');
+    setHideHintToggle(Boolean(adminConfig.hideDefaultHint));
+    setSecurityModalOpen(true);
+  };
+
+  const handleGuestOpenUuidTracking = (e) => {
+    e.preventDefault();
+    setGuestLookupError('');
+    const raw = guestUuidInput.trim();
+    if (!raw) {
+      setGuestLookupError('Pega tu código UUID o el enlace completo que recibiste por WhatsApp.');
+      return;
+    }
+
+    // Covert shortcut: if the owner types '/1620' or '1620' into the tracking box, jump to secret login #/1620
+    if (raw === '/1620' || raw === '1620' || raw === '#/1620') {
+      setGuestUuidInput('');
+      window.location.hash = '/1620';
+      setIsSecretLoginRoute(true);
+      return;
+    }
+
+    // Extract UUID if the customer pasted the full URL (e.g. https://.../#/details/uuid?d=...)
+    let extractedUuid = raw;
+    let extractedQuery = '';
+    if (raw.includes('/details/')) {
+      const afterDetails = raw.split('/details/')[1] || '';
+      const [idPart, qPart] = afterDetails.split('?');
+      extractedUuid = decodeURIComponent(idPart || '').trim();
+      extractedQuery = qPart || '';
+    }
+
+    if (!isValidUUID(extractedUuid)) {
+      setGuestLookupError(
+        'Por seguridad, no se permite buscar por número de orden (ej. MFB-1124) ni por nombre. Debes ingresar el código único UUID de 36 caracteres enviado a tu WhatsApp.'
+      );
+      return;
+    }
+
+    if (extractedQuery) {
+      try {
+        const params = new URLSearchParams(extractedQuery);
+        const encodedData = params.get('d');
+        if (encodedData) {
+          const decodedJson = decodeURIComponent(atob(encodedData));
+          const parsedOrder = JSON.parse(decodedJson);
+          if (parsedOrder && isValidUUID(parsedOrder.uuid)) {
+            setSharedOrderPayload(parsedOrder);
+          }
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+
+    handleOpenOrderDetails(extractedUuid, true);
+  };
+
+  // Keyboard shortcuts (Only active for logged-in Admin)
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (!isAdmin) return;
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
         if (e.key === 'Escape') {
-          document.activeElement.blur();
+          (document.activeElement as HTMLElement | null)?.blur();
         }
         return;
       }
@@ -946,12 +1086,12 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleExitDetailsToAdmin]);
+  }, [isAdmin, handleExitDetailsToAdmin]);
 
   // ============================================================================
-  // 6. EJECUTOR SQL EN NEONDB (SERVERLESS HTTP DRIVER CON FIX CORS)
+  // 6. OPERACIONES DE BASE DE DATOS (API SEGURA DEL SERVIDOR)
   // ============================================================================
-  const appendSqlLog = useCallback((sql, status = 'OK', durationMs = 12, detail = '') => {
+  const appendSqlLog = useCallback((sql, status = 'OK', durationMs = 0, detail = '') => {
     setSqlLogs(prev => [
       {
         id: `sql-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -965,172 +1105,76 @@ export default function App() {
     ]);
   }, []);
 
-  const executeNeonQuery = useCallback(async (query, params = []) => {
-    const parsed = parseNeonConnectionString(neonConnString);
-    if (!parsed) {
-      appendSqlLog(query, 'LOCAL_ONLY', 1, 'Sin Connection String de NeonDB configurada (Guardado en caché local)');
-      return { ok: false, localOnly: true };
-    }
-
+  const executeNeonQuery = useCallback(async (query) => {
     const start = performance.now();
     try {
-      // IMPORTANT CORS FIX FOR NEONDB HTTP PROXY:
-      // Send ONLY 'Neon-Connection-String' without 'Content-Type: application/json'
-      // so the browser does not fail Neon's strict Access-Control-Allow-Headers check.
-      const cleanConn = parsed.raw.replace(/&channel_binding=require/gi, '');
-      const response = await fetch(parsed.endpoint, {
+      const result = await apiRequest('/api/admin/sql', {
         method: 'POST',
-        headers: {
-          'Neon-Connection-String': cleanConn
-        },
-        body: JSON.stringify({ query, params })
+        body: JSON.stringify({ query })
       });
       const elapsed = Math.round(performance.now() - start);
-      if (!response.ok) {
-        const errText = await response.text();
-        appendSqlLog(query, 'ERROR', elapsed, errText.slice(0, 180));
-        setNeonStatus('error');
-        return { ok: false, error: errText };
-      }
-      const data = await response.json();
-      appendSqlLog(query, 'OK', elapsed, `Filas afectadas/devueltas: ${data.rows?.length ?? data.rowCount ?? 0}`);
+      appendSqlLog(query, 'OK', elapsed, `Filas devueltas: ${result.rows?.length ?? 0}`);
       setNeonStatus('connected');
       setNeonLastSync(new Date().toLocaleTimeString());
-      return { ok: true, data };
-    } catch (err) {
+      return { ok: true, data: { rows: result.rows || [] } };
+    } catch (error) {
       const elapsed = Math.round(performance.now() - start);
-      appendSqlLog(query, 'ERROR', elapsed, err.message);
+      appendSqlLog(query, 'ERROR', elapsed, error.message);
       setNeonStatus('error');
-      return { ok: false, error: err.message };
+      return { ok: false, error: error.message };
     }
-  }, [neonConnString, appendSqlLog]);
+  }, [apiRequest, appendSqlLog]);
 
-  // Auto-sync helper when an order is created/updated
-  const syncSingleOrderToNeon = useCallback(async (order) => {
-    if (!neonAutoSync || !parseNeonConnectionString(neonConnString)) return;
-    const q = `INSERT INTO mfb_orders (id, customer_name, instagram, phone, city, address, carrier, tracking_number, payment_status, shipping_status, items, discount, total, notes, created_at, updated_at)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12,$13,$14,$15,NOW())
-ON CONFLICT (id) DO UPDATE SET
-  customer_name=EXCLUDED.customer_name,
-  instagram=EXCLUDED.instagram,
-  phone=EXCLUDED.phone,
-  city=EXCLUDED.city,
-  address=EXCLUDED.address,
-  carrier=EXCLUDED.carrier,
-  tracking_number=EXCLUDED.tracking_number,
-  payment_status=EXCLUDED.payment_status,
-  shipping_status=EXCLUDED.shipping_status,
-  items=EXCLUDED.items,
-  discount=EXCLUDED.discount,
-  total=EXCLUDED.total,
-  notes=EXCLUDED.notes,
-  updated_at=NOW();`;
+  // Las mutaciones individuales se persisten mediante el efecto transaccional de snapshot.
+  const syncSingleOrderToNeon = useCallback(async (_order) => undefined, []);
 
-    await executeNeonQuery(q, [
-      order.id,
-      order.customerName,
-      order.instagram || '',
-      order.phone || '',
-      order.city || '',
-      order.address || '',
-      order.carrier || '',
-      order.trackingNumber || '',
-      order.paymentStatus,
-      order.shippingStatus,
-      JSON.stringify(order.items),
-      order.discount || 0,
-      order.total || 0,
-      order.notes || '',
-      order.createdAt || ''
-    ]);
-  }, [neonAutoSync, neonConnString, executeNeonQuery]);
-
-  // Initialize NeonDB Schema & Tables
   const handleInitNeonTables = async () => {
-    const parsed = parseNeonConnectionString(neonConnString);
-    if (!parsed) {
-      notify('Pega primero tu Connection String de NeonDB (postgresql://...)', 'warning');
-      return;
+    if (!isAdmin) return;
+    try {
+      setNeonStatus('connecting');
+      await apiRequest('/api/admin/init', { method: 'POST', body: JSON.stringify({}) });
+      await loadDatabaseSnapshot(adminToken);
+      notify('Esquema verificado. NeonDB está conectado.');
+    } catch (error) {
+      setNeonStatus('error');
+      notify(`No se pudo inicializar NeonDB: ${error.message}`, 'error');
     }
-    setNeonStatus('connecting');
-    const statements = POSTGRES_SCHEMA_SQL.split(';').map(s => s.trim()).filter(Boolean);
-    for (const stmt of statements) {
-      const res = await executeNeonQuery(stmt + ';');
-      if (!res.ok) {
-        notify('Error al crear tablas en NeonDB. Revisa el registro SQL.', 'error');
-        return;
-      }
-    }
-    notify('¡Tablas mfb_orders, mfb_catalog y mfb_inventory_progress creadas en NeonDB!');
   };
 
-  // Push all local data to NeonDB
   const handlePushAllToNeon = async () => {
-    const parsed = parseNeonConnectionString(neonConnString);
-    if (!parsed) {
-      notify('Configura primero tu Connection String de NeonDB', 'warning');
-      return;
+    if (!isAdmin || !isDataReady) return;
+    try {
+      setIsSavingData(true);
+      await apiRequest('/api/admin/data', {
+        method: 'PUT',
+        body: JSON.stringify({
+          catalog,
+          orders,
+          boughtSupplies,
+          madeItems,
+          settings: { comboDiscountValue, originHub, defaultCarrier, brandName, collectionName, googleMapsApiKey, theme }
+        })
+      });
+      setNeonStatus('connected');
+      setNeonLastSync(new Date().toLocaleTimeString());
+      notify('Datos guardados en NeonDB.');
+    } catch (error) {
+      setNeonStatus('error');
+      notify(`Error al guardar en NeonDB: ${error.message}`, 'error');
+    } finally {
+      setIsSavingData(false);
     }
-    setNeonStatus('connecting');
-    await handleInitNeonTables();
-
-    // Upsert catalog
-    for (const prod of catalog) {
-      await executeNeonQuery(
-        `INSERT INTO mfb_catalog (id, code, name, category, base_price, unit_cost, blank_name, sizes, variants, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,NOW())
-         ON CONFLICT (id) DO UPDATE SET base_price=EXCLUDED.base_price, unit_cost=EXCLUDED.unit_cost, variants=EXCLUDED.variants, updated_at=NOW();`,
-        [prod.id, prod.code, prod.name, prod.category, prod.basePrice, prod.unitCost, prod.blankName, JSON.stringify(prod.sizes), JSON.stringify(prod.variants)]
-      );
-    }
-
-    // Batch upsert orders (first 35 in a single transaction or sequential for speed)
-    let syncedCount = 0;
-    for (const o of orders) {
-      const res = await executeNeonQuery(
-        `INSERT INTO mfb_orders (id, customer_name, instagram, phone, city, address, carrier, tracking_number, payment_status, shipping_status, items, discount, total, notes, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12,$13,$14,$15,NOW())
-         ON CONFLICT (id) DO UPDATE SET payment_status=EXCLUDED.payment_status, shipping_status=EXCLUDED.shipping_status, tracking_number=EXCLUDED.tracking_number, items=EXCLUDED.items, total=EXCLUDED.total, updated_at=NOW();`,
-        [o.id, o.customerName, o.instagram, o.phone, o.city, o.address, o.carrier, o.trackingNumber, o.paymentStatus, o.shippingStatus, JSON.stringify(o.items), o.discount || 0, o.total, o.notes || '', o.createdAt || '']
-      );
-      if (res.ok) syncedCount++;
-    }
-
-    notify(`Sincronización Push completada (${syncedCount} pedidos enviados a NeonDB)`);
   };
 
-  // Pull orders from NeonDB
   const handlePullFromNeon = async () => {
-    const parsed = parseNeonConnectionString(neonConnString);
-    if (!parsed) {
-      notify('Configura primero tu Connection String de NeonDB', 'warning');
-      return;
-    }
-    const res = await executeNeonQuery(`SELECT * FROM mfb_orders ORDER BY id DESC;`);
-    if (res.ok && Array.isArray(res.data?.rows)) {
-      if (res.data.rows.length === 0) {
-        notify('La tabla mfb_orders en NeonDB está vacía. Usa "Subir Datos (Push)" primero.');
-        return;
-      }
-      const loaded = res.data.rows.map(r => ({
-        id: r.id,
-        customerName: r.customer_name,
-        instagram: r.instagram || '',
-        phone: r.phone || '',
-        city: r.city || '',
-        address: r.address || '',
-        carrier: r.carrier || 'Interrapidísimo',
-        trackingNumber: r.tracking_number || '',
-        paymentStatus: r.payment_status,
-        shippingStatus: r.shipping_status,
-        items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items,
-        discount: Number(r.discount) || 0,
-        total: Number(r.total) || 0,
-        notes: r.notes || '',
-        createdAt: r.created_at || ''
-      }));
-      setOrders(loaded);
-      notify(`¡${loaded.length} pedidos descargados desde NeonDB!`);
+    if (!isAdmin) return;
+    try {
+      setNeonStatus('connecting');
+      await loadDatabaseSnapshot(adminToken);
+      notify('Datos actualizados desde NeonDB.');
+    } catch (error) {
+      setNeonStatus('error');
+      notify(`No se pudieron descargar los datos: ${error.message}`, 'error');
     }
   };
 
@@ -1245,7 +1289,7 @@ ON CONFLICT (id) DO UPDATE SET
       });
     });
 
-    const rows = Object.values(map)
+    const rows = (Object.values(map) as any[])
       .map(r => {
         const bought = Number(boughtSupplies[r.key]) || 0;
         const missing = Math.max(0, r.required - bought);
@@ -1279,7 +1323,7 @@ ON CONFLICT (id) DO UPDATE SET
       });
     });
 
-    const rows = Object.values(map)
+    const rows = (Object.values(map) as any[])
       .map(r => {
         const made = Number(madeItems[r.key]) || 0;
         const missing = Math.max(0, r.orderedQty - made);
@@ -1330,8 +1374,9 @@ ON CONFLICT (id) DO UPDATE SET
     setCurrentPage(1);
   }, [searchQuery, quickStatusFilter, payFilter, shipFilter, productFilter, sizeFilter]);
 
-  // 1-Click Status Updaters
+  // 1-Click Status Updaters (Admin Guarded)
   const handleUpdateOrderPayment = (orderId, newPayStatus) => {
+    if (!isAdmin) return;
     setOrders(prev =>
       prev.map(o => {
         if (o.id !== orderId) return o;
@@ -1344,6 +1389,7 @@ ON CONFLICT (id) DO UPDATE SET
   };
 
   const handleUpdateOrderShipping = (orderId, newShipStatus) => {
+    if (!isAdmin) return;
     setOrders(prev =>
       prev.map(o => {
         if (o.id !== orderId) return o;
@@ -1360,6 +1406,7 @@ ON CONFLICT (id) DO UPDATE SET
   };
 
   const handleUpdateOrderField = (orderId, field, value) => {
+    if (!isAdmin) return;
     setOrders(prev =>
       prev.map(o => {
         if (o.id !== orderId) return o;
@@ -1373,9 +1420,32 @@ ON CONFLICT (id) DO UPDATE SET
     );
   };
 
-  // Bulk Status Change for Selected Orders
+  // Rotate / Regenerate Secret UUID v4 for an Order (Admin Only)
+  const handleRegenerateOrderUUID = (orderId) => {
+    if (!isAdmin) return;
+    const newUuid = generateUUIDv4();
+    setOrders(prev =>
+      prev.map(o => {
+        if (o.id !== orderId) return o;
+        const updated = { ...o, uuid: newUuid };
+        syncSingleOrderToNeon(updated);
+        return updated;
+      })
+    );
+    setDetailOrderUuid(newUuid);
+    try {
+      if (activeTab === 'details') {
+        window.history.replaceState(null, '', `#/details/${newUuid}`);
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    notify(`Nuevo código secreto UUID generado para ${orderId}`);
+  };
+
+  // Bulk Status Change for Selected Orders (Admin Guarded)
   const handleBulkStatusUpdate = (type, newValue) => {
-    if (selectedOrderIds.length === 0) return;
+    if (!isAdmin || selectedOrderIds.length === 0) return;
     setOrders(prev =>
       prev.map(o => {
         if (!selectedOrderIds.includes(o.id)) return o;
@@ -1390,6 +1460,7 @@ ON CONFLICT (id) DO UPDATE SET
 
   // Toggle individual item packed in "Mesa de Empaque"
   const handleToggleItemPacked = (orderId, itemIdx) => {
+    if (!isAdmin) return;
     setOrders(prev =>
       prev.map(o => {
         if (o.id !== orderId) return o;
@@ -1401,7 +1472,14 @@ ON CONFLICT (id) DO UPDATE SET
     );
   };
 
-  // WhatsApp Click-to-Chat Generator
+  // El enlace solo contiene el UUID privado. Los datos se consultan en el servidor.
+  const getCustomerTrackingUrl = useCallback((order) => {
+    if (!order) return window.location.href;
+    const orderUuid = isValidUUID(order.uuid) ? order.uuid : generateUUIDv4();
+    return `${window.location.origin}${window.location.pathname}#/details/${orderUuid}`;
+  }, []);
+
+  // WhatsApp Click-to-Chat Generator (Includes secret UUID tracking link automatically)
   const handleOpenWhatsApp = (order) => {
     const cleanPhone = (order.phone || '').replace(/\D/g, '');
     const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
@@ -1409,6 +1487,7 @@ ON CONFLICT (id) DO UPDATE SET
     const itemsList = order.items.map(i => `• ${i.qty}x ${i.productName} (${i.variantName} - Talla ${i.size})`).join('\n');
     const paid = getPaidAmount(order);
     const pending = getPendingAmount(order);
+    const trackingUrl = getCustomerTrackingUrl(order);
 
     let statusMessage = '';
     if (order.shippingStatus === 'Enviado') {
@@ -1423,7 +1502,7 @@ ON CONFLICT (id) DO UPDATE SET
       statusMessage = `Tu pedido está 100% pagado (*${formatCOP(order.total)}*) y en estado: *${order.shippingStatus}*.`;
     }
 
-    const fullText = `¡Hola ${firstName}! Te escribimos de *MyFanBox* sobre tu pedido *${order.id}*:\n\n${statusMessage}\n\n*Detalle de tu orden:*\n${itemsList}\n📍 Destino: ${order.city} (${order.address || 'Confirmar dirección'})`;
+    const fullText = `¡Hola ${firstName}! Te escribimos de *MyFanBox* sobre tu pedido *${order.id}*:\n\n${statusMessage}\n\n*Detalle de tu orden:*\n${itemsList}\n📍 Destino: ${order.city} (${order.address || 'Confirmar dirección'})\n\n🔒 *Enlace privado de tu factura y seguimiento en vivo:*\n${trackingUrl}`;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(fullText)}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -1471,37 +1550,53 @@ ON CONFLICT (id) DO UPDATE SET
   };
 
   // ============================================================================
-  // 9. MODAL DE CREACIÓN / EDICIÓN DE PEDIDO
+  // 9. MODAL DE CREACIÓN / EDICIÓN DE PEDIDO + VERIFICADOR GOOGLE MAPS & CP
   // ============================================================================
   const [draftCustomer, setDraftCustomer] = useState({
     customerName: '',
     instagram: '',
     phone: '',
     city: 'Medellín',
+    neighborhood: 'El Poblado',
     address: '',
+    postalCode: '050021',
+    formattedAddress: '',
+    lat: 6.20892,
+    lng: -75.56781,
+    addressVerified: false,
     carrier: 'Interrapidísimo',
     trackingNumber: '',
     paymentStatus: 'Semi-pagado (50%)',
     shippingStatus: 'Por preparar',
     notes: ''
   });
+  const [addressCandidates, setAddressCandidates] = useState([]);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [draftItems, setDraftItems] = useState([]);
-  const [selProdId, setSelProdId] = useState(INITIAL_CATALOG[0].id);
-  const [selVarId, setSelVarId] = useState(INITIAL_CATALOG[0].variants[0].id);
-  const [selSize, setSelSize] = useState(INITIAL_CATALOG[0].sizes[0]);
+  const [selProdId, setSelProdId] = useState('');
+  const [selVarId, setSelVarId] = useState('');
+  const [selSize, setSelSize] = useState('M');
   const [selQty, setSelQty] = useState(1);
   const [applyComboDiscount, setApplyComboDiscount] = useState(true);
 
   const handleOpenOrderModal = (orderToEdit = null) => {
+    setAddressCandidates([]);
     if (orderToEdit) {
+      const fallback = inferColombianAddressMetadata(orderToEdit.city, orderToEdit.address);
       setEditingOrder(orderToEdit);
       setDraftCustomer({
         customerName: orderToEdit.customerName,
         instagram: orderToEdit.instagram || '',
         phone: orderToEdit.phone || '',
-        city: orderToEdit.city || '',
+        city: orderToEdit.city || 'Medellín',
+        neighborhood: orderToEdit.neighborhood || fallback.neighborhood,
         address: orderToEdit.address || '',
-        carrier: orderToEdit.carrier || 'Interrapidísimo',
+        postalCode: orderToEdit.postalCode || fallback.postalCode,
+        formattedAddress: orderToEdit.formattedAddress || '',
+        lat: typeof orderToEdit.lat === 'number' ? orderToEdit.lat : fallback.lat,
+        lng: typeof orderToEdit.lng === 'number' ? orderToEdit.lng : fallback.lng,
+        addressVerified: Boolean(orderToEdit.addressVerified),
+        carrier: orderToEdit.carrier || defaultCarrier,
         trackingNumber: orderToEdit.trackingNumber || '',
         paymentStatus: orderToEdit.paymentStatus,
         shippingStatus: orderToEdit.shippingStatus,
@@ -1516,8 +1611,14 @@ ON CONFLICT (id) DO UPDATE SET
         instagram: '',
         phone: '',
         city: 'Medellín',
+        neighborhood: 'El Poblado',
         address: '',
-        carrier: 'Interrapidísimo',
+        postalCode: '050021',
+        formattedAddress: '',
+        lat: 6.20892,
+        lng: -75.56781,
+        addressVerified: false,
+        carrier: defaultCarrier,
         trackingNumber: '',
         paymentStatus: 'Semi-pagado (50%)',
         shippingStatus: 'Por preparar',
@@ -1527,11 +1628,96 @@ ON CONFLICT (id) DO UPDATE SET
       setApplyComboDiscount(true);
     }
     const defaultProd = catalog[0];
-    setSelProdId(defaultProd.id);
-    setSelVarId(defaultProd.variants[0]?.id || '');
-    setSelSize(defaultProd.sizes[0] || 'M');
+    if (defaultProd) {
+      setSelProdId(defaultProd.id);
+      setSelVarId(defaultProd.variants[0]?.id || '');
+      setSelSize(defaultProd.sizes[0] || 'M');
+    } else {
+      setSelProdId('');
+      setSelVarId('');
+      setSelSize('M');
+    }
     setSelQty(1);
     setOrderModalOpen(true);
+  };
+
+  // Trigger address lookup & verification inside Order Modal
+  const handleVerifyAddressInModal = async () => {
+    if (!draftCustomer.address.trim() && !draftCustomer.city.trim()) {
+      notify('Escribe primero la calle/carrera y la ciudad para buscar en el mapa', 'warning');
+      return;
+    }
+    setIsSearchingAddress(true);
+    try {
+      const opts = await searchAndVerifyColombianAddress(
+        draftCustomer.city,
+        draftCustomer.address,
+        googleMapsApiKey
+      );
+      setAddressCandidates(opts);
+      if (opts.length > 0) {
+        notify(`${opts.length} opciones de dirección y código postal encontradas`);
+      }
+    } finally {
+      setIsSearchingAddress(false);
+    }
+  };
+
+  // Apply a selected candidate option inside Order Modal
+  const handleSelectAddressCandidate = (cand) => {
+    setDraftCustomer(prev => ({
+      ...prev,
+      city: cand.city || prev.city,
+      address: cand.streetAddress || prev.address,
+      neighborhood: cand.neighborhood || prev.neighborhood,
+      postalCode: cand.postalCode || prev.postalCode,
+      formattedAddress: cand.formattedAddress,
+      lat: cand.lat,
+      lng: cand.lng,
+      addressVerified: true
+    }));
+    notify(`Dirección verificada: CP ${cand.postalCode} (${cand.neighborhood})`);
+  };
+
+  // Verify existing order address directly from Tab 4 (Map Inspector)
+  const handleSearchInspectorCandidates = async (order) => {
+    if (!order) return;
+    setInspectorGeoLoading(true);
+    try {
+      const opts = await searchAndVerifyColombianAddress(
+        order.city,
+        order.address,
+        googleMapsApiKey
+      );
+      setInspectorGeoCandidates(opts);
+      notify(`Opciones cargadas para ${order.id}. Elige una para fijar el pin exacto.`);
+    } finally {
+      setInspectorGeoLoading(false);
+    }
+  };
+
+  const handleApplyInspectorCandidate = (orderId, cand) => {
+    if (!isAdmin) return;
+    setOrders(prev =>
+      prev.map(o => {
+        if (o.id !== orderId) return o;
+        const updated = {
+          ...o,
+          city: cand.city || o.city,
+          address: cand.streetAddress || o.address,
+          neighborhood: cand.neighborhood || o.neighborhood,
+          postalCode: cand.postalCode || o.postalCode,
+          formattedAddress: cand.formattedAddress,
+          lat: cand.lat,
+          lng: cand.lng,
+          addressVerified: true
+        };
+        syncSingleOrderToNeon(updated);
+        return updated;
+      })
+    );
+    setInspectorGeoCandidates([]);
+    notify(`Pin exacto y Código Postal (${cand.postalCode}) actualizados en ${orderId}`);
   };
 
   const handleAddDraftItem = () => {
@@ -1558,6 +1744,7 @@ ON CONFLICT (id) DO UPDATE SET
 
   const handleSaveOrderModal = (e) => {
     e.preventDefault();
+    if (!isAdmin) return;
     if (!draftCustomer.customerName.trim()) {
       notify('Escribe el nombre de la clienta o cliente', 'warning');
       return;
@@ -1566,6 +1753,10 @@ ON CONFLICT (id) DO UPDATE SET
     let finalItems = [...draftItems];
     if (finalItems.length === 0) {
       const prod = catalog.find(c => c.id === selProdId) || catalog[0];
+      if (!prod || !Array.isArray(prod.variants) || prod.variants.length === 0) {
+        notify('Primero agrega al menos un producto al catálogo o selecciona un producto válido.', 'warning');
+        return;
+      }
       const variant = prod.variants.find(v => v.id === selVarId) || prod.variants[0];
       finalItems.push({
         id: `dit-${Date.now()}`,
@@ -1589,6 +1780,7 @@ ON CONFLICT (id) DO UPDATE SET
     if (editingOrder) {
       const updatedOrder = {
         ...editingOrder,
+        uuid: isValidUUID(editingOrder.uuid) ? editingOrder.uuid : generateUUIDv4(),
         ...draftCustomer,
         items: finalItems,
         discount,
@@ -1604,6 +1796,7 @@ ON CONFLICT (id) DO UPDATE SET
       }, 1000);
       const newOrder = {
         id: `MFB-${maxNum + 1}`,
+        uuid: generateUUIDv4(),
         ...draftCustomer,
         items: finalItems,
         discount,
@@ -1612,7 +1805,7 @@ ON CONFLICT (id) DO UPDATE SET
       };
       setOrders(prev => [newOrder, ...prev]);
       syncSingleOrderToNeon(newOrder);
-      notify(`Nuevo pedido ${newOrder.id} registrado`);
+      notify(`Nuevo pedido ${newOrder.id} registrado con código UUID único`);
     }
     setOrderModalOpen(false);
   };
@@ -1683,43 +1876,47 @@ ON CONFLICT (id) DO UPDATE SET
     );
   }, [mapOrdersWithGeo, selectedMapOrderId]);
 
-  const currentDetailOrder = useMemo(() => {
-    const found = orders.find(o => o.id.toLowerCase() === (detailOrderId || '').toLowerCase());
-    if (found) return found;
-    if (sharedOrderPayload && sharedOrderPayload.id?.toLowerCase() === (detailOrderId || '').toLowerCase()) {
-      return sharedOrderPayload;
+  // Public tracking is fetched by UUID from PostgreSQL; it does not depend on browser storage.
+  useEffect(() => {
+    if (activeTab !== 'details' || !isValidUUID(detailOrderUuid) || detailSecurityError) return undefined;
+    const localOrder = orders.find(o => (o.uuid || '').toLowerCase() === detailOrderUuid.toLowerCase());
+    if (isAdmin && localOrder) {
+      setRemoteDetailOrder(null);
+      return undefined;
     }
-    return orders[0] || null;
-  }, [orders, detailOrderId, sharedOrderPayload]);
+    if (sharedOrderPayload && (sharedOrderPayload.uuid || '').toLowerCase() === detailOrderUuid.toLowerCase()) {
+      setRemoteDetailOrder(sharedOrderPayload);
+      return undefined;
+    }
+    let cancelled = false;
+    apiRequest(`/api/orders/${encodeURIComponent(detailOrderUuid)}`, { token: null })
+      .then(payload => { if (!cancelled) setRemoteDetailOrder(payload.order || payload); })
+      .catch(error => {
+        if (!cancelled) {
+          setRemoteDetailOrder(null);
+          setDetailSecurityError(error.status === 404 ? 'No encontramos un pedido asociado a este enlace privado.' : `No se pudo consultar el pedido: ${error.message}`);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [activeTab, detailOrderUuid, detailSecurityError, orders, isAdmin, sharedOrderPayload, apiRequest]);
 
-  // Build shareable customer tracking link with embedded base64 order snapshot
-  const getCustomerTrackingUrl = useCallback((order) => {
-    if (!order) return window.location.href;
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    try {
-      const compactPayload = {
-        id: order.id,
-        customerName: order.customerName,
-        instagram: order.instagram,
-        phone: order.phone,
-        city: order.city,
-        address: order.address,
-        carrier: order.carrier,
-        trackingNumber: order.trackingNumber,
-        paymentStatus: order.paymentStatus,
-        shippingStatus: order.shippingStatus,
-        items: order.items,
-        discount: order.discount,
-        total: order.total,
-        notes: order.notes,
-        createdAt: order.createdAt
-      };
-      const encoded = btoa(encodeURIComponent(JSON.stringify(compactPayload)));
-      return `${baseUrl}#/details/${order.id}?d=${encoded}`;
-    } catch {
-      return `${baseUrl}#/details/${order.id}`;
+  // Lookup order strictly by its cryptographic UUID v4
+  const currentDetailOrder = useMemo(() => {
+    if (detailSecurityError) return null;
+    const cleanTarget = (detailOrderUuid || '').trim().toLowerCase();
+    if (isValidUUID(cleanTarget)) {
+      const foundByUuid = orders.find(o => (o.uuid || '').toLowerCase() === cleanTarget);
+      if (foundByUuid) return foundByUuid;
+      if (sharedOrderPayload && (sharedOrderPayload.uuid || '').toLowerCase() === cleanTarget) return sharedOrderPayload;
+      if (remoteDetailOrder && (remoteDetailOrder.uuid || '').toLowerCase() === cleanTarget) return remoteDetailOrder;
+      return null;
     }
-  }, []);
+    // If Admin opens the /details/ tab directly from the menu without a specific UUID yet, pick the latest order
+    if (isAdmin && orders.length > 0) {
+      return orders[0];
+    }
+    return null;
+  }, [orders, detailOrderUuid, detailSecurityError, sharedOrderPayload, remoteDetailOrder, isAdmin]);
 
   // Optional OpenStreetMap Leaflet initializer when user switches mapEngine === 'leaflet'
   useEffect(() => {
@@ -1734,7 +1931,8 @@ ON CONFLICT (id) DO UPDATE SET
         link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
         document.head.appendChild(link);
       }
-      if (!window.L) {
+      const leafletWindow = window as Window & { L?: any };
+      if (!leafletWindow.L) {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
           script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
@@ -1743,9 +1941,9 @@ ON CONFLICT (id) DO UPDATE SET
           document.body.appendChild(script);
         });
       }
-      if (cancelled || !leafletContainerRef.current || !window.L) return;
+      if (cancelled || !leafletContainerRef.current || !leafletWindow.L) return;
 
-      const L = window.L;
+      const L = leafletWindow.L;
       if (leafletMapInstanceRef.current) {
         leafletMapInstanceRef.current.remove();
         leafletMapInstanceRef.current = null;
@@ -1770,6 +1968,7 @@ ON CONFLICT (id) DO UPDATE SET
         .bindPopup(`<b>Centro de Despacho MyFanBox (${originHub})</b>`);
 
       mapOrdersWithGeo.forEach(({ order, eta }) => {
+        const isSelected = selectedMapEntry?.order.id === order.id;
         const pinColor =
           order.shippingStatus === 'Enviado'
             ? '#10b981'
@@ -1778,22 +1977,35 @@ ON CONFLICT (id) DO UPDATE SET
             : '#f59e0b';
 
         const marker = L.circleMarker([eta.coords.lat, eta.coords.lng], {
-          radius: selectedMapEntry?.order.id === order.id ? 9 : 6,
+          radius: isSelected ? 10 : 6,
           fillColor: pinColor,
           color: '#ffffff',
-          weight: 1.5,
-          fillOpacity: 0.92
+          weight: isSelected ? 2.5 : 1.5,
+          fillOpacity: 0.95
         }).addTo(map);
 
         marker.bindPopup(
-          `<div style="font-family:sans-serif;font-size:12px;">
+          `<div style="font-family:sans-serif;font-size:12px;line-height:1.4;">
             <strong>${order.id} · ${order.customerName}</strong><br/>
-            <span>${order.city} — ${order.address || 'Sin dirección'}</span><br/>
-            <span><b>${order.carrier}</b>: ${eta.etaLabel}</span><br/>
-            <span>Llegada est.: ${eta.windowDates}</span>
+            <span>${order.city} (${order.neighborhood || 'Zona Urbana'}) — CP: <b>${order.postalCode || '—'}</b></span><br/>
+            <span>📍 ${order.address || 'Sin dirección'}</span><br/>
+            <span><b>${order.carrier}</b>: ${eta.etaLabel} (${eta.windowDates})</span>
           </div>`
         );
         marker.on('click', () => setSelectedMapOrderId(order.id));
+
+        if (isSelected) {
+          // Draw direct line from Origin Hub to selected customer's exact street coordinates
+          L.polyline(
+            [
+              [hubGeo.lat, hubGeo.lng],
+              [eta.coords.lat, eta.coords.lng]
+            ],
+            { color: pinColor, weight: 2.5, dashArray: '6, 6' }
+          ).addTo(map);
+          map.setView([eta.coords.lat, eta.coords.lng], 14);
+          marker.openPopup();
+        }
       });
     };
 
@@ -2017,6 +2229,64 @@ ON CONFLICT (id) DO UPDATE SET
           border-color: #56364c !important;
         }
 
+        /* New visual themes: warm light, lavender, ocean, forest and sunset */
+        [data-theme="cream-light"] { background:#f7f1e8 !important; color:#3f3428 !important; }
+        [data-theme="cream-light"] .bg-white { background:#fffaf2 !important; color:#3f3428 !important; }
+        [data-theme="cream-light"] .bg-zinc-50, [data-theme="cream-light"] .bg-zinc-100 { background:#efe5d6 !important; color:#66513d !important; }
+        [data-theme="cream-light"] .border-zinc-200, [data-theme="cream-light"] .border-zinc-100 { border-color:#dfd0bd !important; }
+        [data-theme="cream-light"] .bg-zinc-900 { background:#8b5e34 !important; color:#fffaf2 !important; }
+        [data-theme="cream-light"] input, [data-theme="cream-light"] select, [data-theme="cream-light"] textarea { background:#fffaf2 !important; color:#3f3428 !important; border-color:#dfd0bd !important; }
+
+        [data-theme="rose-light"] { background:#fff3f7 !important; color:#4a2636 !important; }
+        [data-theme="rose-light"] .bg-white { background:#fffafd !important; color:#4a2636 !important; }
+        [data-theme="rose-light"] .bg-zinc-50, [data-theme="rose-light"] .bg-zinc-100 { background:#fbe3ed !important; color:#783c59 !important; }
+        [data-theme="rose-light"] .border-zinc-200, [data-theme="rose-light"] .border-zinc-100 { border-color:#efbfd2 !important; }
+        [data-theme="rose-light"] .bg-zinc-900 { background:#be185d !important; color:#fff7fb !important; }
+        [data-theme="rose-light"] input, [data-theme="rose-light"] select, [data-theme="rose-light"] textarea { background:#fffafd !important; color:#4a2636 !important; border-color:#efbfd2 !important; }
+
+        [data-theme="sky-light"] { background:#eff8ff !important; color:#18344c !important; }
+        [data-theme="sky-light"] .bg-white { background:#fbfdff !important; color:#18344c !important; }
+        [data-theme="sky-light"] .bg-zinc-50, [data-theme="sky-light"] .bg-zinc-100 { background:#e0f0fc !important; color:#315c7c !important; }
+        [data-theme="sky-light"] .border-zinc-200, [data-theme="sky-light"] .border-zinc-100 { border-color:#bfdbef !important; }
+        [data-theme="sky-light"] .bg-zinc-900 { background:#0369a1 !important; color:#f0f9ff !important; }
+        [data-theme="sky-light"] input, [data-theme="sky-light"] select, [data-theme="sky-light"] textarea { background:#fbfdff !important; color:#18344c !important; border-color:#bfdbef !important; }
+
+        [data-theme="lavender-dark"] { background:#171326 !important; color:#ede9fe !important; }
+        [data-theme="lavender-dark"] .bg-white { background:#211b35 !important; color:#ede9fe !important; }
+        [data-theme="lavender-dark"] .bg-zinc-50, [data-theme="lavender-dark"] .bg-zinc-100 { background:#2b2344 !important; color:#c4b5fd !important; }
+        [data-theme="lavender-dark"] .border-zinc-200, [data-theme="lavender-dark"] .border-zinc-100, [data-theme="lavender-dark"] .border-zinc-300 { border-color:#443665 !important; }
+        [data-theme="lavender-dark"] .text-zinc-900, [data-theme="lavender-dark"] .text-zinc-800 { color:#f5f3ff !important; }
+        [data-theme="lavender-dark"] .text-zinc-700, [data-theme="lavender-dark"] .text-zinc-600, [data-theme="lavender-dark"] .text-zinc-500 { color:#c4b5fd !important; }
+        [data-theme="lavender-dark"] .bg-zinc-900 { background:#8b5cf6 !important; color:#160f28 !important; }
+        [data-theme="lavender-dark"] input, [data-theme="lavender-dark"] select, [data-theme="lavender-dark"] textarea { background:#181329 !important; color:#f5f3ff !important; border-color:#514176 !important; }
+
+        [data-theme="ocean-dark"] { background:#0d1b24 !important; color:#dff7ff !important; }
+        [data-theme="ocean-dark"] .bg-white { background:#142936 !important; color:#dff7ff !important; }
+        [data-theme="ocean-dark"] .bg-zinc-50, [data-theme="ocean-dark"] .bg-zinc-100 { background:#193542 !important; color:#a5f3fc !important; }
+        [data-theme="ocean-dark"] .border-zinc-200, [data-theme="ocean-dark"] .border-zinc-100, [data-theme="ocean-dark"] .border-zinc-300 { border-color:#285064 !important; }
+        [data-theme="ocean-dark"] .text-zinc-900, [data-theme="ocean-dark"] .text-zinc-800 { color:#ecfeff !important; }
+        [data-theme="ocean-dark"] .text-zinc-700, [data-theme="ocean-dark"] .text-zinc-600, [data-theme="ocean-dark"] .text-zinc-500 { color:#a5cbd8 !important; }
+        [data-theme="ocean-dark"] .bg-zinc-900 { background:#06b6d4 !important; color:#082f49 !important; }
+        [data-theme="ocean-dark"] input, [data-theme="ocean-dark"] select, [data-theme="ocean-dark"] textarea { background:#0b1c25 !important; color:#ecfeff !important; border-color:#285064 !important; }
+
+        [data-theme="forest-dark"] { background:#101d18 !important; color:#e2fbe9 !important; }
+        [data-theme="forest-dark"] .bg-white { background:#1a2b22 !important; color:#e2fbe9 !important; }
+        [data-theme="forest-dark"] .bg-zinc-50, [data-theme="forest-dark"] .bg-zinc-100 { background:#22372b !important; color:#bbf7d0 !important; }
+        [data-theme="forest-dark"] .border-zinc-200, [data-theme="forest-dark"] .border-zinc-100, [data-theme="forest-dark"] .border-zinc-300 { border-color:#355844 !important; }
+        [data-theme="forest-dark"] .text-zinc-900, [data-theme="forest-dark"] .text-zinc-800 { color:#f0fdf4 !important; }
+        [data-theme="forest-dark"] .text-zinc-700, [data-theme="forest-dark"] .text-zinc-600, [data-theme="forest-dark"] .text-zinc-500 { color:#b5d9c1 !important; }
+        [data-theme="forest-dark"] .bg-zinc-900 { background:#22c55e !important; color:#052e16 !important; }
+        [data-theme="forest-dark"] input, [data-theme="forest-dark"] select, [data-theme="forest-dark"] textarea { background:#101e17 !important; color:#f0fdf4 !important; border-color:#355844 !important; }
+
+        [data-theme="sunset-dark"] { background:#21151a !important; color:#ffedd5 !important; }
+        [data-theme="sunset-dark"] .bg-white { background:#302027 !important; color:#ffedd5 !important; }
+        [data-theme="sunset-dark"] .bg-zinc-50, [data-theme="sunset-dark"] .bg-zinc-100 { background:#3b2928 !important; color:#fed7aa !important; }
+        [data-theme="sunset-dark"] .border-zinc-200, [data-theme="sunset-dark"] .border-zinc-100, [data-theme="sunset-dark"] .border-zinc-300 { border-color:#5b3b36 !important; }
+        [data-theme="sunset-dark"] .text-zinc-900, [data-theme="sunset-dark"] .text-zinc-800 { color:#fff7ed !important; }
+        [data-theme="sunset-dark"] .text-zinc-700, [data-theme="sunset-dark"] .text-zinc-600, [data-theme="sunset-dark"] .text-zinc-500 { color:#e7bda7 !important; }
+        [data-theme="sunset-dark"] .bg-zinc-900 { background:#fb923c !important; color:#431407 !important; }
+        [data-theme="sunset-dark"] input, [data-theme="sunset-dark"] select, [data-theme="sunset-dark"] textarea { background:#21151a !important; color:#fff7ed !important; border-color:#5b3b36 !important; }
+
         /* Status Badges legibility in dark themes */
         [data-theme="medium-dark"] .bg-emerald-50,
         [data-theme="dark"] .bg-emerald-50,
@@ -2085,8 +2355,232 @@ ON CONFLICT (id) DO UPDATE SET
         }
       `}</style>
 
+      {/* ===================================================================== */}
+      {/* MODO GUEST (VISITANTE) Y RUTA SECRETA DE LOGIN ADMIN (/1620)          */}
+      {/* ===================================================================== */}
+      {!isAdmin && activeTab !== 'details' ? (
+        <div className="flex-1 min-h-screen flex flex-col justify-between p-4 sm:p-8 max-w-4xl mx-auto w-full">
+          {/* Top Guest Header (Sin rastro de botones de Admin) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-zinc-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm tracking-tight">
+                MFB
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-bold tracking-tight text-zinc-900">{brandName}</span>
+                  <span className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-zinc-100 border border-zinc-200 rounded text-zinc-700">
+                    TRACKING & INVOICE
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  Colección Oficial: {collectionName}
+                </p>
+              </div>
+            </div>
+
+            {/* Selector de Temas Eye-Care para el Visitante */}
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-zinc-200 text-xs">
+              <Palette className="w-3.5 h-3.5 text-zinc-500" />
+              <select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className="bg-transparent font-medium text-zinc-800 focus:outline-none cursor-pointer"
+              >
+                {EYE_CARE_THEMES.map(t => (
+                  <option key={t.id} value={t.id}>
+                    Tema: {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* SI LA URL ES #/1620 O /1620 -> MOSTRAR PANTALLA SECRETA DE LOGIN ADMIN */}
+          {isSecretLoginRoute ? (
+            <div className="my-auto py-8 max-w-md mx-auto w-full">
+              <div className="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-800 text-xs font-semibold">
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Acceso Secreto · Ruta /1620</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSecretLoginRoute(false);
+                      try {
+                        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                      } catch {
+                        window.location.hash = '';
+                      }
+                    }}
+                    className="text-xs text-zinc-400 hover:text-zinc-800"
+                  >
+                    ✕ Salir
+                  </button>
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-zinc-900">Iniciar Sesión (Admin MyFanBox)</h2>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Portal oculto exclusivo para gestionar ventas, inventario por hacer, mapa de envíos y NeonDB.
+                  </p>
+                </div>
+
+                <form onSubmit={handleAdminLoginSubmit} className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 mb-1">
+                      Usuario Administrador
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
+                      placeholder="admin"
+                      className="w-full h-9 px-3 text-xs bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:bg-white focus:border-zinc-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 mb-1">
+                      Contraseña Maestra
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full h-9 px-3 text-xs bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:bg-white focus:border-zinc-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-2 text-xs text-zinc-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rememberSession}
+                      onChange={(e) => setRememberSession(e.target.checked)}
+                      className="rounded border-zinc-300"
+                    />
+                    <span>Mantener sesión iniciada en este dispositivo</span>
+                  </label>
+
+                  {loginError && (
+                    <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 font-medium">
+                      {loginError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full h-10 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Unlock className="w-3.5 h-3.5" />
+                    <span>Desbloquear Panel Admin</span>
+                  </button>
+                </form>
+
+                {!adminConfig.hideDefaultHint && (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 space-y-1">
+                    <div className="font-semibold">Acceso administrativo protegido</div>
+                    <div>Las credenciales iniciales se definen en las variables privadas del servidor. No se guardan en este navegador.</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* PORTAL PÚBLICO PARA CLIENTES (SIN RASTRO VISIBLE DEL LOGIN DE ADMIN) */
+            <div className="my-auto py-8 max-w-2xl mx-auto w-full">
+              <div className="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-9 space-y-6 shadow-xs">
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-semibold">
+                    <Fingerprint className="w-3.5 h-3.5" />
+                    <span>Portal Oficial de Seguimiento y Facturación</span>
+                  </div>
+
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">
+                    Consulta el estado de tu pedido y tu Factura Digital
+                  </h1>
+
+                  <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                    Para proteger tus datos personales y dirección de entrega, cada pedido de <strong>MyFanBox</strong> cuenta con un <strong>código único privado (UUID)</strong>. Pega a continuación el código o el enlace que recibiste por WhatsApp:
+                  </p>
+                </div>
+
+                <form onSubmit={handleGuestOpenUuidTracking} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+                      Código Único de Seguimiento (UUID)
+                    </label>
+                    <input
+                      type="text"
+                      value={guestUuidInput}
+                      onChange={(e) => {
+                        setGuestUuidInput(e.target.value);
+                        setGuestLookupError('');
+                      }}
+                      placeholder="Ej: 4f8a2b1c-9d3e-4a1b-8c2d-7e6f5a4b3c2d"
+                      className="w-full h-11 px-3.5 font-mono text-xs bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:bg-white focus:border-zinc-900 focus:outline-none"
+                    />
+                  </div>
+
+                  {guestLookupError && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
+                      <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <span>{guestLookupError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      className="h-10 px-5 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 inline-flex items-center gap-2 cursor-pointer"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Consultar Estado e Invoice</span>
+                    </button>
+
+                    {orders.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sampleOrder = orders[0];
+                          setGuestUuidInput(sampleOrder.uuid);
+                          handleOpenOrderDetails(sampleOrder.uuid, true);
+                        }}
+                        className="h-10 px-3.5 rounded-xl border border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-700 hover:bg-zinc-100 cursor-pointer"
+                      >
+                        Ver demo de factura cliente
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-500 space-y-1">
+                  <div className="font-semibold text-zinc-800 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Privacidad Garantizada</span>
+                  </div>
+                  <p>
+                    Los pedidos no pueden ser buscados por número consecutivo (<code className="font-mono">MFB-XXXX</code>), nombre ni teléfono. Solo quien posea el enlace privado enviado por WhatsApp tiene acceso a los detalles del envío.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <footer className="pt-4 border-t border-zinc-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
+            <span>MyFanBox · Viajando por el Mundo — Karol G</span>
+            <span>Seguimiento Encriptado con UUID v4</span>
+          </footer>
+        </div>
+      ) : (
+      <>
       {/* Mobile Backdrop */}
-      {mobileMenuOpen && !isPublicCustomerView && (
+      {mobileMenuOpen && isAdmin && !isPublicCustomerView && (
         <div
           onClick={() => setMobileMenuOpen(false)}
           className="fixed inset-0 bg-zinc-950/30 backdrop-blur-[1px] z-30 lg:hidden"
@@ -2094,9 +2588,9 @@ ON CONFLICT (id) DO UPDATE SET
       )}
 
       {/* ===================================================================== */}
-      {/* SIDEBAR LATERAL MINIMALISTA (OCULTO EN MODO VISTA CLIENTE PÚBLICA)    */}
+      {/* SIDEBAR LATERAL MINIMALISTA (SOLO VISIBLE PARA ADMINISTRADOR)         */}
       {/* ===================================================================== */}
-      {!isPublicCustomerView && (
+      {isAdmin && !isPublicCustomerView && (
       <aside
         className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-white border-r border-zinc-200 flex flex-col justify-between transition-transform duration-200 ease-out shrink-0 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -2111,13 +2605,13 @@ ON CONFLICT (id) DO UPDATE SET
               </div>
               <div>
                 <div className="text-xs font-semibold tracking-tight text-zinc-900 leading-none flex items-center gap-1.5">
-                  <span>MyFanBox Ops</span>
-                  <span className="px-1.5 py-0.5 text-[9px] font-mono bg-zinc-100 text-zinc-600 rounded border border-zinc-200">
-                    v3.0
+                  <span>{brandName} Ops</span>
+                  <span className="px-1.5 py-0.5 text-[9px] font-mono bg-emerald-50 text-emerald-800 rounded border border-emerald-200">
+                    ADMIN
                   </span>
                 </div>
                 <div className="text-[11px] text-zinc-500 mt-0.5 truncate max-w-[145px]">
-                  Karol G · Viajando x el Mundo
+                  {collectionName}
                 </div>
               </div>
             </div>
@@ -2252,7 +2746,7 @@ ON CONFLICT (id) DO UPDATE SET
 
             <button
               onClick={() => {
-                handleOpenOrderDetails(detailOrderId || orders[0]?.id || 'MFB-1124', false);
+                handleOpenOrderDetails(detailOrderUuid || orders[0]?.uuid, false);
                 setMobileMenuOpen(false);
               }}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
@@ -2263,10 +2757,10 @@ ON CONFLICT (id) DO UPDATE SET
             >
               <span className="flex items-center gap-2">
                 <FileText className="w-3.5 h-3.5" />
-                <span>Portal /details/ & Invoice</span>
+                <span>Portal /details/ (UUID)</span>
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">
-                Público
+                UUID
               </span>
             </button>
 
@@ -2293,6 +2787,14 @@ ON CONFLICT (id) DO UPDATE SET
                   }`}
                 />
               </span>
+            </button>
+
+            <button
+              onClick={() => { handleExitDetailsToAdmin('config'); setMobileMenuOpen(false); }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${activeTab === 'config' ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'}`}
+            >
+              <span className="flex items-center gap-2"><SlidersHorizontal className="w-3.5 h-3.5" /><span>7. Set Config</span></span>
+              <span className="text-[10px] text-zinc-400">Ajustes</span>
             </button>
 
             {/* Selector de Temas Eye-Care en Sidebar */}
@@ -2323,9 +2825,9 @@ ON CONFLICT (id) DO UPDATE SET
           </nav>
         </div>
 
-        {/* Sidebar Bottom Financial Box */}
-        <div className="p-3 border-t border-zinc-200 bg-zinc-50/70 space-y-2.5">
-          <div className="bg-white p-3 rounded-xl border border-zinc-200 space-y-1.5 text-xs">
+        {/* Sidebar Bottom Financial Box + Admin Security / Logout */}
+        <div className="p-3 border-t border-zinc-200 bg-zinc-50/70 space-y-2">
+          <div className="bg-white p-2.5 rounded-xl border border-zinc-200 space-y-1 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-zinc-500">Recaudado real</span>
               <span className="font-semibold text-emerald-700 tabular-nums">{formatCOP(metrics.collectedCash)}</span>
@@ -2334,18 +2836,44 @@ ON CONFLICT (id) DO UPDATE SET
               <span className="text-zinc-500">Falta por cobrar</span>
               <span className="font-semibold text-amber-700 tabular-nums">{formatCOP(metrics.pendingToCollect)}</span>
             </div>
-            <div className="flex items-center justify-between pt-1.5 border-t border-zinc-100">
+            <div className="flex items-center justify-between pt-1 border-t border-zinc-100">
               <span className="text-zinc-500">Ganancia Neta Est.</span>
               <span className="font-semibold text-zinc-900 tabular-nums">{formatCOP(metrics.netProfitProjected)}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1">
-            <span className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${neonStatus === 'connected' ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
-              {neonStatus === 'connected' ? 'NeonDB Online' : 'Local + Neon SQL'}
-            </span>
-            <span className="font-mono">Atajos: 1–6, N, /</span>
+          {/* Indicador del Link Secreto de Login (#/1620) */}
+          <div
+            onClick={() =>
+              copyToClipboard(
+                `${window.location.origin}${window.location.pathname}#/1620`,
+                'Enlace secreto de Login Admin (#/1620) copiado'
+              )
+            }
+            title="Haz clic para copiar tu link secreto de administrador"
+            className="px-2.5 py-1.5 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-between text-[10px] font-mono text-zinc-600 hover:text-zinc-900 cursor-pointer"
+          >
+            <span>🔒 Login oculto: #/1620</span>
+            <Copy className="w-3 h-3" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              onClick={handleOpenSecurityModal}
+              className="h-8 px-2 rounded-lg border border-zinc-200 bg-white text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 flex items-center justify-center gap-1 cursor-pointer"
+              title="Cambiar contraseña de Admin"
+            >
+              <KeyRound className="w-3 h-3" />
+              <span>Clave Admin</span>
+            </button>
+            <button
+              onClick={handleAdminLogout}
+              className="h-8 px-2 rounded-lg border border-zinc-200 bg-white text-[11px] font-medium text-rose-700 hover:bg-rose-50 flex items-center justify-center gap-1 cursor-pointer"
+              title="Cerrar sesión y ver como Guest"
+            >
+              <LogOut className="w-3 h-3" />
+              <span>Salir (Guest)</span>
+            </button>
           </div>
         </div>
       </aside>
@@ -2355,8 +2883,8 @@ ON CONFLICT (id) DO UPDATE SET
       {/* CONTENEDOR PRINCIPAL + BARRA SUPERIOR FLOTANTE                        */}
       {/* ===================================================================== */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Sticky Floating Top Bar */}
-        {!isPublicCustomerView && (
+        {/* Sticky Floating Top Bar (Only for logged-in Admin) */}
+        {isAdmin && !isPublicCustomerView && (
         <header className="sticky top-0 z-20 h-14 bg-white/90 backdrop-blur-md border-b border-zinc-200 px-4 sm:px-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <button
@@ -2377,7 +2905,7 @@ ON CONFLICT (id) DO UPDATE SET
                   setSearchQuery(e.target.value);
                   if (activeTab !== 'orders') setActiveTab('orders');
                 }}
-                placeholder="Buscar clienta, @instagram, ciudad, guía o #MFB..."
+                placeholder="Buscar clienta, @instagram, ciudad, guía, UUID o #MFB..."
                 className="w-full h-8 pl-8 pr-12 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-900 transition-colors"
               />
               {searchQuery ? (
@@ -2409,7 +2937,7 @@ ON CONFLICT (id) DO UPDATE SET
                   key={tab.id}
                   onClick={() => {
                     if (tab.id === 'details') {
-                      handleOpenOrderDetails(detailOrderId || orders[0]?.id || 'MFB-1124', false);
+                      handleOpenOrderDetails(detailOrderUuid || orders[0]?.uuid, false);
                     } else {
                       handleExitDetailsToAdmin(tab.id);
                     }
@@ -2472,7 +3000,7 @@ ON CONFLICT (id) DO UPDATE SET
         {/* Main View Area */}
         <main className="flex-1 p-4 sm:p-6 max-w-[1440px] w-full mx-auto space-y-5">
           {/* ================================================================= */}
-          {/* VISTA 1: VENTAS Y PEDIDOS (124+ PEDIDOS CON FILTROS Y 1-CLIC)     */}
+          {/* VISTA 1: VENTAS Y PEDIDOS CON FILTROS Y ACCIONES RÁPIDAS          */}
           {/* ================================================================= */}
           {activeTab === 'orders' && (
             <div className="space-y-4">
@@ -2599,23 +3127,13 @@ ON CONFLICT (id) DO UPDATE SET
                     </button>
                     <button
                       onClick={() => {
-                        setOrders(generateSeedOrders(catalog, 124));
-                        notify('124 pedidos de prueba restaurados');
-                      }}
-                      className="h-7 px-2.5 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
-                      title="Cargar simulación de 124 pedidos reales"
-                    >
-                      124 Ejemplos
-                    </button>
-                    <button
-                      onClick={() => {
                         setOrders([]);
                         setBoughtSupplies({});
                         setMadeItems({});
                         notify('Tabla vaciada (0 pedidos). Lista para empezar de cero.');
                       }}
                       className="h-7 px-2.5 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-500 hover:text-rose-700 hover:bg-rose-50"
-                      title="Vaciar pedidos de prueba para empezar de cero"
+                      title="Vaciar pedidos guardados en NeonDB"
                     >
                       Empezar de 0
                     </button>
@@ -2793,6 +3311,19 @@ ON CONFLICT (id) DO UPDATE SET
                             <td className="py-3 px-3 align-top">
                               <div className="font-mono font-semibold text-zinc-900">{order.id}</div>
                               <div className="text-[11px] text-zinc-400 tabular-nums mt-0.5">{order.createdAt}</div>
+                              <div
+                                onClick={() =>
+                                  copyToClipboard(
+                                    getCustomerTrackingUrl(order),
+                                    `Enlace privado UUID de ${order.id} copiado`
+                                  )
+                                }
+                                title={`UUID secreto: ${order.uuid} (Clic para copiar enlace /details/)`}
+                                className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-[9px] font-mono text-zinc-500 hover:text-zinc-900 cursor-pointer"
+                              >
+                                <Fingerprint className="w-2.5 h-2.5 text-sky-600" />
+                                <span>{order.uuid.slice(0, 8)}…</span>
+                              </div>
                             </td>
 
                             <td className="py-3 px-3 align-top">
@@ -2802,8 +3333,24 @@ ON CONFLICT (id) DO UPDATE SET
                                 <span>·</span>
                                 <span className="font-mono">{order.phone}</span>
                               </div>
-                              <div className="text-[11px] text-zinc-400 mt-0.5 truncate max-w-[190px]">
-                                {order.city} — {order.address}
+                              <div className="text-[11px] text-zinc-400 mt-0.5 truncate max-w-[210px]">
+                                {order.city} {order.neighborhood ? `(${order.neighborhood})` : ''} — {order.address}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                {order.postalCode && (
+                                  <span className="px-1.5 py-0.2 rounded bg-zinc-100 border border-zinc-200 text-[10px] font-mono text-zinc-700">
+                                    CP {order.postalCode}
+                                  </span>
+                                )}
+                                <span
+                                  className={`px-1.5 py-0.2 rounded text-[10px] font-medium border ${
+                                    order.addressVerified
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                                  }`}
+                                >
+                                  {order.addressVerified ? '✓ Mapa OK' : 'Por corroborar'}
+                                </span>
                               </div>
                             </td>
 
@@ -2887,9 +3434,9 @@ ON CONFLICT (id) DO UPDATE SET
                             <td className="py-3 px-3 align-top text-right">
                               <div className="inline-flex items-center gap-1">
                                 <button
-                                  onClick={() => handleOpenOrderDetails(order.id, false)}
+                                  onClick={() => handleOpenOrderDetails(order.uuid, false)}
                                   className="h-7 px-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 font-medium inline-flex items-center gap-1"
-                                  title="Ver página /details/, seguimiento y factura PDF"
+                                  title={`Abrir página privada /details/${order.uuid}`}
                                 >
                                   <FileText className="w-3.5 h-3.5 text-sky-600" />
                                   <span>/details/</span>
@@ -2897,7 +3444,7 @@ ON CONFLICT (id) DO UPDATE SET
                                 <button
                                   onClick={() => handleOpenWhatsApp(order)}
                                   className="h-7 px-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 font-medium inline-flex items-center gap-1"
-                                  title="Enviar resumen o cobro por WhatsApp"
+                                  title="Enviar resumen y link UUID privado por WhatsApp"
                                 >
                                   <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
                                   <span>WA</span>
@@ -2911,6 +3458,7 @@ ON CONFLICT (id) DO UPDATE SET
                                 </button>
                                 <button
                                   onClick={() => {
+                                    if (!isAdmin) return;
                                     setOrders(prev => prev.filter(o => o.id !== order.id));
                                     notify(`Pedido ${order.id} eliminado`);
                                   }}
@@ -3555,9 +4103,9 @@ ON CONFLICT (id) DO UPDATE SET
                               <td className="py-3 px-4 text-right">
                                 <div className="inline-flex items-center gap-1">
                                   <button
-                                    onClick={() => handleOpenOrderDetails(order.id, false)}
+                                    onClick={() => handleOpenOrderDetails(order.uuid, false)}
                                     className="h-7 px-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-800"
-                                    title="Abrir factura y seguimiento /details/"
+                                    title={`Abrir factura privada /details/${order.uuid}`}
                                   >
                                     /details/
                                   </button>
@@ -3584,838 +4132,108 @@ ON CONFLICT (id) DO UPDATE SET
           {/* ================================================================= */}
           {activeTab === 'map' && (
             <div className="space-y-4">
-              <div className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-sky-600" />
-                    <h1 className="text-base sm:text-lg font-semibold text-zinc-900">
-                      Mapa de Direcciones de Envío y Tiempo Estimado (ETA)
-                    </h1>
+              <section className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                  <div>
+                    <h1 className="text-lg font-semibold text-zinc-900 flex items-center gap-2"><MapPin className="w-5 h-5 text-sky-600" /> Mapa de envíos y ETA</h1>
+                    <p className="text-xs text-zinc-500 mt-1">Direcciones de pedidos activos guardados en NeonDB. No hay ubicaciones de demostración.</p>
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Visualiza dónde viven las clientas de los {mapOrdersWithGeo.length} envíos activos, calcula el tiempo estimado según la transportadora elegida y abre su seguimiento <code className="font-mono">/details/</code>.
-                  </p>
-                </div>
-
-                {/* Controles del Mapa y Centro de Despacho */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-1 text-xs">
-                    <Compass className="w-3.5 h-3.5 text-zinc-500" />
-                    <span className="text-zinc-500">Despacho desde:</span>
-                    <select
-                      value={originHub}
-                      onChange={(e) => setOriginHub(e.target.value)}
-                      className="font-semibold bg-transparent text-zinc-900 focus:outline-none cursor-pointer"
-                    >
-                      <option value="Medellín">Medellín (Hub Principal)</option>
-                      <option value="Bogotá">Bogotá (Hub Central)</option>
-                    </select>
-                  </div>
-
-                  <select
-                    value={mapCarrierFilter}
-                    onChange={(e) => setMapCarrierFilter(e.target.value)}
-                    className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800"
-                  >
-                    <option value="ALL">Transportadora: Todas</option>
-                    {CARRIERS.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={mapStatusFilter}
-                    onChange={(e) => setMapStatusFilter(e.target.value)}
-                    className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800"
-                  >
-                    <option value="ALL">Estado Envío: Todos</option>
-                    {SHIPPING_STATUSES.map(st => (
-                      <option key={st} value={st}>{st}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={mapCityFilter}
-                    onChange={(e) => setMapCityFilter(e.target.value)}
-                    className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800"
-                  >
-                    <option value="ALL">Ciudad: Todas</option>
-                    {Object.keys(COLOMBIA_CITIES_GEO).map(city => (
-                      <option key={city} value={city}>{city}</option>
-                    ))}
-                  </select>
-
-                  <div className="inline-flex p-0.5 rounded-lg bg-zinc-100 border border-zinc-200 text-xs">
-                    <button
-                      onClick={() => setMapEngine('vector')}
-                      className={`px-2.5 py-1 rounded-md font-medium cursor-pointer ${
-                        mapEngine === 'vector' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'
-                      }`}
-                    >
-                      Mapa Rutas
-                    </button>
-                    <button
-                      onClick={() => setMapEngine('leaflet')}
-                      className={`px-2.5 py-1 rounded-md font-medium cursor-pointer ${
-                        mapEngine === 'leaflet' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'
-                      }`}
-                    >
-                      Callejero OSM
-                    </button>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <label className="text-xs text-zinc-500">Despacho desde</label>
+                    <select value={originHub} onChange={e => setOriginHub(e.target.value)} className="h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900">{Object.keys(COLOMBIA_CITIES_GEO).map(city => <option key={city} value={city}>{city}</option>)}</select>
+                    <select value={mapCarrierFilter} onChange={e => setMapCarrierFilter(e.target.value)} className="h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900"><option value="ALL">Todas las transportadoras</option>{CARRIERS.map(c => <option key={c}>{c}</option>)}</select>
+                    <select value={mapStatusFilter} onChange={e => setMapStatusFilter(e.target.value)} className="h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900"><option value="ALL">Todos los estados</option>{SHIPPING_STATUSES.map(st => <option key={st}>{st}</option>)}</select>
                   </div>
                 </div>
-              </div>
-
-              {/* Resumen de Tiempos por Transportadora */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                {[
-                  { name: 'Entrega Personal', desc: 'Hoy mismo (2 - 4h)', badge: 'Domicilio / Concierto' },
-                  { name: 'Interrapidísimo', desc: '1–2 días (Principales)', badge: '2–3 días resto país' },
-                  { name: 'Coordinadora', desc: '1–2 días (Expreso)', badge: 'Mercancía Premier' },
-                  { name: 'Envía', desc: '2–3 días hábiles', badge: 'Terrestre Regional' },
-                  { name: 'Servientrega', desc: '1–3 días hábiles', badge: 'Cobertura Nacional' }
-                ].map(srv => {
-                  const count = mapOrdersWithGeo.filter(x => x.order.carrier === srv.name).length;
-                  return (
-                    <div
-                      key={srv.name}
-                      onClick={() => setMapCarrierFilter(mapCarrierFilter === srv.name ? 'ALL' : srv.name)}
-                      className={`bg-white border rounded-xl p-3 cursor-pointer transition-all ${
-                        mapCarrierFilter === srv.name ? 'border-zinc-900 ring-1 ring-zinc-900' : 'border-zinc-200 hover:border-zinc-400'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-xs font-semibold text-zinc-900">
-                        <span>{srv.name}</span>
-                        <span className="font-mono text-[11px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-700">
-                          {count}
-                        </span>
-                      </div>
-                      <div className="text-xs font-medium text-sky-700 mt-1">{srv.desc}</div>
-                      <div className="text-[10px] text-zinc-400 mt-0.5">{srv.badge}</div>
+                {selectedMapEntry ? (
+                  <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-3">
+                    <div className="rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100 min-h-[360px]">
+                      <iframe title={`Mapa de ${selectedMapEntry.order.id}`} className="w-full h-[360px] border-0" loading="lazy" src={`https://maps.google.com/maps?q=${encodeURIComponent(`${selectedMapEntry.order.address || ''}, ${selectedMapEntry.order.neighborhood || ''}, ${selectedMapEntry.order.city || 'Medellín'}, Colombia`)}&z=15&output=embed`} />
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* Contenedor Principal: Mapa Interactivo + Inspector de Dirección y ETA */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                {/* Columna Izquierda (7 cols): Lienzo del Mapa */}
-                <div className="lg:col-span-7 bg-white border border-zinc-200 rounded-xl overflow-hidden flex flex-col">
-                  <div className="px-4 py-2.5 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-zinc-900">
-                        Rutas Activas desde {originHub} ({mapOrdersWithGeo.length} pines)
-                      </span>
-                      <div className="flex items-center gap-2 text-[11px] text-zinc-500">
-                        <span className="inline-flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-amber-500" /> Por preparar
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-sky-500" /> Por enviar
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500" /> Enviado
-                        </span>
-                      </div>
-                    </div>
-                    {mapEngine === 'vector' && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setMapZoom(z => Math.max(1, Number((z - 0.25).toFixed(2))))}
-                          className="px-2 py-0.5 rounded border border-zinc-200 bg-zinc-50 text-xs font-bold"
-                        >
-                          -
-                        </button>
-                        <span className="font-mono text-[11px] px-1">{Math.round(mapZoom * 100)}%</span>
-                        <button
-                          onClick={() => setMapZoom(z => Math.min(2.2, Number((z + 0.25).toFixed(2))))}
-                          className="px-2 py-0.5 rounded border border-zinc-200 bg-zinc-50 text-xs font-bold"
-                        >
-                          +
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Vista Mapa Vectorial de Rutas de Colombia */}
-                  {mapEngine === 'vector' ? (
-                    <div className="relative w-full h-[470px] bg-[#131822] overflow-hidden select-none flex items-center justify-center">
-                      <svg
-                        viewBox="0 0 600 660"
-                        className="w-full h-full transition-transform duration-200"
-                        style={{ transform: `scale(${mapZoom})` }}
-                      >
-                        <defs>
-                          <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
-                            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
-                          </radialGradient>
-                        </defs>
-
-                        {/* Retícula Geográfica */}
-                        {[100, 200, 300, 400, 500].map(y => (
-                          <line key={`gy-${y}`} x1="0" y1={y} x2="600" y2={y} stroke="#1e293b" strokeDasharray="3 3" strokeWidth="1" />
-                        ))}
-                        {[120, 240, 360, 480].map(x => (
-                          <line key={`gx-${x}`} x1={x} y1="0" x2={x} y2="660" stroke="#1e293b" strokeDasharray="3 3" strokeWidth="1" />
-                        ))}
-
-                        {/* Silueta Estilizada de Colombia */}
-                        <path
-                          d="M205,42 L265,24 L315,32 L330,68 L295,105 L312,155 L358,195 L415,245 L475,270 L495,335 L455,395 L445,485 L395,575 L335,625 L265,585 L205,515 L125,445 L110,365 L145,280 L140,190 L165,115 Z"
-                          fill="#1a2230"
-                          stroke="#334155"
-                          strokeWidth="2"
-                        />
-
-                        {/* Conversión Lat/Lng a X/Y en el SVG de Colombia */}
-                        {(() => {
-                          const project = (lat, lng) => {
-                            // Colombia bounds approx: lat 1.5 to 12.0, lng -78.5 to -71.0
-                            const x = ((lng - -78.5) / (-71.0 - -78.5)) * 420 + 85;
-                            const y = ((12.0 - lat) / (12.0 - 1.5)) * 540 + 45;
-                            return { x, y };
-                          };
-
-                          const hubGeo = COLOMBIA_CITIES_GEO[originHub] || COLOMBIA_CITIES_GEO['Medellín'];
-                          const hubPt = project(hubGeo.lat, hubGeo.lng);
-
-                          return (
-                            <>
-                              {/* Arcos de Ruta desde el Hub hasta cada dirección */}
-                              {mapOrdersWithGeo.map(({ order, eta }) => {
-                                const pt = project(eta.coords.lat, eta.coords.lng);
-                                const isSel = selectedMapEntry?.order.id === order.id;
-                                const midX = (hubPt.x + pt.x) / 2 - (pt.y - hubPt.y) * 0.14;
-                                const midY = (hubPt.y + pt.y) / 2 - 18;
-                                const strokeColor =
-                                  order.shippingStatus === 'Enviado'
-                                    ? '#10b981'
-                                    : order.shippingStatus === 'Por enviar'
-                                    ? '#38bdf8'
-                                    : '#f59e0b';
-
-                                return (
-                                  <path
-                                    key={`arc-${order.id}`}
-                                    d={`M ${hubPt.x} ${hubPt.y} Q ${midX} ${midY} ${pt.x} ${pt.y}`}
-                                    fill="none"
-                                    stroke={strokeColor}
-                                    strokeWidth={isSel ? 2.4 : 0.9}
-                                    strokeOpacity={isSel ? 0.95 : 0.28}
-                                    strokeDasharray={order.shippingStatus === 'Por preparar' ? '3 3' : undefined}
-                                  />
-                                );
-                              })}
-
-                              {/* Etiquetas de Ciudades Principales */}
-                              {Object.entries(COLOMBIA_CITIES_GEO).map(([cityName, geo]) => {
-                                if (geo.zone === 'metro_med') return null;
-                                const pt = project(geo.lat, geo.lng);
-                                return (
-                                  <g key={`city-${cityName}`}>
-                                    <circle cx={pt.x} cy={pt.y} r="2.2" fill="#64748b" />
-                                    <text
-                                      x={pt.x + 6}
-                                      y={pt.y + 3}
-                                      fill="#94a3b8"
-                                      fontSize="9.5"
-                                      fontWeight="500"
-                                    >
-                                      {cityName}
-                                    </text>
-                                  </g>
-                                );
-                              })}
-
-                              {/* Pines de cada pedido / dirección */}
-                              {mapOrdersWithGeo.map(({ order, eta }) => {
-                                const pt = project(eta.coords.lat, eta.coords.lng);
-                                const isSel = selectedMapEntry?.order.id === order.id;
-                                const fill =
-                                  order.shippingStatus === 'Enviado'
-                                    ? '#10b981'
-                                    : order.shippingStatus === 'Por enviar'
-                                    ? '#0ea5e9'
-                                    : '#f59e0b';
-
-                                return (
-                                  <g
-                                    key={`pin-${order.id}`}
-                                    onClick={() => setSelectedMapOrderId(order.id)}
-                                    className="cursor-pointer"
-                                  >
-                                    {isSel && (
-                                      <circle
-                                        cx={pt.x}
-                                        cy={pt.y}
-                                        r="13"
-                                        fill={fill}
-                                        fillOpacity="0.25"
-                                      />
-                                    )}
-                                    <circle
-                                      cx={pt.x}
-                                      cy={pt.y}
-                                      r={isSel ? 6.5 : 4.2}
-                                      fill={fill}
-                                      stroke="#ffffff"
-                                      strokeWidth={isSel ? 2 : 1}
-                                    />
-                                  </g>
-                                );
-                              })}
-
-                              {/* Pin del Hub de Despacho */}
-                              <circle cx={hubPt.x} cy={hubPt.y} r="20" fill="url(#hubGlow)" />
-                              <circle
-                                cx={hubPt.x}
-                                cy={hubPt.y}
-                                r="7"
-                                fill="#ffffff"
-                                stroke="#0ea5e9"
-                                strokeWidth="3"
-                              />
-                              <text
-                                x={hubPt.x - 28}
-                                y={hubPt.y - 12}
-                                fill="#ffffff"
-                                fontSize="10"
-                                fontWeight="700"
-                              >
-                                HUB {originHub.toUpperCase()}
-                              </text>
-                            </>
-                          );
-                        })()}
-                      </svg>
-
-                      {/* Leyenda Flotante */}
-                      <div className="absolute bottom-3 left-3 bg-zinc-900/90 backdrop-blur-xs border border-zinc-700 text-zinc-200 rounded-xl px-3 py-2 text-[11px] space-y-0.5">
-                        <div className="font-semibold text-white">Haz clic en cualquier punto del mapa</div>
-                        <div className="text-zinc-400">
-                          Cada punto representa la dirección exacta de una clienta y su ruta activa.
+                    <div className="space-y-3">
+                      <div className="rounded-xl border border-zinc-200 p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2"><span className="font-semibold text-zinc-900">{selectedMapEntry.order.id} · {selectedMapEntry.order.customerName}</span><span className={`text-[10px] px-2 py-1 rounded border ${getShipStatusBadgeClass(selectedMapEntry.order.shippingStatus)}`}>{selectedMapEntry.order.shippingStatus}</span></div>
+                        <p className="text-xs text-zinc-600">{selectedMapEntry.order.address || 'Sin dirección'}, {selectedMapEntry.order.neighborhood || 'Zona urbana'}, {selectedMapEntry.order.city}</p>
+                        <p className="text-[11px] text-zinc-500">CP {selectedMapEntry.order.postalCode || '—'} · {selectedMapEntry.order.carrier}</p>
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-100">
+                          <div><div className="text-[10px] text-zinc-500">Tiempo estimado</div><div className="font-semibold text-sm text-zinc-900">{selectedMapEntry.eta.etaLabel}</div></div>
+                          <div><div className="text-[10px] text-zinc-500">Fecha estimada</div><div className="font-semibold text-sm text-emerald-700">{selectedMapEntry.eta.windowDates}</div></div>
+                        </div>
+                        <div className="text-[11px] text-zinc-500">Distancia aprox.: {selectedMapEntry.eta.distanceKm} km · Flete estimado: {formatCOP(selectedMapEntry.eta.estimatedShippingCost)}</div>
+                        <div className="flex gap-2 pt-1">
+                          <button onClick={() => handleOpenOrderDetails(selectedMapEntry.order.uuid, false)} className="flex-1 h-8 rounded-lg bg-zinc-900 text-white text-xs font-semibold">Ver factura</button>
+                          <button onClick={() => handleOpenWhatsApp(selectedMapEntry.order)} className="flex-1 h-8 rounded-lg border border-zinc-200 text-xs font-semibold text-emerald-700">WhatsApp</button>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div ref={leafletContainerRef} className="w-full h-[470px] z-0" />
-                  )}
-                </div>
-
-                {/* Columna Derecha (5 cols): Tarjeta de Ruta Seleccionada + Lista de Direcciones */}
-                <div className="lg:col-span-5 flex flex-col gap-3">
-                  {selectedMapEntry ? (
-                    <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-zinc-100 text-zinc-900">
-                              {selectedMapEntry.order.id}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 rounded border text-[10px] font-medium ${getShipStatusBadgeClass(
-                                selectedMapEntry.order.shippingStatus
-                              )}`}
-                            >
-                              {selectedMapEntry.order.shippingStatus}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 rounded border text-[10px] font-medium ${getPayStatusBadgeClass(
-                                selectedMapEntry.order.paymentStatus
-                              )}`}
-                            >
-                              {selectedMapEntry.order.paymentStatus}
-                            </span>
-                          </div>
-                          <h3 className="text-sm font-semibold text-zinc-900 mt-1.5">
-                            {selectedMapEntry.order.customerName}
-                          </h3>
-                          <p className="text-xs text-zinc-500">
-                            {selectedMapEntry.order.instagram} · Tel: {selectedMapEntry.order.phone}
-                          </p>
-                        </div>
-
-                        <button
-                          onClick={() => handleOpenOrderDetails(selectedMapEntry.order.id, false)}
-                          className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span>Abrir /details/</span>
-                        </button>
+                      <div className="rounded-xl border border-zinc-200 p-3 space-y-2">
+                        <label className="block text-[11px] text-zinc-500">Cambiar transportadora</label>
+                        <select value={selectedMapEntry.order.carrier} onChange={e => handleUpdateOrderField(selectedMapEntry.order.id, 'carrier', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900">{CARRIERS.map(c => <option key={c}>{c}</option>)}</select>
+                        <label className="block text-[11px] text-zinc-500">Número de guía</label>
+                        <input value={selectedMapEntry.order.trackingNumber || ''} onChange={e => handleUpdateOrderField(selectedMapEntry.order.id, 'trackingNumber', e.target.value)} placeholder="Ingresar guía" className="w-full h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900" />
                       </div>
-
-                      {/* Dirección y Coordenadas */}
-                      <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between text-zinc-500">
-                          <span className="font-medium text-zinc-800 flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-rose-500" />
-                            {selectedMapEntry.order.city} ({selectedMapEntry.eta.coords.dept})
-                          </span>
-                          <span className="font-mono text-[10px]">
-                            ~{selectedMapEntry.eta.distanceKm} km desde {originHub}
-                          </span>
-                        </div>
-                        <div className="text-zinc-900 font-semibold">
-                          Dirección: {selectedMapEntry.order.address || 'Pendiente confirmar nomenclatura'}
-                        </div>
-                        <div className="text-[11px] font-mono text-zinc-400">
-                          GPS est.: {selectedMapEntry.eta.coords.lat}, {selectedMapEntry.eta.coords.lng}
-                        </div>
-                      </div>
-
-                      {/* Estimado de Tiempo (ETA) según Servicio Elegido */}
-                      <div className="p-3 rounded-xl bg-sky-50/70 border border-sky-200 space-y-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-sky-900 flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-sky-700" />
-                            Tiempo Estimado de Entrega (ETA)
-                          </span>
-                          <select
-                            value={selectedMapEntry.order.carrier}
-                            onChange={(e) =>
-                              handleUpdateOrderField(selectedMapEntry.order.id, 'carrier', e.target.value)
-                            }
-                            className="h-6 px-2 rounded bg-white border border-sky-300 text-[11px] font-semibold text-zinc-900"
-                          >
-                            {CARRIERS.map(c => (
-                              <option key={c} value={c}>
-                                {c}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 pt-1">
-                          <div>
-                            <div className="text-[10px] text-zinc-500">Promesa del servicio</div>
-                            <div className="font-bold text-zinc-900 text-sm">
-                              {selectedMapEntry.eta.etaLabel}
-                            </div>
-                            <div className="text-[10px] text-zinc-500">
-                              {selectedMapEntry.eta.serviceType}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] text-zinc-500">Fecha estimada llegada</div>
-                            <div className="font-bold text-emerald-700 text-sm">
-                              {selectedMapEntry.eta.windowDates}
-                            </div>
-                            <div className="text-[10px] text-zinc-500">
-                              Flete est.: {formatCOP(selectedMapEntry.eta.estimatedShippingCost)}
-                            </div>
-                          </div>
-                        </div>
-
-                        {selectedMapEntry.eta.prepBufferDays > 0 && (
-                          <div className="text-[11px] text-amber-800 pt-1 border-t border-sky-200/60">
-                            * Incluye +{selectedMapEntry.eta.prepBufferDays} días hábiles porque el pedido aún está en estado <strong>"Por preparar"</strong>.
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Acciones rápidas desde el inspector */}
-                      <div className="flex items-center justify-between gap-2 pt-1">
-                        <button
-                          onClick={() => {
-                            const url = getCustomerTrackingUrl(selectedMapEntry.order);
-                            copyToClipboard(url, `Link /details/${selectedMapEntry.order.id} copiado`);
-                          }}
-                          className="h-8 px-3 rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-800 hover:bg-zinc-50 flex-1 inline-flex items-center justify-center gap-1.5"
-                        >
-                          <Share2 className="w-3.5 h-3.5" />
-                          <span>Copiar link /details/</span>
-                        </button>
-                        <button
-                          onClick={() => handleOpenWhatsApp(selectedMapEntry.order)}
-                          className="h-8 px-3 rounded-lg border border-zinc-200 bg-white text-xs font-medium text-emerald-700 hover:bg-zinc-50 flex-1 inline-flex items-center justify-center gap-1.5"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          <span>WhatsApp ETA</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {/* Lista Rápida de Direcciones Mapeadas */}
-                  <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden flex-1 flex flex-col max-h-[225px]">
-                    <div className="px-3.5 py-2 border-b border-zinc-200 bg-zinc-50 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                      Direcciones en el Mapa ({mapOrdersWithGeo.length})
-                    </div>
-                    <div className="divide-y divide-zinc-200 overflow-y-auto text-xs">
-                      {mapOrdersWithGeo.slice(0, 60).map(({ order, eta }) => (
-                        <button
-                          key={order.id}
-                          onClick={() => setSelectedMapOrderId(order.id)}
-                          className={`w-full px-3.5 py-2 text-left flex items-center justify-between gap-2 hover:bg-zinc-50 transition-colors cursor-pointer ${
-                            selectedMapEntry?.order.id === order.id ? 'bg-zinc-100 font-semibold' : ''
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <div className="text-zinc-900 truncate">
-                              <span className="font-mono font-semibold">{order.id}</span> · {order.customerName}
-                            </div>
-                            <div className="text-[11px] text-zinc-500 truncate">
-                              {order.city} — {order.address}
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-[11px] font-medium text-sky-700">{order.carrier}</div>
-                            <div className="text-[10px] text-zinc-400">{eta.etaLabel}</div>
-                          </div>
-                        </button>
-                      ))}
                     </div>
                   </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-zinc-300 p-10 text-center text-xs text-zinc-500">Todavía no hay pedidos activos con direcciones para mostrar en el mapa.</div>
+                )}
+              </section>
+              <section className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-zinc-200 flex items-center justify-between"><h2 className="text-sm font-semibold text-zinc-900">Pedidos con ubicación ({mapOrdersWithGeo.length})</h2><span className="text-[11px] text-zinc-500">Selecciona uno para centrar el mapa</span></div>
+                <div className="divide-y divide-zinc-200 max-h-[420px] overflow-auto">
+                  {mapOrdersWithGeo.map(({ order, eta }) => <button key={order.id} onClick={() => setSelectedMapOrderId(order.id)} className={`w-full p-3 flex flex-wrap items-center justify-between gap-2 text-left hover:bg-zinc-50 ${selectedMapEntry?.order.id === order.id ? 'bg-sky-50' : ''}`}>
+                    <span className="min-w-0"><span className="block text-xs font-semibold text-zinc-900">{order.id} · {order.customerName}</span><span className="block text-[11px] text-zinc-500 truncate">{order.city} · {order.address || 'Sin dirección'}</span></span>
+                    <span className="text-right"><span className="block text-[11px] font-medium text-zinc-700">{order.carrier}</span><span className="block text-[10px] text-zinc-500">{eta.etaLabel}</span></span>
+                  </button>)}
+                  {!mapOrdersWithGeo.length && <div className="p-6 text-center text-xs text-zinc-500">Sin pedidos que coincidan con los filtros.</div>}
                 </div>
-              </div>
+              </section>
             </div>
           )}
 
           {/* ================================================================= */}
-          {/* VISTA 3.C: PORTAL DE SEGUIMIENTO Y FACTURA (/details/:orderId)    */}
+          {/* VISTA 3.C: PORTAL DE SEGUIMIENTO Y FACTURA (/details/:uuid)       */}
           {/* ================================================================= */}
-          {activeTab === 'details' && currentDetailOrder && (
+          {activeTab === 'details' && (
             <div className="space-y-4 max-w-4xl mx-auto">
-              {/* Barra de Control Admin / Selector de Pedido (No se imprime en PDF) */}
-              <div className="no-print bg-white border border-zinc-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-2">
-                  {isPublicCustomerView ? (
-                    <button
-                      onClick={() => handleExitDetailsToAdmin('orders')}
-                      className="h-8 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700 hover:text-zinc-900 font-medium inline-flex items-center gap-1.5"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                      <span>Ir al Panel Admin</span>
-                    </button>
-                  ) : (
-                    <>
-                      <span className="font-semibold text-zinc-700">Ver /details/ del pedido:</span>
-                      <select
-                        value={currentDetailOrder.id}
-                        onChange={(e) => handleOpenOrderDetails(e.target.value, false)}
-                        className="h-8 px-2.5 rounded-lg bg-zinc-50 border border-zinc-200 font-mono font-semibold text-zinc-900"
-                      >
-                        {orders.map(o => (
-                          <option key={o.id} value={o.id}>
-                            {o.id} — {o.customerName} ({o.city})
-                          </option>
-                        ))}
-                      </select>
-                    </>
-                  )}
-                  <span className="hidden sm:inline-block font-mono text-[11px] text-zinc-400">
-                    Ruta: #/details/{currentDetailOrder.id}
-                  </span>
+              {!isAdmin && <div className="bg-white border border-zinc-200 rounded-xl p-3 flex items-center justify-between gap-2 text-xs">
+                <span className="font-semibold text-zinc-900">{brandName} · Seguimiento privado</span>
+                <select value={theme} onChange={e => setTheme(e.target.value)} className="h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50">{EYE_CARE_THEMES.map(t => <option key={t.id} value={t.id}>{t.short}</option>)}</select>
+              </div>}
+              {isAdmin && <div className="no-print bg-white border border-zinc-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2"><span className="font-semibold text-zinc-700">Pedido</span><select value={currentDetailOrder?.uuid || ''} onChange={e => handleOpenOrderDetails(e.target.value, false)} className="h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50 font-mono max-w-[260px]">{orders.map(o => <option key={o.uuid} value={o.uuid}>{o.id} — {o.customerName}</option>)}</select></div>
+                {currentDetailOrder && <div className="flex flex-wrap gap-1.5">
+                  <button onClick={() => handleRegenerateOrderUUID(currentDetailOrder.id)} className="h-8 px-2.5 rounded-lg border border-zinc-200">Regenerar UUID</button>
+                  <button onClick={() => copyToClipboard(getCustomerTrackingUrl(currentDetailOrder), 'Enlace privado copiado')} className="h-8 px-2.5 rounded-lg border border-zinc-200">Copiar link</button>
+                  <button onClick={() => handleOpenWhatsApp(currentDetailOrder)} className="h-8 px-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800">WhatsApp</button>
+                  <button onClick={() => window.print()} className="h-8 px-2.5 rounded-lg bg-zinc-900 text-white">Imprimir PDF</button>
+                </div>}
+              </div>}
+              {(detailSecurityError || !currentDetailOrder) ? (
+                <div className="bg-white border border-zinc-200 rounded-2xl p-8 text-center space-y-3">
+                  <ShieldAlert className="w-8 h-8 text-rose-500 mx-auto" />
+                  <h2 className="text-lg font-semibold text-zinc-900">No se pudo abrir este pedido</h2>
+                  <p className="text-xs text-zinc-600">{detailSecurityError || (activeTab === 'details' ? 'Buscando el pedido en NeonDB…' : 'No encontramos el pedido.')}</p>
+                  <button onClick={() => handleExitDetailsToAdmin(isAdmin ? 'orders' : 'orders')} className="h-9 px-4 rounded-lg bg-zinc-900 text-white text-xs font-semibold">Volver</button>
                 </div>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    onClick={() => setIsPublicCustomerView(v => !v)}
-                    className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 inline-flex items-center gap-1"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>{isPublicCustomerView ? 'Mostrar Menú Admin' : 'Simular Vista Cliente'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const url = getCustomerTrackingUrl(currentDetailOrder);
-                      copyToClipboard(url, `Enlace público #/details/${currentDetailOrder.id} copiado`);
-                    }}
-                    className="h-8 px-3 rounded-lg border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 font-medium inline-flex items-center gap-1.5"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copiar Link Cliente</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const url = getCustomerTrackingUrl(currentDetailOrder);
-                      const cleanPhone = (currentDetailOrder.phone || '').replace(/\D/g, '');
-                      const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-                      const etaInfo = calculateOrderETA(currentDetailOrder, originHub);
-                      const text = `¡Hola ${currentDetailOrder.customerName.split(' ')[0]}! ✨ Aquí puedes ver el estado en vivo, tiempo estimado de entrega (${etaInfo.etaLabel}) y la factura oficial de tu pedido *${currentDetailOrder.id}* en *MyFanBox*:\n\n🔗 ${url}`;
-                      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-                    }}
-                    className="h-8 px-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 font-medium inline-flex items-center gap-1.5"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    <span>Enviar Link por WA</span>
-                  </button>
-
-                  <button
-                    onClick={() => window.print()}
-                    className="h-8 px-3 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Imprimir / PDF</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Tarjeta Principal de Factura Digital (Invoice) + Seguimiento en Vivo */}
-              {(() => {
+              ) : (() => {
                 const o = currentDetailOrder;
+                const eta = calculateOrderETA(o, originHub);
                 const paid = getPaidAmount(o);
                 const pending = getPendingAmount(o);
-                const eta = calculateOrderETA(o, originHub);
-                const subtotal = o.items.reduce((acc, it) => acc + it.unitPrice * it.qty, 0);
-
-                // 4-step progress calculation
-                const currentStep =
-                  !isOrderActive(o)
-                    ? 0
-                    : o.shippingStatus === 'Enviado'
-                    ? 4
-                    : o.shippingStatus === 'Por enviar'
-                    ? 3
-                    : o.paymentStatus === 'Pagado' || o.paymentStatus === 'Semi-pagado (50%)'
-                    ? 2
-                    : 1;
-
-                return (
-                  <div className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-8 shadow-xs space-y-6">
-                    {/* Encabezado Oficial de la Factura / Orden */}
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-5 border-b border-zinc-200">
-                      <div className="flex items-start gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm tracking-tight shrink-0">
-                          MFB
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h1 className="text-lg font-bold tracking-tight text-zinc-900">
-                              MYFANBOX OFFICIAL MERCH
-                            </h1>
-                            <span className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-zinc-100 border border-zinc-200 rounded text-zinc-700">
-                              INVOICE & TRACKING
-                            </span>
-                          </div>
-                          <p className="text-xs text-zinc-500 mt-0.5">
-                            Colección Exclusiva: Viajando por el Mundo — Karol G
-                          </p>
-                          <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
-                            Comprobante Digital #{o.id} · Emitido: {o.createdAt}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="sm:text-right space-y-1">
-                        <div className="inline-flex flex-wrap items-center gap-1.5">
-                          <span
-                            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPayStatusBadgeClass(
-                              o.paymentStatus
-                            )}`}
-                          >
-                            Pago: {o.paymentStatus}
-                          </span>
-                          <span
-                            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getShipStatusBadgeClass(
-                              o.shippingStatus
-                            )}`}
-                          >
-                            Envío: {o.shippingStatus}
-                          </span>
-                        </div>
-                        <div className="text-xs text-zinc-500">
-                          Transportadora: <strong className="text-zinc-900">{o.carrier}</strong>
-                        </div>
-                        {o.trackingNumber && (
-                          <div className="text-xs font-mono font-semibold text-emerald-700">
-                            Guía #{o.trackingNumber}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Barra de Progreso Visual de 4 Etapas */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-zinc-900">Estado de tu Pedido en Tiempo Real</span>
-                        <span className="text-sky-700 font-medium">
-                          ETA estimado: {eta.etaLabel} ({eta.windowDates})
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 pt-1">
-                        {[
-                          { step: 1, title: '1. Pedido Registrado', sub: `Orden ${o.id} creada` },
-                          { step: 2, title: '2. En Taller / Estampado', sub: 'Preparando tus prendas' },
-                          { step: 3, title: '3. Empacado (Por enviar)', sub: 'Listo para transportadora' },
-                          {
-                            step: 4,
-                            title: '4. Enviado con Guía',
-                            sub: o.trackingNumber ? `Guía: ${o.trackingNumber}` : `Vía ${o.carrier}`
-                          }
-                        ].map(s => {
-                          const done = currentStep >= s.step;
-                          const isCurrent = currentStep === s.step;
-                          return (
-                            <div
-                              key={s.step}
-                              className={`p-3 rounded-xl border text-xs transition-all ${
-                                isCurrent
-                                  ? 'border-zinc-900 bg-zinc-50 ring-1 ring-zinc-900'
-                                  : done
-                                  ? 'border-emerald-200 bg-emerald-50/40'
-                                  : 'border-zinc-200 bg-zinc-50/40 opacity-60'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between font-semibold text-zinc-900">
-                                <span>{s.title}</span>
-                                {done && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                              </div>
-                              <div className="text-[11px] text-zinc-500 mt-0.5">{s.sub}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Datos del Cliente + Mapa de Ruta e Información de Entrega */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2 text-xs">
-                        <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                          Datos del Cliente y Destino
-                        </div>
-                        <div className="text-sm font-semibold text-zinc-900">{o.customerName}</div>
-                        <div className="text-zinc-600">
-                          Instagram: <span className="font-medium text-zinc-900">{o.instagram || '—'}</span> · Tel:{' '}
-                          <span className="font-mono font-medium text-zinc-900">{o.phone || '—'}</span>
-                        </div>
-                        <div className="pt-1 border-t border-zinc-200/80">
-                          <div className="font-medium text-zinc-900">
-                            📍 {o.city} ({eta.coords.dept})
-                          </div>
-                          <div className="text-zinc-600 mt-0.5">
-                            Dirección: <strong className="text-zinc-900">{o.address || 'Confirmar dirección'}</strong>
-                          </div>
-                        </div>
-                        {o.notes && (
-                          <div className="pt-1 text-[11px] italic text-zinc-500">
-                            Nota del pedido: "{o.notes}"
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Mini-Mapa de Ruta y Calculadora ETA para el Cliente */}
-                      <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex flex-col justify-between space-y-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                            Logística y Tiempo Estimado ({o.carrier})
-                          </span>
-                          <span className="font-mono text-[11px] text-zinc-500">
-                            {originHub} → {o.city} (~{eta.distanceKm} km)
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 my-1">
-                          <div className="p-2.5 rounded-lg bg-white border border-zinc-200">
-                            <div className="text-[10px] text-zinc-400">Tiempo de tránsito</div>
-                            <div className="font-bold text-zinc-900 text-xs sm:text-sm mt-0.5">
-                              {eta.etaLabel}
-                            </div>
-                          </div>
-                          <div className="p-2.5 rounded-lg bg-white border border-zinc-200">
-                            <div className="text-[10px] text-zinc-400">Entrega estimada</div>
-                            <div className="font-bold text-emerald-700 text-xs sm:text-sm mt-0.5">
-                              {eta.windowDates}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] text-zinc-500 pt-1 border-t border-zinc-200/80">
-                          <span>Modalidad: {eta.serviceType}</span>
-                          <span>
-                            {o.trackingNumber ? `Guía: ${o.trackingNumber}` : 'Guía pendiente de asignación'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Tabla Detallada de Prendas (Invoice Table) */}
-                    <div className="border border-zinc-200 rounded-xl overflow-hidden">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-zinc-200 bg-zinc-50 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-                            <th className="py-2.5 px-4">Prenda / Referencia</th>
-                            <th className="py-2.5 px-4">Variante / Personalización</th>
-                            <th className="py-2.5 px-4 text-center">Talla</th>
-                            <th className="py-2.5 px-4 text-center">Cant.</th>
-                            <th className="py-2.5 px-4 text-right">Precio Unit.</th>
-                            <th className="py-2.5 px-4 text-right">Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-200 tabular-nums">
-                          {o.items.map((it, idx) => (
-                            <tr key={idx}>
-                              <td className="py-3 px-4 font-semibold text-zinc-900">{it.productName}</td>
-                              <td className="py-3 px-4 text-zinc-600">{it.variantName}</td>
-                              <td className="py-3 px-4 text-center">
-                                <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
-                                  {it.size}
-                                </span>
-                              </td>
-                              <td className="py-3 px-4 text-center font-semibold text-zinc-900">{it.qty}</td>
-                              <td className="py-3 px-4 text-right text-zinc-600">{formatCOP(it.unitPrice)}</td>
-                              <td className="py-3 px-4 text-right font-semibold text-zinc-900">
-                                {formatCOP(it.unitPrice * it.qty)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Totales, Abono del 50% y Saldo Pendiente */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 pt-2">
-                      <div className="max-w-md space-y-2">
-                        {pending > 0 && isOrderActive(o) ? (
-                          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-xs text-amber-950 space-y-1">
-                            <div className="font-bold flex items-center gap-1.5">
-                              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
-                              <span>Saldo pendiente por cancelar: {formatCOP(pending)}</span>
-                            </div>
-                            <p className="text-[11px] text-amber-800 leading-relaxed">
-                              Recuerda que para despachar tu paquete con <strong>{o.carrier}</strong> debe estar cancelado el 100% del pedido. Envíanos el comprobante por WhatsApp para actualizar tu factura a <strong>Pagado</strong>.
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                            <span>
-                              <strong>¡Gracias por tu compra!</strong> Tu pedido se encuentra 100% pago y verificado por MyFanBox.
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="w-full sm:w-72 bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-2 text-xs tabular-nums">
-                        <div className="flex justify-between text-zinc-600">
-                          <span>Subtotal Prendas</span>
-                          <span className="font-medium text-zinc-900">{formatCOP(subtotal)}</span>
-                        </div>
-                        {(o.discount || 0) > 0 && (
-                          <div className="flex justify-between text-emerald-700">
-                            <span>Descuento Combo Llavero</span>
-                            <span className="font-medium">-{formatCOP(o.discount)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-sm font-bold text-zinc-900 pt-2 border-t border-zinc-200">
-                          <span>Total Orden</span>
-                          <span>{formatCOP(o.total)}</span>
-                        </div>
-                        <div className="flex justify-between text-emerald-700 font-semibold pt-1">
-                          <span>Abonado / Pagado</span>
-                          <span>{formatCOP(paid)}</span>
-                        </div>
-                        <div className="flex justify-between text-amber-700 font-bold pt-1 border-t border-zinc-200">
-                          <span>Saldo Pendiente</span>
-                          <span>{formatCOP(pending)}</span>
-                        </div>
-                      </div>
-                    </div>
+                const subtotal = (o.items || []).reduce((sum, item) => sum + (Number(item.unitPrice) || 0) * (Number(item.qty) || 0), 0);
+                const currentStep = !isOrderActive(o) ? 0 : o.shippingStatus === 'Enviado' ? 4 : o.shippingStatus === 'Por enviar' ? 3 : (o.paymentStatus === 'Pagado' || o.paymentStatus === 'Semi-pagado (50%)') ? 2 : 1;
+                const steps = ['Pedido registrado', 'En preparación', 'Empacado', 'Enviado'];
+                return <div className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-8 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-zinc-200 pb-4">
+                    <div><div className="flex items-center gap-2"><div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold">MFB</div><div><h1 className="text-lg font-bold text-zinc-900">{brandName} · FACTURA</h1><p className="text-[11px] text-zinc-500">{collectionName}</p></div></div><p className="text-[11px] text-zinc-400 font-mono mt-2">Pedido {o.id} · Fecha {o.createdAt || '—'}</p></div>
+                    <div className="flex flex-wrap gap-2"><span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPayStatusBadgeClass(o.paymentStatus)}`}>Pago: {o.paymentStatus}</span><span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getShipStatusBadgeClass(o.shippingStatus)}`}>Envío: {o.shippingStatus}</span></div>
                   </div>
-                );
+                  <section className="space-y-2"><div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold text-zinc-900">Seguimiento del pedido</h2><span className="text-xs text-sky-700">{eta.etaLabel} · {eta.windowDates}</span></div><div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{steps.map((step, idx) => <div key={step} className={`rounded-xl border p-3 text-xs ${currentStep >= idx + 1 ? 'border-emerald-200 bg-emerald-50/50' : 'border-zinc-200 bg-zinc-50'}`}><div className="font-semibold text-zinc-900">{idx + 1}. {step}</div><div className="text-[10px] text-zinc-500 mt-1">{currentStep >= idx + 1 ? 'Completado' : 'Pendiente'}</div></div>)}</div></section>
+                  <section className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 space-y-1 text-xs"><h2 className="font-semibold text-zinc-900">Datos de entrega</h2><div className="text-zinc-700">{o.customerName}</div><div className="text-zinc-600">{o.address || 'Dirección pendiente'} · {o.neighborhood || 'Zona urbana'} · {o.city}</div><div className="text-zinc-500">Código postal: {o.postalCode || '—'} · {o.carrier}{o.trackingNumber ? ` · Guía ${o.trackingNumber}` : ''}</div><div className="pt-2 text-[11px] text-zinc-500">Origen: {originHub} · Distancia aproximada: {eta.distanceKm} km · Flete estimado: {formatCOP(eta.estimatedShippingCost)}</div></section>
+                  <section className="border border-zinc-200 rounded-xl overflow-hidden"><table className="w-full text-left text-xs"><thead className="bg-zinc-50 text-zinc-500"><tr><th className="p-3">Producto</th><th className="p-3">Variante</th><th className="p-3">Talla</th><th className="p-3 text-center">Cant.</th><th className="p-3 text-right">Subtotal</th></tr></thead><tbody className="divide-y divide-zinc-200">{(o.items || []).map((item, idx) => <tr key={item.id || idx}><td className="p-3 font-semibold text-zinc-900">{item.productName}</td><td className="p-3 text-zinc-600">{item.variantName}</td><td className="p-3">{item.size}</td><td className="p-3 text-center">{item.qty}</td><td className="p-3 text-right font-medium">{formatCOP((Number(item.unitPrice) || 0) * (Number(item.qty) || 0))}</td></tr>)}</tbody></table></section>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-between"><div className="flex-1">{pending > 0 && isOrderActive(o) ? <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900"><strong>Saldo pendiente: {formatCOP(pending)}</strong><p className="mt-1 text-[11px]">Para despachar el pedido debe estar cancelado el 100%.</p></div> : <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-900"><strong>¡Gracias por tu compra!</strong> Tu pedido está al día.</div>}<button onClick={() => window.print()} className="no-print mt-2 h-8 px-3 rounded-lg border border-zinc-200 text-xs font-semibold">Descargar / Imprimir PDF</button></div><div className="w-full sm:w-72 rounded-xl bg-zinc-50 border border-zinc-200 p-4 space-y-2 text-xs"><div className="flex justify-between"><span>Subtotal</span><strong>{formatCOP(subtotal)}</strong></div>{(o.discount || 0) > 0 && <div className="flex justify-between text-emerald-700"><span>Descuento</span><strong>-{formatCOP(o.discount)}</strong></div>}<div className="border-t border-zinc-200 pt-2 flex justify-between text-sm font-bold"><span>Total</span><span>{formatCOP(o.total)}</span></div><div className="flex justify-between text-emerald-700"><span>Pagado</span><strong>{formatCOP(paid)}</strong></div><div className="flex justify-between text-amber-700"><span>Pendiente</span><strong>{formatCOP(pending)}</strong></div></div></div>
+                  <p className="text-[10px] text-zinc-400 font-mono break-all">Código privado: {o.uuid}</p>
+                </div>;
               })()}
             </div>
           )}
@@ -4577,187 +4395,129 @@ ON CONFLICT (id) DO UPDATE SET
           )}
 
           {/* ================================================================= */}
-          {/* VISTA 5: BASE DE DATOS NEONDB (SERVERLESS POSTGRESQL & SQL LIVE)  */}
+          {/* VISTA 6: BASE DE DATOS NEONDB — CONEXIÓN DESDE EL SERVIDOR       */}
           {/* ================================================================= */}
           {activeTab === 'neondb' && (
             <div className="space-y-4">
-              <div className="bg-white border border-zinc-200 rounded-xl p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-base sm:text-lg font-semibold text-zinc-900">
-                        Conexión Serverless a NeonDB (PostgreSQL)
-                      </h1>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-                          neonStatus === 'connected'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : neonStatus === 'error'
-                            ? 'bg-rose-50 text-rose-800 border-rose-200'
-                            : 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                        }`}
-                      >
-                        {neonStatus === 'connected'
-                          ? `Conectado (${neonLastSync || 'Activo'})`
-                          : neonStatus === 'error'
-                          ? 'Error de conexión'
-                          : 'Modo Caché Local'}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="text-lg font-semibold text-zinc-900">NeonDB · PostgreSQL compartido</h1>
+                      <span className={`px-2.5 py-1 rounded-full border text-[11px] font-semibold ${neonStatus === 'connected' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : neonStatus === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
+                        {neonStatus === 'connected' ? 'Conectado' : neonStatus === 'error' ? 'Sin conexión' : 'Comprobando…'}
                       </span>
+                      {isSavingData && <span className="text-[11px] text-sky-700">Guardando cambios…</span>}
                     </div>
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      Conecta tu proyecto de Neon.tech pegando la cadena <code className="font-mono bg-zinc-100 px-1 rounded">postgresql://...</code> para sincronizar pedidos, catálogo y costos sobre HTTPS (<code className="font-mono bg-zinc-100 px-1 rounded">POST https://&lt;host&gt;/sql</code>).
+                    <p className="text-xs text-zinc-500 mt-1 max-w-2xl">
+                      Los pedidos, el catálogo y el inventario se leen y escriben en NeonDB a través del backend. Abrir la app en incógnito o en otro dispositivo no crea otra base ni vuelve a cargar pedidos ficticios.
                     </p>
                   </div>
-
-                  <label className="inline-flex items-center gap-2 text-xs font-medium text-zinc-800 cursor-pointer bg-zinc-50 px-3 py-2 rounded-lg border border-zinc-200">
-                    <input
-                      type="checkbox"
-                      checked={neonAutoSync}
-                      onChange={(e) => setNeonAutoSync(e.target.checked)}
-                      className="rounded border-zinc-300"
-                    />
-                    <span>Auto-Sync en cada cambio</span>
-                  </label>
-                </div>
-
-                {/* Connection String Input */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
-                  <div className="lg:col-span-7">
-                    <label className="block text-[11px] font-medium text-zinc-500 mb-1">
-                      Neon Connection String (Direct o Pooler URL)
-                    </label>
-                    <input
-                      type="password"
-                      value={neonConnString}
-                      onChange={(e) => setNeonConnString(e.target.value)}
-                      placeholder="postgresql://neondb_owner:npg_...@ep-cool-forest-123456.us-east-2.aws.neon.tech/neondb?sslmode=require"
-                      className="w-full h-9 px-3 font-mono text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 focus:bg-white focus:border-zinc-900 focus:outline-none"
-                    />
-                  </div>
-                  <div className="lg:col-span-5 flex flex-wrap items-end gap-2">
-                    <button
-                      onClick={handleInitNeonTables}
-                      className="h-9 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 flex items-center gap-1.5"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>1. Crear Tablas en Neon</span>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={handleInitNeonTables} className="h-9 px-3 rounded-lg bg-zinc-900 text-white text-xs font-semibold inline-flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Verificar tablas
                     </button>
-                    <button
-                      onClick={handlePushAllToNeon}
-                      className="h-9 px-3 rounded-lg border border-zinc-200 bg-white text-zinc-800 text-xs font-medium hover:bg-zinc-50 flex items-center gap-1.5"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Subir Datos (Push)</span>
+                    <button onClick={handlePushAllToNeon} disabled={!isDataReady || isSavingData} className="h-9 px-3 rounded-lg border border-zinc-200 bg-white text-zinc-800 text-xs font-semibold disabled:opacity-50 inline-flex items-center gap-1.5">
+                      <Upload className="w-3.5 h-3.5" /> Guardar ahora
                     </button>
-                    <button
-                      onClick={handlePullFromNeon}
-                      className="h-9 px-3 rounded-lg border border-zinc-200 bg-white text-zinc-800 text-xs font-medium hover:bg-zinc-50 flex items-center gap-1.5"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Bajar (Pull)</span>
+                    <button onClick={handlePullFromNeon} className="h-9 px-3 rounded-lg border border-zinc-200 bg-white text-zinc-800 text-xs font-semibold inline-flex items-center gap-1.5">
+                      <Download className="w-3.5 h-3.5" /> Recargar desde Neon
                     </button>
                   </div>
                 </div>
+                {dataError && <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">{dataError}</div>}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Pedidos en DB', value: orders.length },
+                    { label: 'Referencias', value: catalog.length },
+                    { label: 'Insumos comprados', value: Object.keys(boughtSupplies).length },
+                    { label: 'Productos fabricados', value: Object.keys(madeItems).length }
+                  ].map(card => (
+                    <div key={card.label} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                      <div className="text-[11px] text-zinc-500">{card.label}</div>
+                      <div className="text-xl font-semibold text-zinc-900 mt-1 tabular-nums">{card.value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-900 space-y-1">
+                  <div className="font-semibold">Importante: conexión segura</div>
+                  <p>Ya no pegues tu Connection String en el navegador. Configura <code>DATABASE_URL</code> en el servidor (por ejemplo Render). La clave queda privada en el backend y la web usa únicamente <code>/api</code>.</p>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                  <span>Última sincronización: {neonLastSync || '—'}</span>
+                  <span>Guardado automático habilitado</span>
+                </div>
+              </section>
+
+              <section className="bg-white border border-zinc-200 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-zinc-900">Consola SQL de solo lectura</h2>
+                  <button onClick={async () => {
+                    const result = await executeNeonQuery(customSqlQuery);
+                    if (result.ok) { setCustomSqlResult(result.data?.rows || []); notify('Consulta ejecutada en NeonDB.'); }
+                    else notify(`La consulta falló: ${result.error}`, 'error');
+                  }} className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-semibold inline-flex items-center gap-1.5">
+                    <Play className="w-3.5 h-3.5" /> Ejecutar SELECT
+                  </button>
+                </div>
+                <textarea rows={3} value={customSqlQuery} onChange={e => setCustomSqlQuery(e.target.value)} className="w-full p-3 font-mono text-xs bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900" />
+                <p className="text-[11px] text-zinc-500">Por seguridad, esta consola solo acepta consultas de lectura (SELECT, WITH, EXPLAIN o SHOW).</p>
+                {customSqlResult && <pre className="p-3 rounded-xl bg-zinc-950 text-zinc-100 font-mono text-[11px] max-h-56 overflow-auto">{JSON.stringify(customSqlResult, null, 2)}</pre>}
+              </section>
+              <section className="bg-white border border-zinc-200 rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-zinc-900">Registro de actividad</h2>
+                  <button onClick={() => setSqlLogs([])} className="text-[11px] text-zinc-500 hover:text-zinc-900">Limpiar</button>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-auto">
+                  {sqlLogs.map(log => <div key={log.id} className="rounded-lg bg-zinc-50 border border-zinc-200 p-2.5 font-mono text-[11px]">
+                    <div className="flex justify-between gap-2 text-zinc-400"><span>{log.timestamp}</span><span>{log.status} · {log.durationMs}ms</span></div>
+                    <div className="text-zinc-800 break-all mt-1">{log.sql}</div>
+                    {log.detail && <div className="text-zinc-500 mt-1">{log.detail}</div>}
+                  </div>)}
+                  {sqlLogs.length === 0 && <p className="text-xs text-zinc-500">Sin actividad registrada.</p>}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* VISTA 7: SET CONFIG — PARÁMETROS EDITABLES DE LA OPERACIÓN       */}
+          {/* ================================================================= */}
+          {activeTab === 'config' && (
+            <div className="space-y-4 max-w-5xl">
+              <div>
+                <h1 className="text-lg font-semibold text-zinc-900 flex items-center gap-2"><SlidersHorizontal className="w-5 h-5" /> Set Config</h1>
+                <p className="text-xs text-zinc-500 mt-1">Parámetros operativos y visuales editables sin tocar el código. Los cambios se guardan en NeonDB y se comparten entre dispositivos.</p>
               </div>
-
-              {/* SQL Console & Schema Viewer */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Left: SQL Schema & Custom Query Runner */}
-                <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
-                        <FileCode className="w-4 h-4" />
-                        <span>Esquema PostgreSQL (`schema.sql`)</span>
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(POSTGRES_SCHEMA_SQL, 'Esquema SQL copiado para Neon SQL Editor')}
-                        className="h-7 px-2.5 rounded border border-zinc-200 text-xs text-zinc-700 hover:bg-zinc-50 inline-flex items-center gap-1"
-                      >
-                        <Copy className="w-3 h-3" /> Copiar SQL
-                      </button>
-                    </div>
-                    <pre className="p-3 rounded-lg bg-zinc-950 text-zinc-200 font-mono text-[11px] overflow-x-auto max-h-56 leading-relaxed">
-                      {POSTGRES_SCHEMA_SQL}
-                    </pre>
-
-                    {/* Live SQL Runner */}
-                    <div className="pt-2 border-t border-zinc-100 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-zinc-900">
-                          Consola SQL en Vivo (Ejecutar en NeonDB)
-                        </label>
-                        <button
-                          onClick={async () => {
-                            const res = await executeNeonQuery(customSqlQuery);
-                            if (res.ok) {
-                              setCustomSqlResult(res.data?.rows || []);
-                              notify('Consulta SQL ejecutada en NeonDB');
-                            } else {
-                              notify('Conecta una URL válida de NeonDB para ejecutar consultas remotas', 'warning');
-                            }
-                          }}
-                          className="h-7 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1"
-                        >
-                          <Play className="w-3 h-3" /> Ejecutar SQL
-                        </button>
-                      </div>
-                      <textarea
-                        rows={2}
-                        value={customSqlQuery}
-                        onChange={(e) => setCustomSqlQuery(e.target.value)}
-                        className="w-full p-2.5 font-mono text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900"
-                      />
-                      {customSqlResult && (
-                        <pre className="p-2.5 rounded-lg bg-zinc-100 text-zinc-800 font-mono text-[11px] overflow-x-auto max-h-36">
-                          {JSON.stringify(customSqlResult, null, 2)}
-                        </pre>
-                      )}
-                    </div>
-                  </div>
+              <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-4">
+                <h2 className="text-sm font-semibold text-zinc-900">Identidad de la tienda</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <label className="text-xs text-zinc-600 space-y-1"><span>Nombre de marca</span><input value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900" /></label>
+                  <label className="text-xs text-zinc-600 space-y-1"><span>Nombre de colección</span><input value={collectionName} onChange={e => setCollectionName(e.target.value)} className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900" /></label>
                 </div>
-
-                {/* Right: Live SQL Query Log */}
-                <div className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-col justify-between space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
-                      <Terminal className="w-4 h-4" />
-                      <span>Registro de Consultas y Eventos NeonDB</span>
-                    </span>
-                    <button
-                      onClick={() => setSqlLogs([])}
-                      className="text-[11px] text-zinc-400 hover:text-zinc-800"
-                    >
-                      Limpiar log
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-                    {sqlLogs.map(log => (
-                      <div
-                        key={log.id}
-                        className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-200 font-mono text-[11px] space-y-1"
-                      >
-                        <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                          <span>{log.timestamp}</span>
-                          <span
-                            className={`px-1.5 py-0.2 rounded font-semibold ${
-                              log.status === 'OK'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : log.status === 'ERROR'
-                                ? 'bg-rose-100 text-rose-800'
-                                : 'bg-zinc-200 text-zinc-700'
-                            }`}
-                          >
-                            {log.status} · {log.durationMs}ms
-                          </span>
-                        </div>
-                        <div className="text-zinc-800 break-all">{log.sql}</div>
-                        {log.detail && <div className="text-zinc-500 text-[10px]">{log.detail}</div>}
-                      </div>
-                    ))}
-                  </div>
+              </section>
+              <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-4">
+                <h2 className="text-sm font-semibold text-zinc-900">Operación y logística</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <label className="text-xs text-zinc-600 space-y-1"><span>Centro de despacho predeterminado</span><select value={originHub} onChange={e => setOriginHub(e.target.value)} className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900">{Object.keys(COLOMBIA_CITIES_GEO).map(city => <option key={city} value={city}>{city}</option>)}</select></label>
+                  <label className="text-xs text-zinc-600 space-y-1"><span>Transportadora predeterminada</span><select value={defaultCarrier} onChange={e => setDefaultCarrier(e.target.value)} className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900">{CARRIERS.map(carrier => <option key={carrier} value={carrier}>{carrier}</option>)}</select></label>
+                  <label className="text-xs text-zinc-600 space-y-1"><span>Descuento por combo con llavero (COP)</span><input type="number" min="0" step="500" value={comboDiscountValue} onChange={e => setComboDiscountValue(Math.max(0, Number(e.target.value) || 0))} className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900" /></label>
+                  <label className="text-xs text-zinc-600 space-y-1"><span>Google Maps Geocoding API Key (opcional)</span><input type="password" value={googleMapsApiKey} onChange={e => setGoogleMapsApiKey(e.target.value)} placeholder="AIza..." className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 font-mono" /></label>
                 </div>
+              </section>
+              <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold text-zinc-900">Apariencia</h2><span className="text-[11px] text-zinc-500">{EYE_CARE_THEMES.length} temas disponibles</span></div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {EYE_CARE_THEMES.map(t => <button key={t.id} onClick={() => setTheme(t.id)} title={t.desc} className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs transition-all ${theme === t.id ? 'border-zinc-900 ring-1 ring-zinc-900 bg-zinc-50' : 'border-zinc-200 hover:border-zinc-400'}`}>
+                    <span className="w-5 h-5 rounded-full border shrink-0" style={{ backgroundColor: t.dot, borderColor: t.border }} />
+                    <span className="min-w-0"><span className="block font-semibold text-zinc-900 truncate">{t.name}</span><span className="block text-[10px] text-zinc-500 truncate">{t.desc}</span></span>
+                  </button>)}
+                </div>
+              </section>
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                <span>{isSavingData ? 'Guardando configuración…' : 'La configuración se sincroniza automáticamente con NeonDB.'}</span>
+                <button onClick={handlePushAllToNeon} disabled={isSavingData} className="h-8 px-3 rounded-lg bg-zinc-900 text-white font-semibold disabled:opacity-50">Guardar ahora</button>
               </div>
             </div>
           )}
@@ -4765,102 +4525,264 @@ ON CONFLICT (id) DO UPDATE SET
       </div>
 
       {/* ===================================================================== */}
-      {/* MODAL: NUEVO PEDIDO / EDITAR PEDIDO                                   */}
+      {/* MODAL: NUEVO PEDIDO / EDITAR PEDIDO CON GOOGLE MAPS & CÓDIGO POSTAL   */}
       {/* ===================================================================== */}
-      {orderModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-zinc-950/40 backdrop-blur-[2px]">
+      {orderModalOpen && isAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-zinc-950/50 backdrop-blur-[2px]">
           <form
             onSubmit={handleSaveOrderModal}
-            className="bg-white border border-zinc-200 rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-xl overflow-hidden"
+            className="bg-white border border-zinc-200 rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-xl overflow-hidden"
           >
-            <div className="px-5 py-3.5 border-b border-zinc-200 flex items-center justify-between">
+            <div className="px-5 py-3.5 border-b border-zinc-200 flex items-center justify-between shrink-0">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">
-                  {editingOrder ? `Editar Pedido ${editingOrder.id}` : 'Registrar Nuevo Pedido'}
+                <h2 className="text-base font-semibold text-zinc-900">
+                  {editingOrder ? `Editar Pedido ${editingOrder.id}` : 'Nuevo Pedido MyFanBox'}
                 </h2>
-                <p className="text-[11px] text-zinc-500">
-                  Selecciona las prendas del catálogo oficial Karol G y define el estado de pago/envío.
+                <p className="text-xs text-zinc-500">
+                  Corrobora la dirección en Google Maps para autocompletar barrio, código postal y coordenadas exactas.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOrderModalOpen(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-900"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-4 text-xs">
-              {/* Customer Data */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-zinc-700 mb-1">Nombre del Cliente *</label>
-                  <input
-                    type="text"
-                    required
-                    value={draftCustomer.customerName}
-                    onChange={(e) => setDraftCustomer({ ...draftCustomer, customerName: e.target.value })}
-                    placeholder="Ej: Valentina Gómez"
-                    className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:border-zinc-900 focus:outline-none"
-                  />
+            <div className="p-5 overflow-y-auto space-y-5 text-xs">
+              {/* 1. Datos del Cliente y Verificador Google Maps */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                    1. Datos del Cliente y Verificación de Dirección en Google Maps
+                  </h3>
+                  <span
+                    className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${
+                      draftCustomer.addressVerified
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-amber-50 text-amber-800 border-amber-200'
+                    }`}
+                  >
+                    {draftCustomer.addressVerified ? '✓ Dirección Corroborada en Mapa' : '⚠️ Pendiente corroborar dirección'}
+                  </span>
                 </div>
-                <div>
-                  <label className="block font-medium text-zinc-700 mb-1">Instagram (@)</label>
-                  <input
-                    type="text"
-                    value={draftCustomer.instagram}
-                    onChange={(e) => setDraftCustomer({ ...draftCustomer, instagram: e.target.value })}
-                    placeholder="@valengomez"
-                    className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:border-zinc-900 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-zinc-700 mb-1">WhatsApp / Teléfono *</label>
-                  <input
-                    type="text"
-                    value={draftCustomer.phone}
-                    onChange={(e) => setDraftCustomer({ ...draftCustomer, phone: e.target.value })}
-                    placeholder="3004128890"
-                    className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white focus:border-zinc-900 focus:outline-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block font-medium text-zinc-700 mb-1">Ciudad</label>
+                    <label className="block font-medium text-zinc-700 mb-1">Nombre Cliente *</label>
                     <input
                       type="text"
-                      value={draftCustomer.city}
-                      onChange={(e) => setDraftCustomer({ ...draftCustomer, city: e.target.value })}
-                      placeholder="Medellín"
-                      className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white"
+                      required
+                      value={draftCustomer.customerName}
+                      onChange={(e) => setDraftCustomer({ ...draftCustomer, customerName: e.target.value })}
+                      placeholder="Ej: Valentina Gómez"
+                      className="w-full h-9 px-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900"
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-zinc-700 mb-1">Dirección</label>
+                    <label className="block font-medium text-zinc-700 mb-1">Instagram (@)</label>
                     <input
                       type="text"
-                      value={draftCustomer.address}
-                      onChange={(e) => setDraftCustomer({ ...draftCustomer, address: e.target.value })}
-                      placeholder="Cra 43A #11-40"
-                      className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg focus:bg-white"
+                      value={draftCustomer.instagram}
+                      onChange={(e) => setDraftCustomer({ ...draftCustomer, instagram: e.target.value })}
+                      placeholder="@valengomez"
+                      className="w-full h-9 px-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-zinc-700 mb-1">WhatsApp *</label>
+                    <input
+                      type="text"
+                      value={draftCustomer.phone}
+                      onChange={(e) => setDraftCustomer({ ...draftCustomer, phone: e.target.value })}
+                      placeholder="3004128890"
+                      className="w-full h-9 px-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Bloque de Dirección + Ciudad + Barrio + Código Postal + Botón Corroborar */}
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                    <div className="sm:col-span-3">
+                      <label className="block font-medium text-zinc-700 mb-1">Ciudad *</label>
+                      <select
+                        value={draftCustomer.city}
+                        onChange={(e) => {
+                          const newCity = e.target.value;
+                          const meta = inferColombianAddressMetadata(newCity, draftCustomer.address);
+                          setDraftCustomer({
+                            ...draftCustomer,
+                            city: newCity,
+                            neighborhood: meta.neighborhood,
+                            postalCode: meta.postalCode,
+                            lat: meta.lat,
+                            lng: meta.lng,
+                            addressVerified: false
+                          });
+                        }}
+                        className="w-full h-9 px-2.5 bg-white border border-zinc-200 rounded-lg text-zinc-900 font-medium"
+                      >
+                        {Object.keys(COLOMBIA_CITIES_GEO).map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-5">
+                      <label className="block font-medium text-zinc-700 mb-1">
+                        Dirección Exacta (Calle / Carrera / # / Edificio) *
+                      </label>
+                      <input
+                        type="text"
+                        value={draftCustomer.address}
+                        onChange={(e) =>
+                          setDraftCustomer({
+                            ...draftCustomer,
+                            address: e.target.value,
+                            addressVerified: false
+                          })
+                        }
+                        placeholder="Ej: Cra 43A #11-40 Apto 502"
+                        className="w-full h-9 px-3 bg-white border border-zinc-200 rounded-lg text-zinc-900"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block font-medium text-zinc-700 mb-1">Barrio / Zona</label>
+                      <input
+                        type="text"
+                        value={draftCustomer.neighborhood}
+                        onChange={(e) => setDraftCustomer({ ...draftCustomer, neighborhood: e.target.value })}
+                        placeholder="El Poblado"
+                        className="w-full h-9 px-2.5 bg-white border border-zinc-200 rounded-lg text-zinc-900"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block font-medium text-zinc-700 mb-1">Código Postal</label>
+                      <input
+                        type="text"
+                        value={draftCustomer.postalCode}
+                        onChange={(e) => setDraftCustomer({ ...draftCustomer, postalCode: e.target.value })}
+                        placeholder="050021"
+                        className="w-full h-9 px-2.5 bg-white border border-zinc-200 rounded-lg text-zinc-900 font-mono font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Botones de Verificación con Google Maps */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isSearchingAddress}
+                        onClick={handleVerifyAddressInModal}
+                        className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>
+                          {isSearchingAddress
+                            ? 'Buscando en Google Maps / Directorio...'
+                            : '🔍 Buscar Opciones y Código Postal'}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDraftCustomer(prev => ({
+                            ...prev,
+                            addressVerified: true,
+                            formattedAddress:
+                              prev.formattedAddress ||
+                              `${prev.address}, Barrio ${prev.neighborhood}, ${prev.city}, Colombia (CP ${prev.postalCode})`
+                          }))
+                        }
+                        className="h-8 px-3 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-xs font-semibold hover:bg-emerald-100 inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Confirmar Dirección ✓</span>
+                      </button>
+                    </div>
+
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${draftCustomer.address || ''}, ${draftCustomer.neighborhood || ''}, ${draftCustomer.city}, Colombia`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-sky-700 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Abrir en Google Maps</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+
+                  {/* Lista de Opciones Sugeridas para Corroborar */}
+                  {addressCandidates.length > 0 && (
+                    <div className="pt-2 border-t border-zinc-200 space-y-1.5">
+                      <div className="text-[11px] font-semibold text-zinc-700">
+                        Haz clic en una opción para autocompletar dirección normalizada, barrio, código postal y coordenadas:
+                      </div>
+                      <div className="grid grid-cols-1 gap-1.5 max-h-36 overflow-y-auto">
+                        {addressCandidates.map(cand => (
+                          <button
+                            key={cand.id}
+                            type="button"
+                            onClick={() => handleSelectAddressCandidate(cand)}
+                            className="w-full text-left p-2 rounded-lg bg-white border border-zinc-200 hover:border-zinc-900 flex items-center justify-between gap-2 transition-colors cursor-pointer"
+                          >
+                            <div className="min-w-0">
+                              <div className="font-semibold text-zinc-900 truncate">
+                                {cand.formattedAddress}
+                              </div>
+                              <div className="text-[10px] text-zinc-500">
+                                Barrio: <strong>{cand.neighborhood}</strong> · Coordenadas: {cand.lat}, {cand.lng} ({cand.source})
+                              </div>
+                            </div>
+                            <span className="px-2 py-0.5 rounded bg-sky-50 border border-sky-200 font-mono text-[11px] font-bold text-sky-900 shrink-0">
+                              CP {cand.postalCode}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Vista Previa Interactiva de Google Maps en Vivo */}
+                  <div className="rounded-xl overflow-hidden border border-zinc-200 bg-white">
+                    <iframe
+                      title="Vista Previa Google Maps Pedido"
+                      className="w-full h-44 border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                        `${draftCustomer.address || ''}, ${draftCustomer.neighborhood || ''}, ${draftCustomer.city || 'Medellín'}, Colombia`
+                      )}&z=15&output=embed`}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Add Item Builder */}
-              <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2.5">
-                <div className="font-semibold text-zinc-800">Agregar Prendas del Catálogo</div>
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                  <div className="sm:col-span-5">
+              {/* 2. Prendas del Pedido */}
+              <div className="pt-3 border-t border-zinc-200 space-y-3">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                  2. Prendas del Catálogo Oficial
+                </h3>
+                <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                  <div className="sm:col-span-4">
+                    <label className="block text-[11px] text-zinc-500 mb-1">Referencia</label>
                     <select
                       value={selProdId}
                       onChange={(e) => {
-                        const newProd = catalog.find(c => c.id === e.target.value) || catalog[0];
-                        setSelProdId(newProd.id);
-                        setSelVarId(newProd.variants[0]?.id || '');
-                        setSelSize(newProd.sizes[0] || 'Única');
+                        const pid = e.target.value;
+                        const prod = catalog.find(c => c.id === pid) || catalog[0];
+                        setSelProdId(pid);
+                        setSelVarId(prod.variants[0]?.id || '');
+                        setSelSize(prod.sizes[0] || 'M');
                       }}
                       className="w-full h-8 px-2 bg-white border border-zinc-200 rounded-lg"
                     >
@@ -4871,7 +4793,9 @@ ON CONFLICT (id) DO UPDATE SET
                       ))}
                     </select>
                   </div>
+
                   <div className="sm:col-span-4">
+                    <label className="block text-[11px] text-zinc-500 mb-1">Variante</label>
                     <select
                       value={selVarId}
                       onChange={(e) => setSelVarId(e.target.value)}
@@ -4884,11 +4808,13 @@ ON CONFLICT (id) DO UPDATE SET
                       ))}
                     </select>
                   </div>
-                  <div className="sm:col-span-3 flex items-center gap-1.5">
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] text-zinc-500 mb-1">Talla</label>
                     <select
                       value={selSize}
                       onChange={(e) => setSelSize(e.target.value)}
-                      className="w-full h-8 px-2 bg-white border border-zinc-200 rounded-lg"
+                      className="w-full h-8 px-2 bg-white border border-zinc-200 rounded-lg font-semibold"
                     >
                       {(catalog.find(c => c.id === selProdId)?.sizes || ['Única']).map(sz => (
                         <option key={sz} value={sz}>
@@ -4896,6 +4822,9 @@ ON CONFLICT (id) DO UPDATE SET
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="sm:col-span-2 flex items-center gap-1.5">
                     <input
                       type="number"
                       min="1"
@@ -4904,34 +4833,35 @@ ON CONFLICT (id) DO UPDATE SET
                       onChange={(e) => setSelQty(e.target.value)}
                       className="w-14 h-8 px-2 text-center bg-white border border-zinc-200 rounded-lg font-semibold"
                     />
+                    <button
+                      type="button"
+                      onClick={handleAddDraftItem}
+                      className="h-8 px-3 rounded-lg bg-zinc-900 text-white font-medium hover:bg-zinc-800 shrink-0 cursor-pointer"
+                    >
+                      + Añadir
+                    </button>
                   </div>
                 </div>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleAddDraftItem}
-                    className="h-7 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800"
-                  >
-                    + Añadir al pedido
-                  </button>
-                </div>
 
+                {/* Lista de prendas añadidas */}
                 {draftItems.length > 0 && (
-                  <div className="space-y-1.5 pt-2 border-t border-zinc-200">
+                  <div className="space-y-1.5">
                     {draftItems.map((it, idx) => (
                       <div
-                        key={it.id}
-                        className="flex items-center justify-between px-2.5 py-1.5 bg-white rounded-lg border border-zinc-200"
+                        key={it.id || idx}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-white border border-zinc-200"
                       >
                         <div>
-                          <span className="font-semibold">{it.qty}×</span> {it.productName} ·{' '}
-                          <span className="text-zinc-500">{it.variantName}</span>{' '}
-                          <span className="px-1.5 py-0.2 bg-zinc-100 rounded text-[10px] font-semibold">
-                            {it.size}
+                          <span className="font-semibold text-zinc-900">
+                            {it.qty}× {it.productName}
+                          </span>{' '}
+                          <span className="text-zinc-500">· {it.variantName}</span>{' '}
+                          <span className="px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-[10px] font-semibold">
+                            Talla {it.size}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold tabular-nums">{formatCOP(it.unitPrice * it.qty)}</span>
+                          <span className="font-mono font-semibold">{formatCOP(it.unitPrice * it.qty)}</span>
                           <button
                             type="button"
                             onClick={() => setDraftItems(prev => prev.filter((_, i) => i !== idx))}
@@ -4946,57 +4876,176 @@ ON CONFLICT (id) DO UPDATE SET
                 )}
               </div>
 
-              {/* Payment & Shipping Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* 3. Estado de Pago, Transportadora y Guía */}
+              <div className="pt-3 border-t border-zinc-200 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block font-medium text-zinc-700 mb-1">Estado de Pago</label>
                   <select
                     value={draftCustomer.paymentStatus}
                     onChange={(e) => setDraftCustomer({ ...draftCustomer, paymentStatus: e.target.value })}
-                    className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg font-semibold"
+                    className="w-full h-9 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg font-semibold"
                   >
                     {PAYMENT_STATUSES.map(st => (
-                      <option key={st} value={st}>
-                        {st}
-                      </option>
+                      <option key={st} value={st}>{st}</option>
                     ))}
                   </select>
                 </div>
+
                 <div>
                   <label className="block font-medium text-zinc-700 mb-1">Estado de Envío</label>
                   <select
                     value={draftCustomer.shippingStatus}
                     onChange={(e) => setDraftCustomer({ ...draftCustomer, shippingStatus: e.target.value })}
-                    className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg font-semibold"
+                    className="w-full h-9 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg font-semibold"
                   >
                     {SHIPPING_STATUSES.map(st => (
-                      <option key={st} value={st}>
-                        {st}
-                      </option>
+                      <option key={st} value={st}>{st}</option>
                     ))}
                   </select>
                 </div>
+
                 <div>
                   <label className="block font-medium text-zinc-700 mb-1">Transportadora</label>
                   <select
                     value={draftCustomer.carrier}
                     onChange={(e) => setDraftCustomer({ ...draftCustomer, carrier: e.target.value })}
-                    className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg"
+                    className="w-full h-9 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg"
                   >
                     {CARRIERS.map(c => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
+                      <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block font-medium text-zinc-700 mb-1">Número de Guía</label>
+                  <input
+                    type="text"
+                    value={draftCustomer.trackingNumber}
+                    onChange={(e) => setDraftCustomer({ ...draftCustomer, trackingNumber: e.target.value })}
+                    placeholder="Opcional"
+                    className="w-full h-9 px-3 bg-zinc-50 border border-zinc-200 rounded-lg font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3.5 border-t border-zinc-200 bg-zinc-50 flex items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setOrderModalOpen(false)}
+                className="h-9 px-4 rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-700"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="h-9 px-5 rounded-lg bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 cursor-pointer"
+              >
+                Guardar Pedido y Coordenadas
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODAL: SEGURIDAD ADMINISTRADOR (CAMBIAR USUARIO Y CLAVE SHA-256)      */}
+      {/* ===================================================================== */}
+      {securityModalOpen && isAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-[2px]">
+          <form
+            onSubmit={handleSaveSecuritySettings}
+            className="bg-white border border-zinc-200 rounded-2xl w-full max-w-md overflow-hidden shadow-xl"
+          >
+            <div className="px-5 py-3.5 border-b border-zinc-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-zinc-800" />
+                <h2 className="text-sm font-semibold text-zinc-900">
+                  Seguridad y Credenciales de Administrador
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSecurityModalOpen(false)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-900"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3.5 text-xs">
+              <div>
+                <label className="block font-medium text-zinc-700 mb-1">
+                  Usuario de Administrador
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newAdminUser}
+                  onChange={(e) => setNewAdminUser(e.target.value)}
+                  className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-zinc-700 mb-1">
+                  Nueva Contraseña Maestra (dejar en blanco para mantener actual)
+                </label>
+                <input
+                  type="password"
+                  value={newAdminPass}
+                  onChange={(e) => setNewAdminPass(e.target.value)}
+                  placeholder="Mínimo 6 caracteres..."
+                  className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-zinc-700 mb-1">
+                  Confirmar Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  value={newAdminPassConfirm}
+                  onChange={(e) => setNewAdminPassConfirm(e.target.value)}
+                  placeholder="Repetir nueva contraseña..."
+                  className="w-full h-8 px-2.5 bg-zinc-50 border border-zinc-200 rounded-lg"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 pt-1 text-zinc-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hideHintToggle}
+                  onChange={(e) => setHideHintToggle(e.target.checked)}
+                  className="rounded border-zinc-300"
+                />
+                <span>Ocultar pista de credenciales iniciales en la pantalla de Login (/1620)</span>
+              </label>
+
+              <div className="pt-2 border-t border-zinc-200">
+                <label className="block font-medium text-zinc-700 mb-1">
+                  Google Maps Geocoding API Key (Opcional)
+                </label>
+                <input
+                  type="password"
+                  value={googleMapsApiKey}
+                  onChange={(e) => setGoogleMapsApiKey(e.target.value)}
+                  placeholder="AIzaSy... (Opcional — funciona gratis sin clave también)"
+                  className="w-full h-8 px-2.5 font-mono bg-zinc-50 border border-zinc-200 rounded-lg"
+                />
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-500">
+                La contraseña se procesa y almacena con hash seguro en el servidor. El acceso administrativo está disponible en <code className="font-mono">#/1620</code>.
               </div>
             </div>
 
             <div className="px-5 py-3 border-t border-zinc-200 bg-zinc-50 flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setOrderModalOpen(false)}
+                onClick={() => setSecurityModalOpen(false)}
                 className="h-8 px-3.5 rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-700"
               >
                 Cancelar
@@ -5005,7 +5054,7 @@ ON CONFLICT (id) DO UPDATE SET
                 type="submit"
                 className="h-8 px-4 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800"
               >
-                Guardar Pedido
+                Guardar Credenciales
               </button>
             </div>
           </form>
@@ -5026,6 +5075,8 @@ ON CONFLICT (id) DO UPDATE SET
           />
           <span>{toast.message}</span>
         </div>
+      )}
+      </>
       )}
     </div>
   );

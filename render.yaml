@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: myfanbox-gestion
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: MFB_ADMIN_USERNAME
+        sync: false
+      - key: MFB_ADMIN_PASSWORD
+        sync: false
+      - key: MFB_SESSION_SECRET
+        generateValue: true
+      - key: MFB_ALLOWED_ORIGINS
+        sync: false
