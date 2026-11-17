@@ -83,316 +83,6 @@ const CARRIERS = [
   'Entrega Personal'
 ];
 
-const GARMENT_GENDERS = [
-  'Femenino',
-  'Masculino',
-  'Sin especificar'
-];
-
-// ============================================================================
-// 1.0 SANITIZADOR PROFUNDO ANTI-ERROR #31 DE REACT (Convierte {id, label, badge, dot} a String)
-// ============================================================================
-function toSafeText(val: any, fallback = ''): string {
-  if (val === null || val === undefined) return fallback;
-  if (typeof val === 'string') return val;
-  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
-  if (typeof val === 'object') {
-    if (typeof val.label === 'string') return val.label;
-    if (typeof val.name === 'string') return val.name;
-    if (typeof val.id === 'string') return val.id;
-    if (typeof val.value === 'string') return val.value;
-  }
-  return fallback;
-}
-
-function sanitizeCatalogRecord(rawProd: any, idx = 0) {
-  const sizes = Array.isArray(rawProd?.sizes)
-    ? rawProd.sizes.map((s: any) => toSafeText(s, 'M')).filter(Boolean)
-    : ['S', 'M', 'L', 'XL'];
-  const variants = Array.isArray(rawProd?.variants)
-    ? rawProd.variants.map((v: any, vIdx: number) => ({
-        ...v,
-        id: toSafeText(v?.id, `var-${idx}-${vIdx}`),
-        name: toSafeText(v?.name ?? v?.label, 'Estándar'),
-        extraPrice: Number(v?.extraPrice) || 0,
-        extraCost: Number(v?.extraCost) || 0
-      }))
-    : [{ id: `var-${idx}-0`, name: 'Estándar', extraPrice: 0, extraCost: 0 }];
-
-  return {
-    ...rawProd,
-    id: toSafeText(rawProd?.id, `prod-${idx + 1}`),
-    code: toSafeText(rawProd?.code, `REF-${idx + 1}`),
-    name: toSafeText(rawProd?.name ?? rawProd?.label, `Referencia ${idx + 1}`),
-    category: toSafeText(rawProd?.category, 'Prenda'),
-    basePrice: Number(rawProd?.basePrice ?? rawProd?.base_price) || 0,
-    unitCost: Number(rawProd?.unitCost ?? rawProd?.unit_cost) || 0,
-    blankName: toSafeText(rawProd?.blankName ?? rawProd?.blank_name, ''),
-    sizes: sizes.length > 0 ? sizes : ['Única'],
-    variants
-  };
-}
-
-function sanitizeOrderRecord(rawOrder: any, idx = 0) {
-  if (!rawOrder || typeof rawOrder !== 'object') return rawOrder;
-  const rawPay = toSafeText(rawOrder?.paymentStatus ?? rawOrder?.payment_status, 'Pendiente');
-  const paymentStatus = PAYMENT_STATUSES.includes(rawPay) ? rawPay : 'Pendiente';
-
-  const rawShip = toSafeText(rawOrder?.shippingStatus ?? rawOrder?.shipping_status, 'Por preparar');
-  const shippingStatus = SHIPPING_STATUSES.includes(rawShip) ? rawShip : 'Por preparar';
-
-  const rawCarrier = toSafeText(rawOrder?.carrier, 'Interrapidísimo');
-  const carrier = CARRIERS.includes(rawCarrier) ? rawCarrier : 'Interrapidísimo';
-
-  const rawItems = Array.isArray(rawOrder?.items) ? rawOrder.items : [];
-  const items = rawItems.map((it: any, iIdx: number) => {
-    const rawGender = toSafeText(it?.gender, 'Sin especificar');
-    const gender = GARMENT_GENDERS.includes(rawGender) ? rawGender : 'Sin especificar';
-    return {
-      ...it,
-      id: toSafeText(it?.id, `item-${idx}-${iIdx}`),
-      productId: toSafeText(it?.productId ?? it?.catalogId ?? it?.product_id, ''),
-      productName: toSafeText(it?.productName ?? it?.name, 'Prenda MyFanBox'),
-      variantId: toSafeText(it?.variantId ?? it?.variant_id, ''),
-      variantName: toSafeText(it?.variantName ?? it?.variant, 'Estándar'),
-      size: toSafeText(it?.size, 'M'),
-      gender,
-      qty: Math.max(1, Number(it?.qty) || 1),
-      unitPrice: Number(it?.unitPrice ?? it?.unit_price) || 0,
-      packed: Boolean(it?.packed)
-    };
-  });
-
-  const subtotal = items.reduce((acc: number, it: any) => acc + (Number(it.unitPrice) || 0) * (Number(it.qty) || 1), 0);
-  const discount = Number(rawOrder?.discount) || 0;
-  const computedTotal = Number(rawOrder?.total) || Math.max(0, subtotal - discount);
-
-  return {
-    ...rawOrder,
-    id: toSafeText(rawOrder?.id, `MFB-${1001 + idx}`),
-    uuid: isValidUUID(toSafeText(rawOrder?.uuid)) ? toSafeText(rawOrder?.uuid).toLowerCase() : generateUUIDv4(),
-    customerName: toSafeText(rawOrder?.customerName ?? rawOrder?.customer_name, 'Cliente MyFanBox'),
-    cedula: toSafeText(rawOrder?.cedula ?? rawOrder?.documentId ?? rawOrder?.document_id, ''),
-    instagram: toSafeText(rawOrder?.instagram, ''),
-    phone: toSafeText(rawOrder?.phone, ''),
-    city: toSafeText(rawOrder?.city, 'Medellín'),
-    neighborhood: toSafeText(rawOrder?.neighborhood, ''),
-    address: toSafeText(rawOrder?.address, ''),
-    postalCode: toSafeText(rawOrder?.postalCode ?? rawOrder?.postal_code, ''),
-    formattedAddress: toSafeText(rawOrder?.formattedAddress ?? rawOrder?.formatted_address, ''),
-    lat: typeof rawOrder?.lat === 'number' && !isNaN(rawOrder.lat) ? rawOrder.lat : Number(rawOrder?.lat) || undefined,
-    lng: typeof rawOrder?.lng === 'number' && !isNaN(rawOrder.lng) ? rawOrder.lng : Number(rawOrder?.lng) || undefined,
-    manualPin: Boolean(rawOrder?.manualPin ?? rawOrder?.manual_pin),
-    addressVerified: Boolean(rawOrder?.addressVerified ?? rawOrder?.address_verified ?? rawOrder?.manualPin),
-    paymentStatus,
-    shippingStatus,
-    carrier,
-    trackingNumber: toSafeText(rawOrder?.trackingNumber ?? rawOrder?.tracking_code ?? rawOrder?.trackingCode, ''),
-    notes: toSafeText(rawOrder?.notes, ''),
-    discount,
-    total: computedTotal,
-    createdAt: toSafeText(rawOrder?.createdAt ?? rawOrder?.created_at, new Date().toISOString().split('T')[0]),
-    items
-  };
-}
-
-// ============================================================================
-// 1.0B COMPONENTE DE LOGO OFICIAL MYFANBOX (Emblema CD Alado + Imagen Subible)
-// ============================================================================
-function MyFanBoxBrandLogo({
-  logoUrl,
-  brandName = 'MyFanBox',
-  size = 'md',
-  onUploadLogo
-}: {
-  logoUrl?: string;
-  brandName?: string;
-  size?: 'sm' | 'md' | 'lg';
-  onUploadLogo?: (dataUrl: string) => void;
-}) {
-  const fileRef = useRef<HTMLInputElement | null>(null);
-  const dimClass = size === 'sm' ? 'h-8 px-2' : size === 'lg' ? 'h-11 px-3' : 'h-9 px-2.5';
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !onUploadLogo) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        onUploadLogo(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  return (
-    <div className="inline-flex items-center gap-2 shrink-0">
-      <div
-        onClick={() => onUploadLogo && fileRef.current?.click()}
-        title={onUploadLogo ? 'Haz clic para subir el logo de MyFanBox (.png, .jpg, .svg)' : brandName}
-        className={`${dimClass} rounded-xl bg-zinc-900 text-white flex items-center justify-center gap-2 border border-zinc-800 shadow-2xs overflow-hidden transition-transform ${
-          onUploadLogo ? 'cursor-pointer hover:scale-[1.02]' : ''
-        }`}
-      >
-        {logoUrl ? (
-          <img src={logoUrl} alt={brandName} className="h-full py-1 w-auto object-contain" />
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <svg viewBox="0 0 44 34" className="w-6 h-5 shrink-0" fill="none">
-              <path d="M9 11C5 10 2 12 1 15C3 16 6 16 9 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-              <path d="M8 16C4 16 2 18 2 21C4 21 7 20 9 19" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-              <path d="M35 11C39 10 42 12 43 15C41 16 38 16 35 15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-              <path d="M36 16C40 16 42 18 42 21C40 21 37 20 35 19" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-              <circle cx="22" cy="17" r="10.5" stroke="currentColor" strokeWidth="1.9" />
-              <circle cx="22" cy="17" r="3.2" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M32 3L33.1 5.6L35.9 5.9L33.8 7.7L34.4 10.5L32 9.1L29.6 10.5L30.2 7.7L28.1 5.9L30.9 5.6L32 3Z" fill="currentColor" />
-            </svg>
-            <span className="text-[11px] font-black tracking-tight lowercase leading-none">
-              {brandName.toLowerCase()}
-            </span>
-          </div>
-        )}
-      </div>
-      {onUploadLogo && (
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-      )}
-    </div>
-  );
-}
-
-// ============================================================================
-// 1.0C COMPONENTE DE MAPA INTERACTIVO PARA PONER PIN MANUALMENTE (CLIC / ARRASTRAR)
-// ============================================================================
-function InteractiveManualPinMap({
-  lat,
-  lng,
-  title,
-  subtitle,
-  onPinChange,
-  heightClass = 'h-60'
-}: {
-  lat: number;
-  lng: number;
-  title?: string;
-  subtitle?: string;
-  onPinChange: (newLat: number, newLng: number) => void;
-  heightClass?: string;
-}) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const w = window as Window & { L?: any };
-    if (w.L) {
-      setReady(true);
-      return;
-    }
-    if (!document.getElementById('leaflet-css-cdn')) {
-      const link = document.createElement('link');
-      link.id = 'leaflet-css-cdn';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-    if (!document.getElementById('leaflet-js-cdn')) {
-      const script = document.createElement('script');
-      script.id = 'leaflet-js-cdn';
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.async = true;
-      script.onload = () => setReady(true);
-      document.body.appendChild(script);
-    } else {
-      const timer = setInterval(() => {
-        if ((window as any).L) {
-          setReady(true);
-          clearInterval(timer);
-        }
-      }, 120);
-      return () => clearInterval(timer);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!ready || !containerRef.current) return;
-    const L = (window as any).L;
-    if (!L) return;
-
-    const safeLat = typeof lat === 'number' && !isNaN(lat) ? lat : 6.20892;
-    const safeLng = typeof lng === 'number' && !isNaN(lng) ? lng : -75.56781;
-
-    if (!mapRef.current) {
-      const map = L.map(containerRef.current).setView([safeLat, safeLng], 15);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
-      }).addTo(map);
-
-      const marker = L.marker([safeLat, safeLng], { draggable: true }).addTo(map);
-      marker.on('dragend', () => {
-        const pos = marker.getLatLng();
-        onPinChange(Number(pos.lat.toFixed(5)), Number(pos.lng.toFixed(5)));
-      });
-
-      map.on('click', (e: any) => {
-        const cLat = Number(e.latlng.lat.toFixed(5));
-        const cLng = Number(e.latlng.lng.toFixed(5));
-        marker.setLatLng([cLat, cLng]);
-        onPinChange(cLat, cLng);
-      });
-
-      mapRef.current = map;
-      markerRef.current = marker;
-    } else {
-      mapRef.current.setView([safeLat, safeLng], mapRef.current.getZoom() || 15);
-      if (markerRef.current) {
-        markerRef.current.setLatLng([safeLat, safeLng]);
-      }
-    }
-
-    if (markerRef.current) {
-      markerRef.current.bindPopup(
-        `<div style="font-family:sans-serif;font-size:12px;"><b>${title || 'Ubicación del Pedido'}</b><br/>${subtitle || ''}<br/><span style="font-family:monospace;font-size:11px;">📍 ${safeLat}, ${safeLng}</span></div>`
-      );
-    }
-  }, [ready, lat, lng, title, subtitle]);
-
-  useEffect(() => {
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []);
-
-  return (
-    <div className="relative rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100">
-      <div ref={containerRef} className={`w-full ${heightClass} z-10`} />
-      <div className="z-20 pointer-events-none absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-zinc-900/85 text-white text-[10px] font-medium shadow flex items-center gap-1.5">
-        <MapPin className="w-3 h-3 text-emerald-400" />
-        <span>Haz clic en la calle exacta o arrastra el marcador azul para mover el pin</span>
-      </div>
-    </div>
-  );
-}
-
-function parseCoordsFromInput(raw: string): { lat: number; lng: number } | null {
-  if (!raw) return null;
-  const match = String(raw).match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
-  if (!match) return null;
-  const lat = parseFloat(match[1]);
-  const lng = parseFloat(match[2]);
-  if (isNaN(lat) || isNaN(lng)) return null;
-  return { lat: Number(lat.toFixed(5)), lng: Number(lng.toFixed(5)) };
-}
-
 const THEME_STORAGE_KEY = 'mfb_theme';
 const ADMIN_SESSION_KEY = 'mfb_admin_session_token_v2';
 
@@ -440,18 +130,18 @@ const EYE_CARE_THEMES = [
 ];
 
 const THEME_PALETTES = {
-  light: { background:'#F7F8FA', surface:'#FFFFFF', surfaceAlt:'#EEF1F5', hover:'#E4E9F0', text:'#182230', muted:'#536273', primary:'#285D52', primaryText:'#FFFFFF', border:'#D5DDE5', isDark: false },
-  'cream-light': { background:'#F5F0E7', surface:'#FFFCF6', surfaceAlt:'#EAE1D2', hover:'#DFD3C0', text:'#2F2922', muted:'#685B4B', primary:'#76543A', primaryText:'#FFFFFF', border:'#D8C9B5', isDark: false },
-  'rose-light': { background:'#FFF5F7', surface:'#FFFFFF', surfaceAlt:'#F8E5EB', hover:'#F0D5DF', text:'#3B2430', muted:'#745666', primary:'#9B3F63', primaryText:'#FFFFFF', border:'#E8C7D3', isDark: false },
-  'sky-light': { background:'#F1F7FC', surface:'#FFFFFF', surfaceAlt:'#E4EEF7', hover:'#D5E4F2', text:'#1E3144', muted:'#536B82', primary:'#285B83', primaryText:'#FFFFFF', border:'#C9D8E6', isDark: false },
-  'medium-dark': { background:'#151A22', surface:'#1E2530', surfaceAlt:'#26303E', hover:'#303C4E', text:'#F1F5F9', muted:'#94A3B8', primary:'#2A7B6F', primaryText:'#F8FAFC', border:'#334155', isDark: true },
-  dark: { background:'#0E1015', surface:'#161A22', surfaceAlt:'#1F2530', hover:'#2A3241', text:'#F3F4F6', muted:'#9CA3AF', primary:'#4F5D95', primaryText:'#FFFFFF', border:'#2D3545', isDark: true },
-  'yellow-dark': { background:'#181510', surface:'#221E17', surfaceAlt:'#2C261D', hover:'#383024', text:'#F5EFE4', muted:'#B8AC99', primary:'#8C6B32', primaryText:'#FFFDF9', border:'#42392B', isDark: true },
-  'pink-dark': { background:'#1A1217', surface:'#251A21', surfaceAlt:'#31222C', hover:'#3E2B38', text:'#FAF0F5', muted:'#C4A8B8', primary:'#944268', primaryText:'#FFF9FC', border:'#4A3342', isDark: true },
-  'lavender-dark': { background:'#151320', surface:'#1E1B2E', surfaceAlt:'#28243C', hover:'#342F4E', text:'#F3F0FF', muted:'#B0A8CC', primary:'#5E4B9E', primaryText:'#FFFFFF', border:'#3F3859', isDark: true },
-  'ocean-dark': { background:'#0F1B22', surface:'#162731', surfaceAlt:'#1E3441', hover:'#274353', text:'#ECFEFF', muted:'#99BCC9', primary:'#1F7A8C', primaryText:'#FFFFFF', border:'#2E4C5C', isDark: true },
-  'forest-dark': { background:'#111C16', surface:'#182820', surfaceAlt:'#21362B', hover:'#2B4638', text:'#ECFDF3', muted:'#9EC2AC', primary:'#2D6A4F', primaryText:'#FFFFFF', border:'#314E3E', isDark: true },
-  'sunset-dark': { background:'#1C1413', surface:'#281C1B', surfaceAlt:'#352523', hover:'#44302D', text:'#FFF5F0', muted:'#C8AAA0', primary:'#9E4E36', primaryText:'#FFFFFF', border:'#4F3733', isDark: true }
+  light: { background:'#F7F8FA', surface:'#FFFFFF', surfaceAlt:'#EEF1F5', text:'#182230', muted:'#536273', primary:'#285D52', primaryText:'#FFFFFF', border:'#D5DDE5' },
+  'cream-light': { background:'#F5F0E7', surface:'#FFFCF6', surfaceAlt:'#EAE1D2', text:'#2F2922', muted:'#685B4B', primary:'#76543A', primaryText:'#FFFFFF', border:'#D8C9B5' },
+  'rose-light': { background:'#FFF5F7', surface:'#FFFFFF', surfaceAlt:'#F8E5EB', text:'#3B2430', muted:'#745666', primary:'#9B3F63', primaryText:'#FFFFFF', border:'#E8C7D3' },
+  'sky-light': { background:'#F1F7FC', surface:'#FFFFFF', surfaceAlt:'#E4EEF7', text:'#1E3144', muted:'#536B82', primary:'#285B83', primaryText:'#FFFFFF', border:'#C9D8E6' },
+  'medium-dark': { background:'#171D26', surface:'#222B37', surfaceAlt:'#2B3745', text:'#F2F5F8', muted:'#B8C4D2', primary:'#5BB7A5', primaryText:'#10231F', border:'#3A4858' },
+  dark: { background:'#101318', surface:'#191F29', surfaceAlt:'#242C38', text:'#F4F6FA', muted:'#B4BECC', primary:'#A6B3FF', primaryText:'#15152A', border:'#303A49' },
+  'yellow-dark': { background:'#1D1A14', surface:'#282319', surfaceAlt:'#342D20', text:'#FAF3E5', muted:'#CDBE9E', primary:'#D6A84B', primaryText:'#251B08', border:'#51432A' },
+  'pink-dark': { background:'#21151E', surface:'#2D1D2A', surfaceAlt:'#3C2838', text:'#FFF2F8', muted:'#D9B8CC', primary:'#D96A9B', primaryText:'#2B1020', border:'#56364B' },
+  'lavender-dark': { background:'#191627', surface:'#252039', surfaceAlt:'#332B4B', text:'#F5F1FF', muted:'#C7BDE4', primary:'#B39AEF', primaryText:'#21183B', border:'#494064' },
+  'ocean-dark': { background:'#10202A', surface:'#18313F', surfaceAlt:'#224353', text:'#EAFBFF', muted:'#B5D4DE', primary:'#54C5D5', primaryText:'#092A35', border:'#345A68' },
+  'forest-dark': { background:'#14231C', surface:'#1E3428', surfaceAlt:'#294333', text:'#EFFAF2', muted:'#BFDAC7', primary:'#79C891', primaryText:'#102A19', border:'#3A5B45' },
+  'sunset-dark': { background:'#261A19', surface:'#362422', surfaceAlt:'#49302A', text:'#FFF4E8', muted:'#E3C2A7', primary:'#E58A52', primaryText:'#34190F', border:'#614239' }
 };
 
 // ============================================================================
@@ -900,32 +590,61 @@ export default function App() {
       return 'medium-dark';
     }
   });
+  const [visualEditorOpen, setVisualEditorOpen] = useState(false);
   const [customTheme, setCustomTheme] = useState({
-    background: '#F4F1EA',
-    surface: '#FFFFFF',
-    surfaceAlt: '#E9E4DA',
-    text: '#24211D',
-    muted: '#625C53',
-    primary: '#315C52',
+    background: '#141920',
+    surface: '#1C232D',
+    surfaceAlt: '#242D3A',
+    hover: '#2E3A4B',
+    hoverText: '#F8FAFC',
+    selectedBg: '#1F3A3D',
+    selectedText: '#E6FFFA',
+    text: '#F1F5F9',
+    muted: '#94A3B8',
+    primary: '#2A7B6F',
     primaryText: '#FFFFFF',
-    border: '#CFC7B9'
+    border: '#323E4F'
   });
-  const activeThemePalette = theme === 'custom' ? customTheme : (THEME_PALETTES[theme] || THEME_PALETTES.light);
+
+  const baseThemeRef = THEME_PALETTES[theme] || THEME_PALETTES['medium-dark'];
+  const activeThemePalette = useMemo(() => {
+    const src = theme === 'custom' ? customTheme : baseThemeRef;
+    const isDark = getContrastRatio(src.surface || '#1C232D', '#FFFFFF') > 4.2;
+    return {
+      background: src.background || '#141920',
+      surface: src.surface || '#1C232D',
+      surfaceAlt: src.surfaceAlt || '#242D3A',
+      hover: src.hover || (isDark ? '#2E3A4B' : '#E2E8F0'),
+      hoverText: src.hoverText || (isDark ? '#F8FAFC' : '#0F172A'),
+      selectedBg: src.selectedBg || (isDark ? '#243B4A' : '#D8ECE8'),
+      selectedText: src.selectedText || (isDark ? '#F8FAFC' : '#133A32'),
+      text: src.text || (isDark ? '#F1F5F9' : '#182230'),
+      muted: src.muted || (isDark ? '#94A3B8' : '#536273'),
+      primary: src.primary || '#2A7B6F',
+      primaryText: src.primaryText || '#FFFFFF',
+      border: src.border || (isDark ? '#323E4F' : '#D5DDE5'),
+      isDark
+    };
+  }, [theme, customTheme, baseThemeRef]);
+
+  const updateVisualThemeColor = (key: string, value: string) => {
+    setCustomTheme(prev => {
+      const base = theme === 'custom' ? prev : activeThemePalette;
+      return { ...base, [key]: value };
+    });
+    if (theme !== 'custom') setTheme('custom');
+  };
 
   // Map & Routing State
   const [originHub, setOriginHub] = useState('Medellín');
   const [defaultCarrier, setDefaultCarrier] = useState('Interrapidísimo');
   const [brandName, setBrandName] = useState('MyFanBox');
-  const [brandLogoUrl, setBrandLogoUrl] = useState(() => {
-    try { return localStorage.getItem('mfb_brand_logo') || ''; } catch { return ''; }
-  });
   const [collectionName, setCollectionName] = useState('Viajando por el Mundo — Karol G');
   const [mapCarrierFilter, setMapCarrierFilter] = useState('ALL');
   const [mapStatusFilter, setMapStatusFilter] = useState('ALL');
   const [mapCityFilter, setMapCityFilter] = useState('ALL');
   const [selectedMapOrderId, setSelectedMapOrderId] = useState('');
-  const [mapEngine, setMapEngine] = useState('manual-pin'); // 'manual-pin' | 'gmaps' | 'leaflet'
-  const [mapCoordPaste, setMapCoordPaste] = useState('');
+  const [mapEngine, setMapEngine] = useState('gmaps'); // 'gmaps' | 'leaflet' | 'vector'
   const [mapZoom, setMapZoom] = useState(1);
   const [inspectorGeoCandidates, setInspectorGeoCandidates] = useState([]);
   const [inspectorGeoLoading, setInspectorGeoLoading] = useState(false);
@@ -953,7 +672,6 @@ export default function App() {
   const [shipFilter, setShipFilter] = useState('ALL');
   const [productFilter, setProductFilter] = useState('ALL');
   const [sizeFilter, setSizeFilter] = useState('ALL');
-  const [genderFilter, setGenderFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [selectedOrderIds, setSelectedOrderIds] = useState([]);
@@ -1018,26 +736,19 @@ export default function App() {
   }, [adminToken]);
 
   const applyDatabaseSnapshot = useCallback((payload) => {
-    // NeonDB is the source of truth. Sanitize every record so legacy {id, label, badge, dot} objects never trigger React Error #31.
-    const nextCatalog = Array.isArray(payload.catalog)
-      ? payload.catalog.map((c, idx) => sanitizeCatalogRecord(c, idx))
-      : [];
-    const nextOrders = Array.isArray(payload.orders)
-      ? payload.orders.map((o, idx) => sanitizeOrderRecord(o, idx))
-      : [];
+    // NeonDB is the source of truth. An empty server response must remain empty;
+    // starter products are inserted once by server initialization, not resurrected in the browser.
+    const nextCatalog = Array.isArray(payload.catalog) ? payload.catalog : [];
     setCatalog(nextCatalog);
-    setOrders(nextOrders);
+    setOrders(Array.isArray(payload.orders) ? payload.orders : []);
     setBoughtSupplies(payload.boughtSupplies && typeof payload.boughtSupplies === 'object' ? payload.boughtSupplies : {});
     setMadeItems(payload.madeItems && typeof payload.madeItems === 'object' ? payload.madeItems : {});
     setComboDiscountValue(Math.max(0, Number(payload.settings?.comboDiscountValue ?? payload.comboDiscountValue ?? 5000) || 0));
-    setOriginHub(toSafeText(payload.settings?.originHub, 'Medellín'));
-    setDefaultCarrier(toSafeText(payload.settings?.defaultCarrier, 'Interrapidísimo'));
-    setBrandName(toSafeText(payload.settings?.brandName, 'MyFanBox'));
-    if (typeof payload.settings?.brandLogoUrl === 'string') {
-      setBrandLogoUrl(payload.settings.brandLogoUrl);
-    }
-    setCollectionName(toSafeText(payload.settings?.collectionName, 'Viajando por el Mundo — Karol G'));
-    setGoogleMapsApiKey(toSafeText(payload.settings?.googleMapsApiKey, ''));
+    setOriginHub(payload.settings?.originHub || 'Medellín');
+    setDefaultCarrier(payload.settings?.defaultCarrier || 'Interrapidísimo');
+    setBrandName(payload.settings?.brandName || 'MyFanBox');
+    setCollectionName(payload.settings?.collectionName || 'Viajando por el Mundo — Karol G');
+    setGoogleMapsApiKey(payload.settings?.googleMapsApiKey || '');
     if (payload.settings?.theme && EYE_CARE_THEMES.some(item => item.id === payload.settings.theme)) setTheme(payload.settings.theme);
     if (payload.settings?.customTheme && typeof payload.settings.customTheme === 'object') setCustomTheme(prev => ({ ...prev, ...payload.settings.customTheme }));
     if (payload.adminConfig) setAdminConfig(payload.adminConfig);
@@ -1118,7 +829,6 @@ export default function App() {
               originHub,
               defaultCarrier,
               brandName,
-              brandLogoUrl,
               collectionName,
               googleMapsApiKey,
               theme,
@@ -1140,11 +850,11 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [
     isAdmin, isDataReady, adminToken, catalog, orders, boughtSupplies, madeItems,
-    comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName,
+    comboDiscountValue, originHub, defaultCarrier, brandName, collectionName,
     googleMapsApiKey, theme, customTheme, apiRequest, notify
   ]);
 
-  // Persist theme choice & custom logo
+  // Persist theme choice
   useEffect(() => {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, theme);
@@ -1152,15 +862,6 @@ export default function App() {
       console.error(e);
     }
   }, [theme]);
-
-  useEffect(() => {
-    try {
-      if (brandLogoUrl) localStorage.setItem('mfb_brand_logo', brandLogoUrl);
-      else localStorage.removeItem('mfb_brand_logo');
-    } catch (e) {
-      console.error(e);
-    }
-  }, [brandLogoUrl]);
 
   // Strict Router for Secret Admin Slug '/1620' ('#/1620') & Customer '/details/:uuid'
   useEffect(() => {
@@ -1214,7 +915,7 @@ export default function App() {
               const decodedJson = decodeURIComponent(atob(encodedData));
               const parsedOrder = JSON.parse(decodedJson);
               if (parsedOrder && isValidUUID(parsedOrder.uuid)) {
-                setSharedOrderPayload(sanitizeOrderRecord(parsedOrder));
+                setSharedOrderPayload(parsedOrder);
               }
             }
           } catch (err) {
@@ -1409,7 +1110,7 @@ export default function App() {
           const decodedJson = decodeURIComponent(atob(encodedData));
           const parsedOrder = JSON.parse(decodedJson);
           if (parsedOrder && isValidUUID(parsedOrder.uuid)) {
-            setSharedOrderPayload(sanitizeOrderRecord(parsedOrder));
+            setSharedOrderPayload(parsedOrder);
           }
         }
       } catch (err) {
@@ -1513,7 +1214,7 @@ export default function App() {
           orders,
           boughtSupplies,
           madeItems,
-          settings: { comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName, googleMapsApiKey, theme, customTheme }
+          settings: { comboDiscountValue, originHub, defaultCarrier, brandName, collectionName, googleMapsApiKey, theme, customTheme }
         })
       });
       setNeonStatus('connected');
@@ -1634,9 +1335,8 @@ export default function App() {
         }
         const variant = prod.variants.find(v => v.id === item.variantId || v.name === item.variantName) || prod.variants[0] || {};
         const blankTitle = variant.blankOverride || prod.blankName || `${prod.name} (En blanco)`;
-        const genderSpec = item.gender && item.gender !== 'Sin especificar' ? `${item.size} · ${item.gender}` : item.size;
 
-        addRequirement(blankTitle, genderSpec, prod.category === 'Prenda' ? 'Prenda en Blanco' : 'Base Accesorio', item.qty);
+        addRequirement(blankTitle, item.size, prod.category === 'Prenda' ? 'Prenda en Blanco' : 'Base Accesorio', item.qty);
 
         // Additional supplies required
         if (variant.needsRhinestones || item.variantName.toLowerCase().includes('brillos') || item.variantName.toLowerCase().includes('pedrería')) {
@@ -1670,8 +1370,7 @@ export default function App() {
 
     activeOrders.forEach(order => {
       order.items.forEach(item => {
-        const genderLabel = item.gender || 'Sin especificar';
-        const key = `${item.productId}|||${item.variantId || item.variantName}|||${item.size}|||${genderLabel}`;
+        const key = `${item.productId}|||${item.variantId || item.variantName}|||${item.size}`;
         if (!map[key]) {
           map[key] = {
             key,
@@ -1679,7 +1378,6 @@ export default function App() {
             productName: item.productName,
             variantName: item.variantName,
             size: item.size,
-            gender: genderLabel,
             orderedQty: 0
           };
         }
@@ -1708,7 +1406,7 @@ export default function App() {
     const q = searchQuery.trim().toLowerCase();
     return orders.filter(o => {
       if (q) {
-        const hay = `${o.id} ${o.customerName} ${o.cedula || ''} ${o.instagram} ${o.phone} ${o.city} ${o.address} ${o.trackingNumber} ${o.notes}`.toLowerCase();
+        const hay = `${o.id} ${o.customerName} ${o.instagram} ${o.phone} ${o.city} ${o.address} ${o.trackingNumber} ${o.notes}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
 
@@ -1728,16 +1426,15 @@ export default function App() {
       if (shipFilter !== 'ALL' && o.shippingStatus !== shipFilter) return false;
       if (productFilter !== 'ALL' && !o.items.some(it => it.productId === productFilter)) return false;
       if (sizeFilter !== 'ALL' && !o.items.some(it => it.size === sizeFilter)) return false;
-      if (genderFilter !== 'ALL' && !o.items.some(it => (it.gender || 'Sin especificar') === genderFilter)) return false;
 
       return true;
     });
-  }, [orders, searchQuery, quickStatusFilter, payFilter, shipFilter, productFilter, sizeFilter, genderFilter]);
+  }, [orders, searchQuery, quickStatusFilter, payFilter, shipFilter, productFilter, sizeFilter]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, quickStatusFilter, payFilter, shipFilter, productFilter, sizeFilter, genderFilter]);
+  }, [searchQuery, quickStatusFilter, payFilter, shipFilter, productFilter, sizeFilter]);
 
   // 1-Click Status Updaters (Admin Guarded)
   const handleUpdateOrderPayment = (orderId, newPayStatus) => {
@@ -1852,7 +1549,7 @@ export default function App() {
     else if (!rawPhone.startsWith('+') && fullPhone.length === 10) fullPhone = `57${fullPhone}`; // Compatibilidad con números colombianos antiguos
     if (!fullPhone) { notify('Este pedido no tiene un teléfono válido.', 'warning'); return; }
     const firstName = order.customerName.split(' ')[0];
-    const itemsList = order.items.map(i => `• ${i.qty}x ${i.productName} (${i.variantName} - Talla ${i.size}${i.gender && i.gender !== 'Sin especificar' ? ` · ${i.gender}` : ''})`).join('\n');
+    const itemsList = order.items.map(i => `• ${i.qty}x ${i.productName} (${i.variantName} - Talla ${i.size})`).join('\n');
     const paid = getPaidAmount(order);
     const pending = getPendingAmount(order);
     const trackingUrl = getCustomerTrackingUrl(order);
@@ -1883,7 +1580,7 @@ export default function App() {
   // Export CSV
   const handleExportCSV = () => {
     const headers = [
-      'ID', 'Fecha', 'Cliente', 'Cedula', 'Instagram', 'WhatsApp', 'Ciudad', 'Direccion', 'Latitud', 'Longitud',
+      'ID', 'Fecha', 'Cliente', 'Instagram', 'WhatsApp', 'Ciudad', 'Direccion',
       'Prendas', 'Total_COP', 'Pagado_COP', 'Saldo_Pendiente_COP',
       'Estado_Pago', 'Estado_Envio', 'Transportadora', 'Guia', 'Notas'
     ];
@@ -1891,14 +1588,11 @@ export default function App() {
       o.id,
       o.createdAt,
       o.customerName,
-      o.cedula || '',
       o.instagram,
       o.phone,
       o.city,
       o.address,
-      o.lat ?? '',
-      o.lng ?? '',
-      o.items.map(i => `${i.qty}x ${i.productName} [${i.variantName} - Talla ${i.size} - ${i.gender || 'Sin especificar'}]`).join(' | '),
+      o.items.map(i => `${i.qty}x ${i.productName} [${i.variantName} - Talla ${i.size}]`).join(' | '),
       o.total,
       getPaidAmount(o),
       getPendingAmount(o),
@@ -1925,7 +1619,6 @@ export default function App() {
   // ============================================================================
   const [draftCustomer, setDraftCustomer] = useState({
     customerName: '',
-    cedula: '',
     instagram: '',
     phone: '',
     city: 'Medellín',
@@ -1935,7 +1628,6 @@ export default function App() {
     formattedAddress: '',
     lat: 6.20892,
     lng: -75.56781,
-    manualPin: false,
     addressVerified: false,
     carrier: 'Interrapidísimo',
     trackingNumber: '',
@@ -1945,24 +1637,20 @@ export default function App() {
   });
   const [addressCandidates, setAddressCandidates] = useState([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
-  const [modalCoordPaste, setModalCoordPaste] = useState('');
   const [draftItems, setDraftItems] = useState([]);
   const [selProdId, setSelProdId] = useState('');
   const [selVarId, setSelVarId] = useState('');
   const [selSize, setSelSize] = useState('M');
-  const [selGender, setSelGender] = useState('Femenino');
   const [selQty, setSelQty] = useState(1);
   const [applyComboDiscount, setApplyComboDiscount] = useState(true);
 
   const handleOpenOrderModal = (orderToEdit = null) => {
     setAddressCandidates([]);
-    setModalCoordPaste('');
     if (orderToEdit) {
       const fallback = inferColombianAddressMetadata(orderToEdit.city, orderToEdit.address);
       setEditingOrder(orderToEdit);
       setDraftCustomer({
         customerName: orderToEdit.customerName,
-        cedula: orderToEdit.cedula || '',
         instagram: orderToEdit.instagram || '',
         phone: orderToEdit.phone || '',
         city: orderToEdit.city || 'Medellín',
@@ -1972,21 +1660,19 @@ export default function App() {
         formattedAddress: orderToEdit.formattedAddress || '',
         lat: typeof orderToEdit.lat === 'number' ? orderToEdit.lat : fallback.lat,
         lng: typeof orderToEdit.lng === 'number' ? orderToEdit.lng : fallback.lng,
-        manualPin: Boolean(orderToEdit.manualPin),
-        addressVerified: Boolean(orderToEdit.addressVerified || orderToEdit.manualPin),
+        addressVerified: Boolean(orderToEdit.addressVerified),
         carrier: orderToEdit.carrier || defaultCarrier,
         trackingNumber: orderToEdit.trackingNumber || '',
         paymentStatus: orderToEdit.paymentStatus,
         shippingStatus: orderToEdit.shippingStatus,
         notes: orderToEdit.notes || ''
       });
-      setDraftItems(orderToEdit.items.map(i => ({ ...i, gender: i.gender || 'Sin especificar' })));
+      setDraftItems(orderToEdit.items.map(i => ({ ...i })));
       setApplyComboDiscount((orderToEdit.discount || 0) > 0);
     } else {
       setEditingOrder(null);
       setDraftCustomer({
         customerName: '',
-        cedula: '',
         instagram: '',
         phone: '',
         city: 'Medellín',
@@ -1996,7 +1682,6 @@ export default function App() {
         formattedAddress: '',
         lat: 6.20892,
         lng: -75.56781,
-        manualPin: false,
         addressVerified: false,
         carrier: defaultCarrier,
         trackingNumber: '',
@@ -2017,7 +1702,6 @@ export default function App() {
       setSelVarId('');
       setSelSize('M');
     }
-    setSelGender('Femenino');
     setSelQty(1);
     setOrderModalOpen(true);
   };
@@ -2115,7 +1799,6 @@ export default function App() {
         variantId: variant.id,
         variantName: variant.name,
         size: selSize,
-        gender: selGender || 'Sin especificar',
         qty: Math.max(1, Number(selQty) || 1),
         unitPrice,
         packed: false
@@ -2272,7 +1955,7 @@ export default function App() {
     }
     let cancelled = false;
     apiRequest(`/api/orders/${encodeURIComponent(detailOrderUuid)}`, { token: null })
-      .then(payload => { if (!cancelled) setRemoteDetailOrder(sanitizeOrderRecord(payload.order || payload)); })
+      .then(payload => { if (!cancelled) setRemoteDetailOrder(payload.order || payload); })
       .catch(error => {
         if (!cancelled) {
           setRemoteDetailOrder(null);
@@ -2412,14 +2095,14 @@ export default function App() {
     >
       {/* Dynamic Eye-Care Theme Styles + Clean Print Invoice Styles */}
       <style>{`
-        /* ====================================================================
-           MOTOR DE TEMAS UNIFICADO MYFANBOX (CON SOPORTE COMPLETO HOVER/FOCUS)
-           ==================================================================== */
         [data-theme="${theme}"] {
           --mfb-bg: ${activeThemePalette.background};
           --mfb-surface: ${activeThemePalette.surface};
           --mfb-surface-alt: ${activeThemePalette.surfaceAlt};
-          --mfb-hover: ${(activeThemePalette as any).hover || activeThemePalette.surfaceAlt};
+          --mfb-hover: ${activeThemePalette.hover};
+          --mfb-hover-text: ${activeThemePalette.hoverText};
+          --mfb-selected-bg: ${activeThemePalette.selectedBg};
+          --mfb-selected-text: ${activeThemePalette.selectedText};
           --mfb-text: ${activeThemePalette.text};
           --mfb-muted: ${activeThemePalette.muted};
           --mfb-primary: ${activeThemePalette.primary};
@@ -2429,64 +2112,91 @@ export default function App() {
           color: var(--mfb-text) !important;
         }
 
-        /* Selección de texto con el cursor */
+        /* Selección de texto */
         [data-theme="${theme}"] ::selection {
           background-color: var(--mfb-primary) !important;
           color: var(--mfb-primary-text) !important;
         }
 
-        /* Superficies principales (Tarjetas, Modales, Header, Sidebar) */
-        [data-theme="${theme}"] .bg-white,
-        [data-theme="${theme}"] .bg-white\/90 {
+        /* Superficies principales y secundarias (Sin barras invertidas) */
+        [data-theme="${theme}"] [class*="bg-white"] {
           background-color: var(--mfb-surface) !important;
           color: var(--mfb-text) !important;
         }
-
-        /* Superficies secundarias */
-        [data-theme="${theme}"] .bg-zinc-50,
-        [data-theme="${theme}"] .bg-zinc-50\/50,
-        [data-theme="${theme}"] .bg-zinc-50\/60,
-        [data-theme="${theme}"] .bg-zinc-50\/70,
-        [data-theme="${theme}"] .bg-zinc-50\/80,
-        [data-theme="${theme}"] .bg-zinc-50\/90,
-        [data-theme="${theme}"] .bg-zinc-100 {
+        [data-theme="${theme}"] [class*="bg-zinc-50"],
+        [data-theme="${theme}"] [class*="bg-zinc-100"] {
           background-color: var(--mfb-surface-alt) !important;
           color: var(--mfb-text) !important;
         }
 
-        /* CORRECCIÓN CRÍTICA: Estados :hover para que NUNCA se pongan blancos ni invisibles */
-        [data-theme="${theme}"] .hover\:bg-white:hover,
-        [data-theme="${theme}"] .hover\:bg-zinc-50:hover,
-        [data-theme="${theme}"] .hover\:bg-zinc-50\/80:hover,
-        [data-theme="${theme}"] .hover\:bg-zinc-50\/90:hover,
-        [data-theme="${theme}"] .hover\:bg-zinc-100:hover,
-        [data-theme="${theme}"] .hover\:bg-zinc-100\/70:hover,
-        [data-theme="${theme}"] .hover\:bg-zinc-200:hover {
+        /* HOVERS EN TABLAS, BOTONES Y MENÚS (Nunca más se ponen blancos) */
+        [data-theme="${theme}"] tbody tr:hover,
+        [data-theme="${theme}"] tbody tr:hover > td,
+        [data-theme="${theme}"] [class*="hover:bg-white"]:hover,
+        [data-theme="${theme}"] [class*="hover:bg-zinc-50"]:hover,
+        [data-theme="${theme}"] [class*="hover:bg-zinc-100"]:hover,
+        [data-theme="${theme}"] [class*="hover:bg-zinc-200"]:hover {
           background-color: var(--mfb-hover) !important;
-          color: var(--mfb-text) !important;
+          color: var(--mfb-hover-text) !important;
         }
 
-        [data-theme="${theme}"] .hover\:text-zinc-900:hover,
-        [data-theme="${theme}"] .hover\:text-zinc-800:hover,
-        [data-theme="${theme}"] .hover\:text-zinc-700:hover {
-          color: var(--mfb-text) !important;
+        [data-theme="${theme}"] button[class*="hover:bg-zinc-"]:hover *,
+        [data-theme="${theme}"] button[class*="hover:bg-white"]:hover *,
+        [data-theme="${theme}"] [class*="hover:text-zinc-"]:hover {
+          color: var(--mfb-hover-text) !important;
         }
 
-        [data-theme="${theme}"] .hover\:border-zinc-900:hover,
-        [data-theme="${theme}"] .hover\:border-zinc-400:hover {
+        /* ELEMENTOS Y FILAS SELECCIONADAS */
+        [data-theme="${theme}"] .bg-sky-50,
+        [data-theme="${theme}"] .mfb-selected {
+          background-color: var(--mfb-selected-bg) !important;
+          color: var(--mfb-selected-text) !important;
           border-color: var(--mfb-primary) !important;
         }
-
-        /* Bordes y divisores de tabla */
-        [data-theme="${theme}"] .border-zinc-100,
-        [data-theme="${theme}"] .border-zinc-200,
-        [data-theme="${theme}"] .border-zinc-300,
-        [data-theme="${theme}"] .border-zinc-400,
-        [data-theme="${theme}"] .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
-          border-color: var(--mfb-border) !important;
+        [data-theme="${theme}"] .bg-sky-50 *,
+        [data-theme="${theme}"] .mfb-selected * {
+          color: var(--mfb-selected-text) !important;
         }
 
-        /* Tipografía principal y secundaria */
+        /* BOTONES PRINCIPALES Y PESTAÑAS ACTIVAS (.bg-zinc-900) */
+        [data-theme="${theme}"] .bg-zinc-900,
+        [data-theme="${theme}"] [class*="hover:bg-zinc-800"]:hover {
+          background-color: var(--mfb-primary) !important;
+          color: var(--mfb-primary-text) !important;
+          border-color: var(--mfb-primary) !important;
+        }
+        [data-theme="${theme}"] .bg-zinc-900 * {
+          color: var(--mfb-primary-text) !important;
+        }
+        [data-theme="${theme}"] .bg-zinc-900 .bg-zinc-800,
+        [data-theme="${theme}"] .bg-zinc-900 .bg-zinc-700 {
+          background-color: rgba(0, 0, 0, 0.25) !important;
+          color: var(--mfb-primary-text) !important;
+        }
+
+        /* INPUTS, SELECTS Y CORRECCIÓN DE FOCUS BLANCO */
+        [data-theme="${theme}"] input:not([type="color"]),
+        [data-theme="${theme}"] select,
+        [data-theme="${theme}"] textarea,
+        [data-theme="${theme}"] input:not([type="color"]):focus,
+        [data-theme="${theme}"] select:focus,
+        [data-theme="${theme}"] textarea:focus,
+        [data-theme="${theme}"] [class*="focus:bg-white"]:focus {
+          background-color: var(--mfb-surface) !important;
+          color: var(--mfb-text) !important;
+          border-color: var(--mfb-border) !important;
+        }
+        [data-theme="${theme}"] input:not([type="color"]):focus,
+        [data-theme="${theme}"] select:focus,
+        [data-theme="${theme}"] textarea:focus {
+          border-color: var(--mfb-primary) !important;
+        }
+        [data-theme="${theme}"] select option {
+          background-color: var(--mfb-surface) !important;
+          color: var(--mfb-text) !important;
+        }
+
+        /* TEXTOS Y BORDES */
         [data-theme="${theme}"] .text-zinc-900,
         [data-theme="${theme}"] .text-zinc-800,
         [data-theme="${theme}"] .text-zinc-700 {
@@ -2497,128 +2207,16 @@ export default function App() {
         [data-theme="${theme}"] .text-zinc-400 {
           color: var(--mfb-muted) !important;
         }
-
-        /* Elementos Seleccionados / Botones Principales (.bg-zinc-900) */
-        [data-theme="${theme}"] .bg-zinc-900,
-        [data-theme="${theme}"] .hover\:bg-zinc-800:hover {
-          background-color: var(--mfb-primary) !important;
-          color: var(--mfb-primary-text) !important;
-          border-color: var(--mfb-primary) !important;
-        }
-        [data-theme="${theme}"] .bg-zinc-900 * {
-          color: var(--mfb-primary-text) !important;
-        }
-        /* Contadores internos dentro de botones seleccionados */
-        [data-theme="${theme}"] .bg-zinc-900 .bg-zinc-800,
-        [data-theme="${theme}"] .bg-zinc-900 .bg-zinc-700 {
-          background-color: rgba(0, 0, 0, 0.25) !important;
-          color: var(--mfb-primary-text) !important;
-        }
-
-        /* Inputs, Selects, Textareas y corrección de focus:bg-white */
-        [data-theme="${theme}"] input,
-        [data-theme="${theme}"] select,
-        [data-theme="${theme}"] textarea {
-          background-color: var(--mfb-surface) !important;
-          color: var(--mfb-text) !important;
+        [data-theme="${theme}"] .border-zinc-100,
+        [data-theme="${theme}"] .border-zinc-200,
+        [data-theme="${theme}"] .border-zinc-300,
+        [data-theme="${theme}"] .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
           border-color: var(--mfb-border) !important;
         }
-        [data-theme="${theme}"] input:focus,
-        [data-theme="${theme}"] select:focus,
-        [data-theme="${theme}"] textarea:focus,
-        [data-theme="${theme}"] .focus\:bg-white:focus {
-          background-color: var(--mfb-surface) !important;
-          color: var(--mfb-text) !important;
-          border-color: var(--mfb-primary) !important;
-        }
-        [data-theme="${theme}"] select option {
-          background-color: var(--mfb-surface) !important;
-          color: var(--mfb-text) !important;
-        }
-        [data-theme="${theme}"] input::placeholder,
-        [data-theme="${theme}"] textarea::placeholder {
-          color: var(--mfb-muted) !important;
-          opacity: 0.8 !important;
-        }
 
-        /* Etiquetas semánticas y filas seleccionadas en temas oscuros */
-        ${
-          (activeThemePalette as any).isDark || theme.endsWith('-dark') || theme === 'dark'
-            ? `
-        [data-theme="${theme}"] .bg-emerald-50,
-        [data-theme="${theme}"] .bg-emerald-50\/50,
-        [data-theme="${theme}"] .bg-emerald-50\/60,
-        [data-theme="${theme}"] .hover\:bg-emerald-100:hover {
-          background-color: rgba(16, 185, 129, 0.16) !important;
-          color: #6ee7b7 !important;
-          border-color: rgba(16, 185, 129, 0.35) !important;
-        }
-        [data-theme="${theme}"] .bg-emerald-50 *,
-        [data-theme="${theme}"] .text-emerald-700,
-        [data-theme="${theme}"] .text-emerald-800,
-        [data-theme="${theme}"] .text-emerald-900,
-        [data-theme="${theme}"] .text-emerald-950 {
-          color: #6ee7b7 !important;
-        }
-
-        [data-theme="${theme}"] .bg-amber-50,
-        [data-theme="${theme}"] .bg-amber-100,
-        [data-theme="${theme}"] .bg-amber-100\/80 {
-          background-color: rgba(245, 158, 11, 0.16) !important;
-          color: #fcd34d !important;
-          border-color: rgba(245, 158, 11, 0.38) !important;
-        }
-        [data-theme="${theme}"] .bg-amber-50 *,
-        [data-theme="${theme}"] .bg-amber-100 *,
-        [data-theme="${theme}"] .text-amber-700,
-        [data-theme="${theme}"] .text-amber-800,
-        [data-theme="${theme}"] .text-amber-900,
-        [data-theme="${theme}"] .text-amber-950 {
-          color: #fcd34d !important;
-        }
-
-        [data-theme="${theme}"] .bg-rose-50,
-        [data-theme="${theme}"] .hover\:bg-rose-50:hover {
-          background-color: rgba(244, 63, 94, 0.16) !important;
-          color: #fda4af !important;
-          border-color: rgba(244, 63, 94, 0.38) !important;
-        }
-        [data-theme="${theme}"] .bg-rose-50 *,
-        [data-theme="${theme}"] .text-rose-700,
-        [data-theme="${theme}"] .text-rose-800 {
-          color: #fda4af !important;
-        }
-
-        [data-theme="${theme}"] .bg-sky-50 {
-          background-color: rgba(14, 165, 233, 0.18) !important;
-          color: #7dd3fc !important;
-          border-color: rgba(14, 165, 233, 0.4) !important;
-        }
-        [data-theme="${theme}"] .bg-sky-50 *,
-        [data-theme="${theme}"] .text-sky-700,
-        [data-theme="${theme}"] .text-sky-800,
-        [data-theme="${theme}"] .text-sky-900 {
-          color: #7dd3fc !important;
-        }
-
-        [data-theme="${theme}"] .bg-purple-50 {
-          background-color: rgba(168, 85, 247, 0.18) !important;
-          color: #d8b4fe !important;
-          border-color: rgba(168, 85, 247, 0.4) !important;
-        }
-        `
-            : ''
-        }
-
-        /* Impresión limpia de Factura en papel */
         @media print {
-          aside, header, .no-print {
-            display: none !important;
-          }
-          body, .mfb-theme-root {
-            background: #ffffff !important;
-            color: #000000 !important;
-          }
+          aside, header, .no-print { display: none !important; }
+          body, .mfb-theme-root { background: #ffffff !important; color: #000000 !important; }
         }
       `}</style>
 
@@ -2630,7 +2228,9 @@ export default function App() {
           {/* Top Guest Header (Sin rastro de botones de Admin) */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-zinc-200">
             <div className="flex items-center gap-3">
-              <MyFanBoxBrandLogo logoUrl={brandLogoUrl} brandName={brandName} size="lg" />
+              <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm tracking-tight">
+                MFB
+              </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-base font-bold tracking-tight text-zinc-900">{brandName}</span>
@@ -2865,15 +2465,9 @@ export default function App() {
           {/* Brand Header */}
           <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-200">
             <div className="flex items-center gap-2.5">
-              <MyFanBoxBrandLogo
-                logoUrl={brandLogoUrl}
-                brandName={brandName}
-                size="sm"
-                onUploadLogo={(dataUrl) => {
-                  setBrandLogoUrl(dataUrl);
-                  notify('Logo de MyFanBox actualizado');
-                }}
-              />
+              <div className="w-7 h-7 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-bold text-xs tracking-tighter">
+                MFB
+              </div>
               <div>
                 <div className="text-xs font-semibold tracking-tight text-zinc-900 leading-none flex items-center gap-1.5">
                   <span>{brandName} Ops</span>
@@ -3396,19 +2990,7 @@ export default function App() {
                       <Download className="w-3.5 h-3.5" />
                       <span>Exportar CSV</span>
                     </button>
-                    <!--
-                      onClick={() => {
-                        setOrders([]);
-                        setBoughtSupplies({});
-                        setMadeItems({});
-                        notify('Tabla vaciada (0 pedidos). Lista para empezar de cero.');
-                      }}
-                      className="h-7 px-2.5 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-500 hover:text-rose-700 hover:bg-rose-50"
-                      title="Vaciar pedidos guardados en NeonDB"
-                    >
-                      Empezar de 0
-                    </button>
-                    -->
+
                   </div>
                 </div>
 
@@ -3447,32 +3029,19 @@ export default function App() {
                     ))}
                   </select>
 
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <select
-                      value={sizeFilter}
-                      onChange={(e) => setSizeFilter(e.target.value)}
-                      className="h-8 px-2 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 focus:outline-none focus:bg-white focus:border-zinc-900"
-                    >
-                      <option value="ALL">Talla: Todas</option>
-                      {['XS', 'S', 'M', 'L', 'XL', '2XL', 'Única'].map(sz => (
-                        <option key={sz} value={sz}>Talla {sz}</option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={genderFilter}
-                      onChange={(e) => setGenderFilter(e.target.value)}
-                      className="h-8 px-2 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 focus:outline-none focus:bg-white focus:border-zinc-900"
-                    >
-                      <option value="ALL">Corte: Todos</option>
-                      {GARMENT_GENDERS.map(g => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    value={sizeFilter}
+                    onChange={(e) => setSizeFilter(e.target.value)}
+                    className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 focus:outline-none focus:bg-white focus:border-zinc-900"
+                  >
+                    <option value="ALL">Talla: Todas</option>
+                    {['XS', 'S', 'M', 'L', 'XL', '2XL', 'Única'].map(sz => (
+                      <option key={sz} value={sz}>Talla {sz}</option>
+                    ))}
+                  </select>
 
                   <div className="flex items-center justify-between sm:justify-end gap-2">
-                    {(searchQuery || quickStatusFilter !== 'ALL' || payFilter !== 'ALL' || shipFilter !== 'ALL' || productFilter !== 'ALL' || sizeFilter !== 'ALL' || genderFilter !== 'ALL') && (
+                    {(searchQuery || quickStatusFilter !== 'ALL' || payFilter !== 'ALL' || shipFilter !== 'ALL' || productFilter !== 'ALL' || sizeFilter !== 'ALL') && (
                       <button
                         onClick={() => {
                           setSearchQuery('');
@@ -3481,7 +3050,6 @@ export default function App() {
                           setShipFilter('ALL');
                           setProductFilter('ALL');
                           setSizeFilter('ALL');
-                          setGenderFilter('ALL');
                         }}
                         className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-700 hover:bg-zinc-50"
                       >
@@ -3613,14 +3181,7 @@ export default function App() {
                             </td>
 
                             <td className="py-3 px-3 align-top">
-                              <div className="font-medium text-zinc-900 flex items-center gap-1.5 flex-wrap">
-                                <span>{order.customerName}</span>
-                                {order.cedula && (
-                                  <span className="px-1.5 py-0.2 rounded bg-zinc-100 border border-zinc-200 text-[10px] font-mono text-zinc-700">
-                                    C.C. {order.cedula}
-                                  </span>
-                                )}
-                              </div>
+                              <div className="font-medium text-zinc-900">{order.customerName}</div>
                               <div className="text-[11px] text-zinc-500 flex flex-wrap items-center gap-1.5 mt-0.5">
                                 <span>{order.instagram}</span>
                                 <span>·</span>
@@ -3660,9 +3221,6 @@ export default function App() {
                                   <span className="text-zinc-500 truncate max-w-[130px]">· {it.variantName}</span>
                                   <span className="px-1.5 py-0.2 bg-zinc-100 border border-zinc-200 rounded text-[10px] font-semibold text-zinc-800">
                                     {it.size}
-                                  </span>
-                                  <span className="px-1.5 py-0.2 bg-zinc-50 border border-zinc-200 rounded text-[10px] text-zinc-600">
-                                    {it.gender || 'Sin especificar'}
                                   </span>
                                 </div>
                               ))}
@@ -4032,9 +3590,6 @@ export default function App() {
                                 <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
                                   {row.size}
                                 </span>
-                                <span className="ml-1 px-2 py-0.5 rounded bg-zinc-50 border border-zinc-200 text-[10px] text-zinc-600">
-                                  {row.gender || 'Sin especificar'}
-                                </span>
                               </td>
                               <td className="py-2.5 px-4 text-center font-semibold text-zinc-900">{row.orderedQty}</td>
                               <td className="py-2.5 px-4 text-center">
@@ -4168,7 +3723,7 @@ export default function App() {
                                         {it.qty}× {it.productName}
                                       </span>
                                       <div className="text-[11px] text-zinc-500">
-                                        {it.variantName} · Talla <strong>{it.size}</strong> · <span>{it.gender || 'Sin especificar'}</span>
+                                        {it.variantName} · Talla <strong>{it.size}</strong>
                                       </div>
                                     </div>
                                   </label>
@@ -4334,9 +3889,6 @@ export default function App() {
                               <td className="py-3 px-4 font-mono font-semibold text-zinc-900">{order.id}</td>
                               <td className="py-3 px-4">
                                 <div className="font-medium text-zinc-900">{order.customerName}</div>
-                                {order.cedula && (
-                                  <div className="text-[11px] font-mono text-zinc-600">C.C. {order.cedula}</div>
-                                )}
                                 <div className="text-[11px] text-zinc-500 font-mono">{order.phone}</div>
                               </td>
                               <td className="py-3 px-4">
@@ -4449,122 +4001,8 @@ export default function App() {
                 </div>
                 {selectedMapEntry ? (
                   <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-3">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="inline-flex p-0.5 rounded-lg bg-zinc-100 border border-zinc-200 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => setMapEngine('manual-pin')}
-                            className={`px-2.5 py-1 rounded-md font-medium ${mapEngine === 'manual-pin' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'}`}
-                          >
-                            📍 Mover Pin Manualmente
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setMapEngine('gmaps')}
-                            className={`px-2.5 py-1 rounded-md font-medium ${mapEngine === 'gmaps' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600'}`}
-                          >
-                            Google Maps Vista Calle
-                          </button>
-                        </div>
-                        <span className="text-[11px] font-mono text-zinc-500">
-                          Coordenadas: {selectedMapEntry.eta.coords.lat}, {selectedMapEntry.eta.coords.lng}
-                        </span>
-                      </div>
-
-                      {mapEngine === 'manual-pin' ? (
-                        <InteractiveManualPinMap
-                          lat={selectedMapEntry.eta.coords.lat}
-                          lng={selectedMapEntry.eta.coords.lng}
-                          title={`${selectedMapEntry.order.id} · ${selectedMapEntry.order.customerName}`}
-                          subtitle={`${selectedMapEntry.order.address || ''}, ${selectedMapEntry.order.city}`}
-                          heightClass="h-[360px]"
-                          onPinChange={(newLat, newLng) => {
-                            setOrders(prev =>
-                              prev.map(o =>
-                                o.id === selectedMapEntry.order.id
-                                  ? { ...o, lat: newLat, lng: newLng, manualPin: true, addressVerified: true }
-                                  : o
-                              )
-                            );
-                            notify(`Pin manual fijado en ${newLat}, ${newLng}`);
-                          }}
-                        />
-                      ) : (
-                        <div className="rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100 min-h-[360px]">
-                          <iframe
-                            title={`Mapa de ${selectedMapEntry.order.id}`}
-                            className="w-full h-[360px] border-0"
-                            loading="lazy"
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                              selectedMapEntry.order.manualPin && typeof selectedMapEntry.order.lat === 'number'
-                                ? `${selectedMapEntry.order.lat},${selectedMapEntry.order.lng}`
-                                : `${selectedMapEntry.order.address || ''}, ${selectedMapEntry.order.neighborhood || ''}, ${selectedMapEntry.order.city || 'Medellín'}, Colombia`
-                            )}&z=16&output=embed`}
-                          />
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-2.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs">
-                        <div>
-                          <label className="block text-[10px] text-zinc-500 mb-0.5">Latitud Manual</label>
-                          <input
-                            type="number"
-                            step="0.0001"
-                            value={selectedMapEntry.eta.coords.lat}
-                            onChange={(e) => {
-                              const val = parseFloat(e.target.value);
-                              if (!isNaN(val)) {
-                                setOrders(prev =>
-                                  prev.map(o => (o.id === selectedMapEntry.order.id ? { ...o, lat: val, manualPin: true, addressVerified: true } : o))
-                                );
-                              }
-                            }}
-                            className="w-full h-7 px-2 rounded border border-zinc-200 bg-white font-mono"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-zinc-500 mb-0.5">Longitud Manual</label>
-                          <input
-                            type="number"
-                            step="0.0001"
-                            value={selectedMapEntry.eta.coords.lng}
-                            onChange={(e) => {
-                              const val = parseFloat(e.target.value);
-                              if (!isNaN(val)) {
-                                setOrders(prev =>
-                                  prev.map(o => (o.id === selectedMapEntry.order.id ? { ...o, lng: val, manualPin: true, addressVerified: true } : o))
-                                );
-                              }
-                            }}
-                            className="w-full h-7 px-2 rounded border border-zinc-200 bg-white font-mono"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-zinc-500 mb-0.5">Pegar Coordenadas / Link Maps</label>
-                          <input
-                            type="text"
-                            value={mapCoordPaste}
-                            onChange={(e) => {
-                              const txt = e.target.value;
-                              setMapCoordPaste(txt);
-                              const parsed = parseCoordsFromInput(txt);
-                              if (parsed) {
-                                setOrders(prev =>
-                                  prev.map(o =>
-                                    o.id === selectedMapEntry.order.id
-                                      ? { ...o, lat: parsed.lat, lng: parsed.lng, manualPin: true, addressVerified: true }
-                                      : o
-                                  )
-                                );
-                                notify(`Coordenadas aplicadas: ${parsed.lat}, ${parsed.lng}`);
-                              }
-                            }}
-                            placeholder="Ej: 6.2089, -75.5678"
-                            className="w-full h-7 px-2 rounded border border-zinc-200 bg-white font-mono"
-                          />
-                        </div>
-                      </div>
+                    <div className="rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100 min-h-[360px]">
+                      <iframe title={`Mapa de ${selectedMapEntry.order.id}`} className="w-full h-[360px] border-0" loading="lazy" src={`https://maps.google.com/maps?q=${encodeURIComponent(`${selectedMapEntry.order.address || ''}, ${selectedMapEntry.order.neighborhood || ''}, ${selectedMapEntry.order.city || 'Medellín'}, Colombia`)}&z=15&output=embed`} />
                     </div>
                     <div className="space-y-3">
                       <div className="rounded-xl border border-zinc-200 p-3 space-y-2">
@@ -4641,12 +4079,12 @@ export default function App() {
                 const steps = ['Pedido registrado', 'En preparación', 'Empacado', 'Enviado'];
                 return <div className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-8 shadow-sm space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 border-b border-zinc-200 pb-4">
-                    <div><div className="flex items-center gap-2"><MyFanBoxBrandLogo logoUrl={brandLogoUrl} brandName={brandName} size="lg" /><div><h1 className="text-lg font-bold text-zinc-900">{brandName} · FACTURA</h1><p className="text-[11px] text-zinc-500">{collectionName}</p></div></div><p className="text-[11px] text-zinc-400 font-mono mt-2">Pedido {o.id} · Fecha {o.createdAt || '—'}</p></div>
+                    <div><div className="flex items-center gap-2"><div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold">MFB</div><div><h1 className="text-lg font-bold text-zinc-900">{brandName} · FACTURA</h1><p className="text-[11px] text-zinc-500">{collectionName}</p></div></div><p className="text-[11px] text-zinc-400 font-mono mt-2">Pedido {o.id} · Fecha {o.createdAt || '—'}</p></div>
                     <div className="flex flex-wrap gap-2"><span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPayStatusBadgeClass(o.paymentStatus)}`}>Pago: {o.paymentStatus}</span><span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getShipStatusBadgeClass(o.shippingStatus)}`}>Envío: {o.shippingStatus}</span></div>
                   </div>
                   <section className="space-y-2"><div className="flex items-center justify-between gap-2"><h2 className="text-sm font-semibold text-zinc-900">Seguimiento del pedido</h2><span className="text-xs text-sky-700">{eta.etaLabel} · {eta.windowDates}</span></div><div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{steps.map((step, idx) => <div key={step} className={`rounded-xl border p-3 text-xs ${currentStep >= idx + 1 ? 'border-emerald-200 bg-emerald-50/50' : 'border-zinc-200 bg-zinc-50'}`}><div className="font-semibold text-zinc-900">{idx + 1}. {step}</div><div className="text-[10px] text-zinc-500 mt-1">{currentStep >= idx + 1 ? 'Completado' : 'Pendiente'}</div></div>)}</div></section>
-                  <section className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 space-y-1 text-xs"><h2 className="font-semibold text-zinc-900">Datos del cliente y entrega</h2><div className="text-zinc-700 font-medium">{o.customerName} {o.cedula ? `· C.C. ${o.cedula}` : ''}</div><div className="text-zinc-600">{o.address || 'Dirección pendiente'} · {o.neighborhood || 'Zona urbana'} · {o.city}</div><div className="text-zinc-500">Código postal: {o.postalCode || '—'} · {o.carrier}{o.trackingNumber ? ` · Guía ${o.trackingNumber}` : ''} · Envío GRATIS</div><div className="pt-2 text-[11px] text-zinc-500">Origen: {originHub} · Distancia aproximada: {eta.distanceKm} km · Coordenadas: {eta.coords.lat}, {eta.coords.lng}</div></section>
-                  <section className="border border-zinc-200 rounded-xl overflow-hidden"><table className="w-full text-left text-xs"><thead className="bg-zinc-50 text-zinc-500"><tr><th className="p-3">Producto</th><th className="p-3">Variante</th><th className="p-3">Talla / Corte</th><th className="p-3 text-center">Cant.</th><th className="p-3 text-right">Subtotal</th></tr></thead><tbody className="divide-y divide-zinc-200">{(o.items || []).map((item, idx) => <tr key={item.id || idx}><td className="p-3 font-semibold text-zinc-900">{item.productName}</td><td className="p-3 text-zinc-600">{item.variantName}</td><td className="p-3">{item.size} · <span className="text-zinc-500">{item.gender || 'Sin especificar'}</span></td><td className="p-3 text-center">{item.qty}</td><td className="p-3 text-right font-medium">{formatCOP((Number(item.unitPrice) || 0) * (Number(item.qty) || 0))}</td></tr>)}</tbody></table></section>
+                  <section className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 space-y-1 text-xs"><h2 className="font-semibold text-zinc-900">Datos de entrega</h2><div className="text-zinc-700">{o.customerName}</div><div className="text-zinc-600">{o.address || 'Dirección pendiente'} · {o.neighborhood || 'Zona urbana'} · {o.city}</div><div className="text-zinc-500">Código postal: {o.postalCode || '—'} · {o.carrier}{o.trackingNumber ? ` · Guía ${o.trackingNumber}` : ''} · Envío GRATIS</div><div className="pt-2 text-[11px] text-zinc-500">Origen: {originHub} · Distancia aproximada: {eta.distanceKm} km · Envío GRATIS</div></section>
+                  <section className="border border-zinc-200 rounded-xl overflow-hidden"><table className="w-full text-left text-xs"><thead className="bg-zinc-50 text-zinc-500"><tr><th className="p-3">Producto</th><th className="p-3">Variante</th><th className="p-3">Talla</th><th className="p-3 text-center">Cant.</th><th className="p-3 text-right">Subtotal</th></tr></thead><tbody className="divide-y divide-zinc-200">{(o.items || []).map((item, idx) => <tr key={item.id || idx}><td className="p-3 font-semibold text-zinc-900">{item.productName}</td><td className="p-3 text-zinc-600">{item.variantName}</td><td className="p-3">{item.size}</td><td className="p-3 text-center">{item.qty}</td><td className="p-3 text-right font-medium">{formatCOP((Number(item.unitPrice) || 0) * (Number(item.qty) || 0))}</td></tr>)}</tbody></table></section>
                   <div className="flex flex-col sm:flex-row gap-3 justify-between"><div className="flex-1">{pending > 0 && isOrderActive(o) ? <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900"><strong>Saldo pendiente: {formatCOP(pending)}</strong><p className="mt-1 text-[11px]">Para despachar el pedido debe estar cancelado el 100%.</p></div> : <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-900"><strong>¡Gracias por tu compra!</strong> Tu pedido está al día.</div>}<button onClick={() => window.print()} className="no-print mt-2 h-8 px-3 rounded-lg border border-zinc-200 text-xs font-semibold">Descargar / Imprimir PDF</button></div><div className="w-full sm:w-72 rounded-xl bg-zinc-50 border border-zinc-200 p-4 space-y-2 text-xs"><div className="flex justify-between"><span>Subtotal</span><strong>{formatCOP(subtotal)}</strong></div>{(o.discount || 0) > 0 && <div className="flex justify-between text-emerald-700"><span>Descuento</span><strong>-{formatCOP(o.discount)}</strong></div>}<div className="border-t border-zinc-200 pt-2 flex justify-between text-sm font-bold"><span>Total</span><span>{formatCOP(o.total)}</span></div><div className="flex justify-between text-emerald-700"><span>Pagado</span><strong>{formatCOP(paid)}</strong></div><div className="flex justify-between text-amber-700"><span>Pendiente</span><strong>{formatCOP(pending)}</strong></div></div></div>
                   <p className="text-[10px] text-zinc-400 font-mono break-all">Código privado: {o.uuid}</p>
                 </div>;
@@ -4907,45 +4345,10 @@ export default function App() {
                 <p className="text-xs text-zinc-500 mt-1">Parámetros operativos y visuales editables sin tocar el código. Los cambios se guardan en NeonDB y se comparten entre dispositivos.</p>
               </div>
               <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-4">
-                <h2 className="text-sm font-semibold text-zinc-900">Identidad y Logo de MyFanBox</h2>
+                <h2 className="text-sm font-semibold text-zinc-900">Identidad de la tienda</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label className="text-xs text-zinc-600 space-y-1"><span>Nombre de marca</span><input value={brandName} onChange={e => setBrandName(e.target.value)} className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900" /></label>
                   <label className="text-xs text-zinc-600 space-y-1"><span>Nombre de colección</span><input value={collectionName} onChange={e => setCollectionName(e.target.value)} className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900" /></label>
-                </div>
-                <div className="pt-2 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <MyFanBoxBrandLogo
-                      logoUrl={brandLogoUrl}
-                      brandName={brandName}
-                      size="lg"
-                      onUploadLogo={(dataUrl) => {
-                        setBrandLogoUrl(dataUrl);
-                        notify('Logo de MyFanBox cargado');
-                      }}
-                    />
-                    <div className="text-xs">
-                      <div className="font-semibold text-zinc-900">Logo Oficial de MyFanBox</div>
-                      <p className="text-[11px] text-zinc-500">Haz clic sobre el logo para subir una imagen (.png / .jpg / .svg) o pega una URL de imagen.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-1 max-w-md">
-                    <input
-                      type="text"
-                      value={brandLogoUrl}
-                      onChange={(e) => setBrandLogoUrl(e.target.value)}
-                      placeholder="Pegar URL del logo o subir haciendo clic en el emblema..."
-                      className="flex-1 h-8 px-2.5 text-xs rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900"
-                    />
-                    {brandLogoUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setBrandLogoUrl('')}
-                        className="h-8 px-2.5 rounded-lg border border-zinc-200 text-xs text-rose-600 hover:bg-rose-50"
-                      >
-                        Restaurar emblema
-                      </button>
-                    )}
-                  </div>
                 </div>
               </section>
               <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 space-y-1">
@@ -4970,30 +4373,7 @@ export default function App() {
                   </button>)}
                 </div>
               </section>
-              <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div><h2 className="text-sm font-semibold text-zinc-900">Creador de temas propios</h2><p className="text-xs text-zinc-500 mt-1">Define una paleta coherente. Los cambios se sincronizan con NeonDB.</p></div>
-                  <button type="button" onClick={() => setTheme('custom')} className="rounded-lg px-3 py-2 text-xs font-semibold bg-zinc-900 text-white">Aplicar mi tema</button>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    ['background','Fondo general'],['surface','Tarjetas y paneles'],['surfaceAlt','Superficie secundaria'],['text','Texto principal'],
-                    ['muted','Texto secundario'],['primary','Color de acción'],['primaryText','Texto sobre acciones'],['border','Bordes y separadores']
-                  ].map(([key,label]) => <label key={key} className="flex items-center gap-2 rounded-xl border border-zinc-200 p-2.5 text-xs text-zinc-700">
-                    <input type="color" value={customTheme[key]} onChange={e => setCustomTheme(prev => ({ ...prev, [key]: e.target.value }))} className="w-9 h-9 rounded-lg border-0 bg-transparent cursor-pointer" />
-                    <span className="min-w-0"><span className="block font-semibold">{label}</span><span className="block font-mono text-[10px] text-zinc-500">{customTheme[key]}</span></span>
-                  </label>)}
-                </div>
-                <div className="rounded-xl p-4 border space-y-2" style={{ background: customTheme.background, color: customTheme.text, borderColor: customTheme.border }}>
-                  <div className="rounded-lg border p-3" style={{ background: customTheme.surface, borderColor: customTheme.border }}><div className="font-semibold text-sm">Vista previa de MyFanBox</div><div className="text-xs mt-1" style={{ color: customTheme.muted }}>Texto secundario · pedidos · inventario</div><button type="button" onClick={() => setTheme('custom')} className="mt-3 rounded-lg px-3 py-2 text-xs font-semibold" style={{ background: customTheme.primary, color: customTheme.primaryText }}>Acción principal</button></div>
-                  <div className="text-[10px]" style={{ color: customTheme.muted }}>Vista previa de superficies, tipografía y acento.</div>
-                </div>
-                <div className="flex flex-wrap gap-2 text-[11px]">
-                  <span className={`rounded-lg px-2.5 py-1.5 border ${getContrastRatio(customTheme.text, customTheme.surface) >= 4.5 ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-amber-300 bg-amber-50 text-amber-900'}`}>Texto / tarjeta: {getContrastRatio(customTheme.text, customTheme.surface).toFixed(2)}:1 {getContrastRatio(customTheme.text, customTheme.surface) >= 4.5 ? '· Buen contraste' : '· Conviene aumentarlo'}</span>
-                  <span className={`rounded-lg px-2.5 py-1.5 border ${getContrastRatio(customTheme.primaryText, customTheme.primary) >= 4.5 ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-amber-300 bg-amber-50 text-amber-900'}`}>Botón: {getContrastRatio(customTheme.primaryText, customTheme.primary).toFixed(2)}:1 {getContrastRatio(customTheme.primaryText, customTheme.primary) >= 4.5 ? '· Buen contraste' : '· Conviene aumentarlo'}</span>
-                </div>
-                <div className="flex flex-wrap gap-2"><button type="button" onClick={() => setCustomTheme({ background:'#F4F1EA', surface:'#FFFFFF', surfaceAlt:'#E9E4DA', text:'#24211D', muted:'#625C53', primary:'#315C52', primaryText:'#FFFFFF', border:'#CFC7B9' })} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs">Restaurar paleta equilibrada</button><button type="button" onClick={() => setTheme('custom')} className="rounded-lg bg-zinc-900 text-white px-3 py-2 text-xs font-semibold">Usar este tema</button></div>
-              </section>
+
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
                 <span>{isSavingData ? 'Guardando configuración…' : 'La configuración se sincroniza automáticamente con NeonDB.'}</span>
                 <button onClick={handlePushAllToNeon} disabled={isSavingData} className="h-8 px-3 rounded-lg bg-zinc-900 text-white font-semibold disabled:opacity-50">Guardar ahora</button>
@@ -5048,7 +4428,7 @@ export default function App() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block font-medium text-zinc-700 mb-1">Nombre Cliente *</label>
                     <input
@@ -5058,16 +4438,6 @@ export default function App() {
                       onChange={(e) => setDraftCustomer({ ...draftCustomer, customerName: e.target.value })}
                       placeholder="Ej: Valentina Gómez"
                       className="w-full h-9 px-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-medium text-zinc-700 mb-1">Cédula / Documento *</label>
-                    <input
-                      type="text"
-                      value={draftCustomer.cedula || ''}
-                      onChange={(e) => setDraftCustomer({ ...draftCustomer, cedula: e.target.value })}
-                      placeholder="Ej: 1037645890"
-                      className="w-full h-9 px-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 font-mono"
                     />
                   </div>
                   <div>
@@ -5086,10 +4456,11 @@ export default function App() {
                       type="text"
                       value={draftCustomer.phone}
                       onChange={(e) => setDraftCustomer({ ...draftCustomer, phone: e.target.value })}
-                      placeholder="+57 300 123 4567"
+                      placeholder="+57 300 123 4567 / +54 9 11 1234 5678 / +1 202 555 0123"
                       autoComplete="tel"
                       className="w-full h-9 px-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 font-mono"
                     />
+                    <p className="mt-1 text-[10px] text-zinc-500">Para Colombia puedes escribir 10 dígitos o +57. Para otros países incluye su prefijo (+54, +1, +34, etc.).</p>
                   </div>
                 </div>
 
@@ -5242,87 +4613,16 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* Mapa con Pin de Ubicación Manual (Clic o arrastrar marcador + Coordenadas) */}
-                  <div className="pt-2 border-t border-zinc-200 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-[11px] font-semibold text-zinc-800 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Poner Pin de Ubicación Manualmente (Haz clic en la calle o arrastra el marcador)</span>
-                      </span>
-                      <span className="font-mono text-[11px] text-zinc-500">
-                        📍 {draftCustomer.lat}, {draftCustomer.lng}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <input
-                        type="text"
-                        value={modalCoordPaste}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setModalCoordPaste(val);
-                          const parsed = parseCoordsFromInput(val);
-                          if (parsed) {
-                            setDraftCustomer(prev => ({
-                              ...prev,
-                              lat: parsed.lat,
-                              lng: parsed.lng,
-                              manualPin: true,
-                              addressVerified: true
-                            }));
-                          }
-                        }}
-                        placeholder="Pegar link Google Maps o lat, lng..."
-                        className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={draftCustomer.lat}
-                        onChange={(e) =>
-                          setDraftCustomer(prev => ({
-                            ...prev,
-                            lat: parseFloat(e.target.value) || 0,
-                            manualPin: true,
-                            addressVerified: true
-                          }))
-                        }
-                        placeholder="Latitud"
-                        className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={draftCustomer.lng}
-                        onChange={(e) =>
-                          setDraftCustomer(prev => ({
-                            ...prev,
-                            lng: parseFloat(e.target.value) || 0,
-                            manualPin: true,
-                            addressVerified: true
-                          }))
-                        }
-                        placeholder="Longitud"
-                        className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
-                      />
-                    </div>
-
-                    <InteractiveManualPinMap
-                      lat={draftCustomer.lat}
-                      lng={draftCustomer.lng}
-                      title={draftCustomer.customerName || 'Cliente MyFanBox'}
-                      subtitle={`${draftCustomer.address || ''}, ${draftCustomer.city}`}
-                      heightClass="h-48"
-                      onPinChange={(newLat, newLng) => {
-                        setDraftCustomer(prev => ({
-                          ...prev,
-                          lat: newLat,
-                          lng: newLng,
-                          manualPin: true,
-                          addressVerified: true
-                        }));
-                        setModalCoordPaste(`${newLat}, ${newLng}`);
-                      }}
+                  {/* Vista Previa Interactiva de Google Maps en Vivo */}
+                  <div className="rounded-xl overflow-hidden border border-zinc-200 bg-white">
+                    <iframe
+                      title="Vista Previa Google Maps Pedido"
+                      className="w-full h-44 border-0"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                        `${draftCustomer.address || ''}, ${draftCustomer.neighborhood || ''}, ${draftCustomer.city || 'Medellín'}, Colombia`
+                      )}&z=15&output=embed`}
                     />
                   </div>
                 </div>
@@ -5334,7 +4634,7 @@ export default function App() {
                   2. Prendas del Catálogo Oficial
                 </h3>
                 <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200 grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-4">
                     <label className="block text-[11px] text-zinc-500 mb-1">Referencia</label>
                     <select
                       value={selProdId}
@@ -5355,7 +4655,7 @@ export default function App() {
                     </select>
                   </div>
 
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-4">
                     <label className="block text-[11px] text-zinc-500 mb-1">Variante</label>
                     <select
                       value={selVarId}
@@ -5380,21 +4680,6 @@ export default function App() {
                       {(catalog.find(c => c.id === selProdId)?.sizes || ['Única']).map(sz => (
                         <option key={sz} value={sz}>
                           {sz}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] text-zinc-500 mb-1">Corte / Género</label>
-                    <select
-                      value={selGender}
-                      onChange={(e) => setSelGender(e.target.value)}
-                      className="w-full h-8 px-2 bg-white border border-zinc-200 rounded-lg font-medium"
-                    >
-                      {GARMENT_GENDERS.map(g => (
-                        <option key={g} value={g}>
-                          {g}
                         </option>
                       ))}
                     </select>
@@ -5434,19 +4719,7 @@ export default function App() {
                           <span className="text-zinc-500">· {it.variantName}</span>{' '}
                           <span className="px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-[10px] font-semibold">
                             Talla {it.size}
-                          </span>{' '}
-                          <select
-                            value={it.gender || 'Sin especificar'}
-                            onChange={(e) => {
-                              const newGender = e.target.value;
-                              setDraftItems(prev => prev.map((row, rIdx) => (rIdx === idx ? { ...row, gender: newGender } : row)));
-                            }}
-                            className="h-6 px-1.5 rounded bg-zinc-50 border border-zinc-200 text-[10px] font-medium"
-                          >
-                            {GARMENT_GENDERS.map(g => (
-                              <option key={g} value={g}>{g}</option>
-                            ))}
-                          </select>
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-semibold">{formatCOP(it.unitPrice * it.qty)}</span>
@@ -5646,6 +4919,104 @@ export default function App() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* BOTÓN FLOTANTE PARA ABRIR EL EDITOR VISUAL EN CUALQUIER PESTAÑA */}
+      {isAdmin && (
+        <button
+          type="button"
+          onClick={() => setVisualEditorOpen(prev => !prev)}
+          className="no-print fixed bottom-4 left-4 z-50 h-10 px-3.5 rounded-xl bg-zinc-900 text-white text-xs font-semibold shadow-lg flex items-center gap-2 cursor-pointer"
+        >
+          <Palette className="w-4 h-4" />
+          <span>{visualEditorOpen ? 'Cerrar Editor Visual' : '🎨 Editor Visual de Tema'}</span>
+        </button>
+      )}
+
+      {/* PANEL FLOTANTE DE EDICIÓN VISUAL EN VIVO (CAMBIA COLORES, HOVERS Y SELECCIÓN) */}
+      {visualEditorOpen && isAdmin && (
+        <div className="no-print fixed bottom-16 left-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-2xl space-y-3 text-xs">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2.5">
+            <div>
+              <h3 className="font-bold text-sm text-zinc-900">🎨 Editor Visual en Vivo</h3>
+              <p className="text-[11px] text-zinc-500">Cambia colores, hovers y selección mientras ves tu tabla</p>
+            </div>
+            <button onClick={() => setVisualEditorOpen(false)} className="p-1 rounded-lg hover:bg-zinc-100 cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* 1. Elegir plantilla base para editar */}
+          <div>
+            <label className="block text-[11px] font-semibold text-zinc-500 mb-1">
+              Cargar base de un tema para editarlo:
+            </label>
+            <select
+              value={theme}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setTheme(nextId);
+                if (THEME_PALETTES[nextId]) {
+                  setCustomTheme({ ...activeThemePalette, ...THEME_PALETTES[nextId] });
+                }
+              }}
+              className="w-full h-8 px-2.5 rounded-lg border border-zinc-200 text-xs font-medium cursor-pointer"
+            >
+              {EYE_CARE_THEMES.map(t => (
+                <option key={t.id} value={t.id}>{t.name} — {t.desc}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. Los 12 controles de color incluyendo HOVER y SELECCIÓN */}
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              ['background', 'Fondo Página'],
+              ['surface', 'Tarjetas / Tabla'],
+              ['surfaceAlt', 'Barras / Filtros'],
+              ['border', 'Bordes / Líneas'],
+              ['hover', '🔥 Fondo Hover (Cursor)'],
+              ['hoverText', '🔥 Texto Hover (Cursor)'],
+              ['selectedBg', '✨ Fondo Seleccionado'],
+              ['selectedText', '✨ Texto Seleccionado'],
+              ['primary', 'Botón Principal'],
+              ['primaryText', 'Texto Botón Principal'],
+              ['text', 'Texto Principal'],
+              ['muted', 'Texto Secundario']
+            ].map(([key, label]) => (
+              <label key={key} className="flex items-center gap-2 p-2 rounded-xl border border-zinc-200 cursor-pointer hover:bg-zinc-50">
+                <input
+                  type="color"
+                  value={(activeThemePalette as any)[key] || '#1C232D'}
+                  onChange={(e) => updateVisualThemeColor(key, e.target.value)}
+                  className="w-7 h-7 rounded border-0 bg-transparent cursor-pointer shrink-0"
+                />
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-semibold text-zinc-900 truncate">{label}</span>
+                  <span className="block font-mono text-[10px] text-zinc-500">{(activeThemePalette as any)[key]}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+
+          {/* 3. Zona de prueba interactiva para probar el cursor en vivo */}
+          <div className="p-3 rounded-xl border border-zinc-200 bg-zinc-50 space-y-2">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+              Zona de Prueba (Pasa el mouse aquí)
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button type="button" className="h-8 px-3 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium cursor-pointer">
+                Pasa el cursor (Hover)
+              </button>
+              <button type="button" className="h-8 px-3 rounded-lg mfb-selected border text-xs font-semibold">
+                Fila Seleccionada
+              </button>
+              <button type="button" className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-semibold">
+                Botón Principal
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
