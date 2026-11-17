@@ -91,6 +91,418 @@ const GARMENT_GENDERS = [
 
 const ALL_GARMENT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
 
+const OFFICIAL_CATALOG_FALLBACK = [
+  {
+    "id": "cat-1",
+    "code": "TROPICOQUETA",
+    "name": "Hoodie Tropicoqueta",
+    "category": "Prenda",
+    "basePrice": 140000,
+    "unitCost": 66000,
+    "blankName": "Hoodie Base Beige (Sin estampar)",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v1-std",
+        "name": "Estándar",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": false,
+        "needsGlitterVinyl": false
+      },
+      {
+        "id": "v1-brillos",
+        "name": "Con Brillos (+$10.000)",
+        "extraPrice": 10000,
+        "extraCost": 3500,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": false
+      }
+    ]
+  },
+  {
+    "id": "cat-2",
+    "code": "STAR-HOODIE",
+    "name": "Star Hoodie",
+    "category": "Prenda",
+    "basePrice": 140000,
+    "unitCost": 68000,
+    "blankName": "Hoodie Base Negro (Sin estampar)",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v2-std",
+        "name": "Estrella de Brillos (Estándar)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": false
+      },
+      {
+        "id": "v2-extra",
+        "name": "Con Brillos Extra (+$10.000)",
+        "extraPrice": 10000,
+        "extraCost": 3500,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": false
+      }
+    ]
+  },
+  {
+    "id": "cat-3",
+    "code": "LATINA-CROP",
+    "name": "Latina Croptop",
+    "category": "Prenda",
+    "basePrice": 80000,
+    "unitCost": 32000,
+    "blankName": "Croptop Base",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v3-crema",
+        "name": "Blanco/Crema (Congas)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Blanco/Crema",
+        "needsRhinestones": false,
+        "needsGlitterVinyl": false
+      },
+      {
+        "id": "v3-negro",
+        "name": "Negro (Latina Foreva)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Negro",
+        "needsRhinestones": false,
+        "needsGlitterVinyl": false
+      }
+    ]
+  },
+  {
+    "id": "cat-4",
+    "code": "NMADST",
+    "name": "NMADST (Raglan \"No me arrepiento de sentir tanto\")",
+    "category": "Prenda",
+    "basePrice": 90000,
+    "unitCost": 41000,
+    "blankName": "Camiseta Raglan Blanca / Mangas Negras",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v4-azul",
+        "name": "Pedrería Mangas + Vinilo Escarchado Azul",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v4-negro",
+        "name": "Pedrería Mangas + Vinilo Escarchado Negro",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Negro Escarchado"
+      }
+    ]
+  },
+  {
+    "id": "cat-5",
+    "code": "SPARKLY",
+    "name": "Sparkly Oversized Unisex",
+    "category": "Prenda",
+    "basePrice": 90000,
+    "unitCost": 43000,
+    "blankName": "Camiseta Oversized Unisex Negra",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v5-mun-neg",
+        "name": "Muñeca + Pedrería Negra (Vinilo Azul)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v5-mun-pla",
+        "name": "Muñeca + Pedrería Plateada (Vinilo Azul)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v5-fir-neg",
+        "name": "Firma Karol G + Pedrería Negra (Vinilo Azul)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v5-fir-pla",
+        "name": "Firma Karol G + Pedrería Plateada (Vinilo Azul)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsRhinestones": true,
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      }
+    ]
+  },
+  {
+    "id": "cat-6",
+    "code": "CANTAR-CORA",
+    "name": "Cantar con Cora Croptop",
+    "category": "Prenda",
+    "basePrice": 85000,
+    "unitCost": 35000,
+    "blankName": "Croptop Base",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v6-celeste",
+        "name": "Celeste (\"Still love you\")",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Celeste",
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v6-blanco",
+        "name": "Blanco (\"Matadora\")",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Blanco",
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      },
+      {
+        "id": "v6-negro",
+        "name": "Negro (\"Bby Wow\")",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "blankOverride": "Croptop Base Negro",
+        "needsGlitterVinyl": true,
+        "vinylColor": "Azul Escarchado"
+      }
+    ]
+  },
+  {
+    "id": "cat-7",
+    "code": "CD-NFC",
+    "name": "Llavero Mini CD (Con NFC)",
+    "category": "Accesorio",
+    "basePrice": 30000,
+    "unitCost": 9500,
+    "blankName": "Caja Acrílica Mini CD + Herraje Estrella",
+    "sizes": [
+      "Única"
+    ],
+    "variants": [
+      {
+        "id": "v7-msb",
+        "name": "Mañana Será Bonito (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-bs",
+        "name": "Bichota Season (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-kg",
+        "name": "KG0516 (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-ocean",
+        "name": "Ocean (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-unstop",
+        "name": "Unstoppable (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      },
+      {
+        "id": "v7-tropi",
+        "name": "Tropicoqueta (Con NFC)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": true
+      }
+    ]
+  },
+  {
+    "id": "cat-8",
+    "code": "CD-QR",
+    "name": "Llavero Mini CD (Sin NFC / QR)",
+    "category": "Accesorio",
+    "basePrice": 28000,
+    "unitCost": 7200,
+    "blankName": "Caja Acrílica Mini CD + Herraje Estrella",
+    "sizes": [
+      "Única"
+    ],
+    "variants": [
+      {
+        "id": "v8-msb",
+        "name": "Mañana Será Bonito (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-bs",
+        "name": "Bichota Season (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-kg",
+        "name": "KG0516 (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-ocean",
+        "name": "Ocean (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-unstop",
+        "name": "Unstoppable (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      },
+      {
+        "id": "v8-tropi",
+        "name": "Tropicoqueta (Sin NFC / QR)",
+        "extraPrice": 0,
+        "extraCost": 0,
+        "needsNFC": false
+      }
+    ]
+  },
+  {
+    "id": "cat-9",
+    "code": "DTF-FANBOX",
+    "name": "Nueva DTF Fanbox (Kit Personaliza tú mismx)",
+    "category": "Accesorio",
+    "basePrice": 30000,
+    "unitCost": 11000,
+    "blankName": "Cajita Fanbox + Plancha Parches DTF",
+    "sizes": [
+      "Única"
+    ],
+    "variants": [
+      {
+        "id": "v9-kit",
+        "name": "Kit Parches DTF para Planchar",
+        "extraPrice": 0,
+        "extraCost": 0
+      }
+    ]
+  },
+  {
+    "id": "cat-10",
+    "code": "CUSTOM",
+    "name": "Prenda Personalizada (\"Idea en mente\")",
+    "category": "Prenda",
+    "basePrice": 110000,
+    "unitCost": 52000,
+    "blankName": "Prenda Base Custom (Según diseño)",
+    "sizes": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": [
+      {
+        "id": "v10-tee",
+        "name": "Camiseta Personalizada desde cero",
+        "extraPrice": 0,
+        "extraCost": 0
+      },
+      {
+        "id": "v10-hoodie",
+        "name": "Hoodie Personalizado desde cero (+$35.000)",
+        "extraPrice": 35000,
+        "extraCost": 18000
+      }
+    ]
+  }
+];
+
+
 // ============================================================================
 // 1.0 SANITIZADOR PROFUNDO ANTI-ERROR #31 DE REACT (Convierte {id, label, badge, dot} a String)
 // ============================================================================
@@ -1083,6 +1495,9 @@ export default function App() {
   // Navigation & UI state
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'shipping' | 'map' | 'costs' | 'neondb' | 'config' | 'details' | 'secret-login'
   const [invSubtab, setInvSubtab] = useState('buy'); // 'buy' | 'make' | 'pack'
+  const [invShowOnlyOrdered, setInvShowOnlyOrdered] = useState(false);
+  const [invSizeFilter, setInvSizeFilter] = useState('ALL');
+  const [invCategoryFilter, setInvCategoryFilter] = useState('ALL');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -1877,12 +2292,21 @@ export default function App() {
     };
   }, [orders, catalog]);
 
-  // A. ¿QUÉ TOCA COMPRAR? (Prendas base en blanco + Insumos de pedrería, vinilo escarchado y chips NFC)
+  // A. ¿QUÉ TOCA COMPRAR? (Pre-poblado con TODAS las remeras, hoodies, croptops y accesorios en TODAS las tallas XS-2XL)
   const shoppingNeeds = useMemo(() => {
     const activeOrders = orders.filter(isOrderActive);
-    const map = {};
+    const effectiveCatalog = catalog.length > 0 ? catalog : OFFICIAL_CATALOG_FALLBACK;
+    const map: Record<string, any> = {};
+    const SIZE_ORDER: Record<string, number> = { XS: 1, S: 2, M: 3, L: 4, XL: 5, '2XL': 6, 'Única': 7 };
+    const CAT_ORDER: Record<string, number> = {
+      'Prenda en Blanco': 1,
+      'Prenda Base': 2,
+      'Base Accesorio': 3,
+      'Insumo Taller': 4,
+      'Insumo Electrónico': 5
+    };
 
-    const addRequirement = (blankName, sizeOrSpec, categoryLabel, qty) => {
+    const ensureRow = (blankName: string, sizeOrSpec: string, categoryLabel: string, refName = '') => {
       const key = `${blankName}___${sizeOrSpec}`;
       if (!map[key]) {
         map[key] = {
@@ -1890,87 +2314,232 @@ export default function App() {
           blankName,
           sizeOrSpec,
           categoryLabel,
-          required: 0
+          refNames: refName ? [refName] : [],
+          required: 0,
+          genderBreakdown: { Femenino: 0, Masculino: 0, 'Sin especificar': 0 }
         };
+      } else if (refName && !map[key].refNames.includes(refName)) {
+        map[key].refNames.push(refName);
       }
-      map[key].required += qty;
+      return map[key];
     };
 
+    // 1. Pre-poblar TODAS las prendas y accesorios del catálogo con todas sus tallas posibles (XS, S, M, L, XL, 2XL)
+    effectiveCatalog.forEach((prod: any) => {
+      const isAcc =
+        String(prod.category || '').toLowerCase().includes('accesorio') ||
+        String(prod.name || '').toLowerCase().includes('llavero') ||
+        String(prod.name || '').toLowerCase().includes('fanbox') ||
+        String(prod.name || '').toLowerCase().includes('parche');
+      const categoryLabel = isAcc ? 'Base Accesorio' : 'Prenda en Blanco';
+      const sizesToCreate = isAcc
+        ? (Array.isArray(prod.sizes) && prod.sizes.length > 0 ? prod.sizes : ['Única'])
+        : ALL_GARMENT_SIZES;
+
+      const variants = Array.isArray(prod.variants) && prod.variants.length > 0 ? prod.variants : [{}];
+      variants.forEach((variant: any) => {
+        const blankTitle = variant?.blankOverride || prod.blankName || `${prod.name} (En blanco)`;
+        sizesToCreate.forEach((sz: string) => {
+          ensureRow(blankTitle, sz, categoryLabel, prod.name);
+        });
+      });
+    });
+
+    // Pre-poblar también los insumos fijos de taller
+    ensureRow('Insumo: Kit Pedrería / Brillos Termoadhesivos', 'Paquete x Prenda', 'Insumo Taller', 'Prendas con pedrería / brillos');
+    ensureRow('Insumo: Vinilo Textil (Azul Escarchado)', 'Corte Estampado', 'Insumo Taller', 'Estampado vinilo azul');
+    ensureRow('Insumo: Vinilo Textil (Negro Escarchado)', 'Corte Estampado', 'Insumo Taller', 'Estampado vinilo negro');
+    ensureRow('Insumo: Chip Sticker NFC Programable', 'Unidad NFC', 'Insumo Electrónico', 'Llavero Mini CD (Con NFC)');
+
+    // 2. Sumar las cantidades reales pedidas en los pedidos activos
     activeOrders.forEach(order => {
-      order.items.forEach(item => {
-        const prod = catalog.find(c => c.id === item.productId);
+      (order.items || []).forEach((item: any) => {
+        const qty = Math.max(1, Number(item.qty) || 1);
+        const prod = effectiveCatalog.find((c: any) => c.id === item.productId || c.name === item.productName);
+        const sizeClean = item.size || 'M';
+        const genderClean = GARMENT_GENDERS.includes(item.gender) ? item.gender : 'Sin especificar';
+
         if (!prod) {
-          addRequirement(item.productName, item.size, 'Prenda Base', item.qty);
+          const r = ensureRow(item.productName || 'Prenda Base', sizeClean, 'Prenda en Blanco');
+          r.required += qty;
+          r.genderBreakdown[genderClean] = (r.genderBreakdown[genderClean] || 0) + qty;
           return;
         }
-        const variant = prod.variants.find(v => v.id === item.variantId || v.name === item.variantName) || prod.variants[0] || {};
+
+        const variant =
+          (prod.variants || []).find((v: any) => v.id === item.variantId || v.name === item.variantName) ||
+          prod.variants?.[0] ||
+          {};
+        const isAcc =
+          String(prod.category || '').toLowerCase().includes('accesorio') ||
+          String(prod.name || '').toLowerCase().includes('llavero') ||
+          String(prod.name || '').toLowerCase().includes('fanbox') ||
+          String(prod.name || '').toLowerCase().includes('parche');
         const blankTitle = variant.blankOverride || prod.blankName || `${prod.name} (En blanco)`;
-        const genderSpec = item.gender && item.gender !== 'Sin especificar' ? `${item.size} · ${item.gender}` : item.size;
+        const targetSize = isAcc ? 'Única' : sizeClean;
 
-        addRequirement(blankTitle, genderSpec, prod.category === 'Prenda' ? 'Prenda en Blanco' : 'Base Accesorio', item.qty);
+        const row = ensureRow(blankTitle, targetSize, isAcc ? 'Base Accesorio' : 'Prenda en Blanco', prod.name);
+        row.required += qty;
+        row.genderBreakdown[genderClean] = (row.genderBreakdown[genderClean] || 0) + qty;
 
-        // Additional supplies required
-        if (variant.needsRhinestones || item.variantName.toLowerCase().includes('brillos') || item.variantName.toLowerCase().includes('pedrería')) {
-          addRequirement('Insumo: Kit Pedrería / Brillos Termoadhesivos', 'Paquete x Prenda', 'Insumo Taller', item.qty);
+        // Insumos adicionales requeridos por la prenda
+        const vNameLower = String(item.variantName || variant.name || '').toLowerCase();
+        if (variant.needsRhinestones || vNameLower.includes('brillos') || vNameLower.includes('pedrería')) {
+          const rKit = ensureRow('Insumo: Kit Pedrería / Brillos Termoadhesivos', 'Paquete x Prenda', 'Insumo Taller');
+          rKit.required += qty;
         }
         if (variant.needsGlitterVinyl) {
-          addRequirement(`Insumo: Vinilo Textil (${variant.vinylColor || 'Escarchado'})`, 'Corte Estampado', 'Insumo Taller', item.qty);
+          const vColor = variant.vinylColor || 'Escarchado';
+          const rVin = ensureRow(`Insumo: Vinilo Textil (${vColor})`, 'Corte Estampado', 'Insumo Taller');
+          rVin.required += qty;
         }
-        if (variant.needsNFC || item.productName.toLowerCase().includes('con nfc')) {
-          addRequirement('Insumo: Chip Sticker NFC Programable', 'Unidad NFC', 'Insumo Electrónico', item.qty);
+        if (variant.needsNFC || String(item.productName || prod.name || '').toLowerCase().includes('con nfc')) {
+          const rNfc = ensureRow('Insumo: Chip Sticker NFC Programable', 'Unidad NFC', 'Insumo Electrónico');
+          rNfc.required += qty;
         }
       });
     });
 
-    const rows = (Object.values(map) as any[])
-      .map(r => {
-        const bought = Number(boughtSupplies[r.key]) || 0;
+    const rows = Object.values(map)
+      .map((r: any) => {
+        // Compatibilidad con stock guardado anteriormente bajo claves con género ("___M · Femenino")
+        let bought = Number(boughtSupplies[r.key]);
+        if (!Number.isFinite(bought)) {
+          bought = Object.entries(boughtSupplies).reduce((acc, [k, val]) => {
+            if (k === r.key || k.startsWith(`${r.blankName}___${r.sizeOrSpec} · `)) {
+              return acc + (Number(val) || 0);
+            }
+            return acc;
+          }, 0);
+        }
         const missing = Math.max(0, r.required - bought);
         return { ...r, bought, missing };
       })
-      .sort((a, b) => a.categoryLabel.localeCompare(b.categoryLabel) || a.blankName.localeCompare(b.blankName));
+      .sort((a: any, b: any) => {
+        const catA = CAT_ORDER[a.categoryLabel] || 99;
+        const catB = CAT_ORDER[b.categoryLabel] || 99;
+        if (catA !== catB) return catA - catB;
+        const nameCmp = a.blankName.localeCompare(b.blankName);
+        if (nameCmp !== 0) return nameCmp;
+        const szA = SIZE_ORDER[a.sizeOrSpec] || 99;
+        const szB = SIZE_ORDER[b.sizeOrSpec] || 99;
+        return szA - szB || a.sizeOrSpec.localeCompare(b.sizeOrSpec);
+      });
 
     const totalMissingToBuy = rows.reduce((acc, r) => acc + r.missing, 0);
     return { rows, totalMissingToBuy };
   }, [orders, catalog, boughtSupplies]);
 
-  // B. ¿QUÉ TOCA ESTAMPAR / HACER? (Matriz de producción por Referencia, Variante y Talla)
+  // B. ¿QUÉ TOCA ESTAMPAR / HACER? (Pre-poblado con TODAS las referencias, variantes y tallas XS–2XL)
   const productionMatrix = useMemo(() => {
     const activeOrders = orders.filter(isOrderActive);
-    const map = {};
+    const effectiveCatalog = catalog.length > 0 ? catalog : OFFICIAL_CATALOG_FALLBACK;
+    const map: Record<string, any> = {};
+    const SIZE_ORDER: Record<string, number> = { XS: 1, S: 2, M: 3, L: 4, XL: 5, '2XL': 6, 'Única': 7 };
 
-    activeOrders.forEach(order => {
-      order.items.forEach(item => {
-        const genderLabel = item.gender || 'Sin especificar';
-        const key = `${item.productId}|||${item.variantId || item.variantName}|||${item.size}|||${genderLabel}`;
-        if (!map[key]) {
+    // 1. Pre-poblar todas las referencias y variantes del catálogo con todas sus tallas (XS a 2XL)
+    effectiveCatalog.forEach((prod: any) => {
+      const isAcc =
+        String(prod.category || '').toLowerCase().includes('accesorio') ||
+        String(prod.name || '').toLowerCase().includes('llavero') ||
+        String(prod.name || '').toLowerCase().includes('fanbox') ||
+        String(prod.name || '').toLowerCase().includes('parche');
+      const sizesToCreate = isAcc
+        ? (Array.isArray(prod.sizes) && prod.sizes.length > 0 ? prod.sizes : ['Única'])
+        : ALL_GARMENT_SIZES;
+
+      const variants = Array.isArray(prod.variants) && prod.variants.length > 0
+        ? prod.variants
+        : [{ id: 'v-std', name: 'Estándar' }];
+
+      variants.forEach((variant: any) => {
+        const varId = variant.id || variant.name || 'v-std';
+        sizesToCreate.forEach((sz: string) => {
+          const key = `${prod.id}|||${varId}|||${sz}`;
           map[key] = {
             key,
-            productId: item.productId,
-            productName: item.productName,
-            variantName: item.variantName,
-            size: item.size,
-            gender: genderLabel,
-            orderedQty: 0
+            productId: prod.id,
+            productName: prod.name,
+            variantId: varId,
+            variantName: variant.name || 'Estándar',
+            category: isAcc ? 'Accesorio' : 'Prenda',
+            size: sz,
+            orderedQty: 0,
+            genderBreakdown: { Femenino: 0, Masculino: 0, 'Sin especificar': 0 }
           };
-        }
-        map[key].orderedQty += item.qty;
+        });
       });
     });
 
-    const rows = (Object.values(map) as any[])
-      .map(r => {
-        const made = Number(madeItems[r.key]) || 0;
+    // 2. Sumar los pedidos activos en la matriz
+    activeOrders.forEach(order => {
+      (order.items || []).forEach((item: any) => {
+        const qty = Math.max(1, Number(item.qty) || 1);
+        const prod = effectiveCatalog.find((c: any) => c.id === item.productId || c.name === item.productName);
+        const matchedVar = prod?.variants?.find((v: any) => v.id === item.variantId || v.name === item.variantName) || prod?.variants?.[0];
+        const prodId = prod?.id || item.productId || item.productName;
+        const varId = matchedVar?.id || item.variantId || item.variantName || 'v-std';
+        const varName = matchedVar?.name || item.variantName || 'Estándar';
+        const isAcc =
+          String(prod?.category || '').toLowerCase().includes('accesorio') ||
+          String(prod?.name || item.productName || '').toLowerCase().includes('llavero') ||
+          String(prod?.name || item.productName || '').toLowerCase().includes('fanbox');
+        const sz = isAcc ? 'Única' : (item.size || 'M');
+        const genderClean = GARMENT_GENDERS.includes(item.gender) ? item.gender : 'Sin especificar';
+
+        const key = `${prodId}|||${varId}|||${sz}`;
+        if (!map[key]) {
+          map[key] = {
+            key,
+            productId: prodId,
+            productName: prod?.name || item.productName || 'Prenda MyFanBox',
+            variantId: varId,
+            variantName: varName,
+            category: isAcc ? 'Accesorio' : 'Prenda',
+            size: sz,
+            orderedQty: 0,
+            genderBreakdown: { Femenino: 0, Masculino: 0, 'Sin especificar': 0 }
+          };
+        }
+        map[key].orderedQty += qty;
+        map[key].genderBreakdown[genderClean] = (map[key].genderBreakdown[genderClean] || 0) + qty;
+      });
+    });
+
+    const rows = Object.values(map)
+      .map((r: any) => {
+        let made = Number(madeItems[r.key]);
+        if (!Number.isFinite(made)) {
+          made = Object.entries(madeItems).reduce((acc, [k, val]) => {
+            if (
+              k === r.key ||
+              k.startsWith(`${r.productId}|||${r.variantId}|||${r.size}|||`) ||
+              k.startsWith(`${r.productId}|||${r.variantName}|||${r.size}|||`)
+            ) {
+              return acc + (Number(val) || 0);
+            }
+            return acc;
+          }, 0);
+        }
         const missing = Math.max(0, r.orderedQty - made);
-        const progress = r.orderedQty > 0 ? Math.min(100, Math.round((made / r.orderedQty) * 100)) : 100;
+        const progress = r.orderedQty > 0 ? Math.min(100, Math.round((made / r.orderedQty) * 100)) : (made > 0 ? 100 : 0);
         return { ...r, made, missing, progress };
       })
-      .sort((a, b) => a.productName.localeCompare(b.productName) || a.variantName.localeCompare(b.variantName));
+      .sort((a: any, b: any) => {
+        if (a.category !== b.category) return a.category === 'Prenda' ? -1 : 1;
+        const pCmp = a.productName.localeCompare(b.productName);
+        if (pCmp !== 0) return pCmp;
+        const vCmp = a.variantName.localeCompare(b.variantName);
+        if (vCmp !== 0) return vCmp;
+        const szA = SIZE_ORDER[a.size] || 99;
+        const szB = SIZE_ORDER[b.size] || 99;
+        return szA - szB;
+      });
 
     const totalOrderedUnits = rows.reduce((acc, r) => acc + r.orderedQty, 0);
     const totalMissingToMake = rows.reduce((acc, r) => acc + r.missing, 0);
     return { rows, totalOrderedUnits, totalMissingToMake };
-  }, [orders, madeItems]);
+  }, [orders, catalog, madeItems]);
 
   // ============================================================================
   // 8. FILTRADO RÁPIDO DE PEDIDOS Y ACCIONES DE TABLA
@@ -4051,34 +4620,94 @@ export default function App() {
               {/* SUB-TAB A: QUÉ TOCA COMPRAR AL PROVEEDOR */}
               {invSubtab === 'buy' && (
                 <div className="space-y-3">
-                  <div className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-sm font-semibold text-zinc-900">
-                        A. Prendas en Blanco e Insumos para Comprar al Proveedor
-                      </h2>
-                      <p className="text-xs text-zinc-500">
-                        Consolida cuántas prendas base sin estampar, chips NFC, kits de brillos y vinilos necesitas para cumplir todos los pedidos.
-                      </p>
+                  <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <h2 className="text-sm font-semibold text-zinc-900">
+                          A. Prendas en Blanco e Insumos para Comprar al Proveedor (Todas las Tallas XS–2XL)
+                        </h2>
+                        <p className="text-xs text-zinc-500">
+                          Incluye todas las remeras, hoodies, croptops, raglans y accesorios con todas las tallas posibles para controlar stock y compras.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const missing = shoppingNeeds.rows.filter((r: any) => r.missing > 0);
+                          if (!missing.length) {
+                            notify('¡Ya tienes todos los insumos comprados!');
+                            return;
+                          }
+                          const txt =
+                            `*LISTA DE COMPRAS A PROVEEDOR — MYFANBOX*\n` +
+                            missing
+                              .map((r: any) => {
+                                const gParts = Object.entries(r.genderBreakdown || {})
+                                  .filter(([, count]) => Number(count) > 0)
+                                  .map(([g, count]) => `${count} ${g}`)
+                                  .join(', ');
+                                return `• ${r.blankName} [Talla ${r.sizeOrSpec}${gParts ? ` — ${gParts}` : ''}] -> COMPRAR: ${r.missing} uds (Pedidos: ${r.required}, En stock: ${r.bought})`;
+                              })
+                              .join('\n');
+                          copyToClipboard(txt, 'Lista de compras para proveedor copiada');
+                        }}
+                        className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copiar lista para proveedor</span>
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        const missing = shoppingNeeds.rows.filter(r => r.missing > 0);
-                        if (!missing.length) {
-                          notify('¡Ya tienes todos los insumos comprados!');
-                          return;
-                        }
-                        const txt =
-                          `*LISTA DE COMPRAS A PROVEEDOR — MYFANBOX*\n` +
-                          missing
-                            .map(r => `• ${r.blankName} [${r.sizeOrSpec}] -> COMPRAR: ${r.missing} uds (Pedidos: ${r.required}, Ya tengo: ${r.bought})`)
-                            .join('\n');
-                        copyToClipboard(txt, 'Lista de compras para proveedor copiada');
-                      }}
-                      className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 shrink-0"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copiar lista para proveedor</span>
-                    </button>
+
+                    {/* Filtros rápidos de Inventario (Por defecto muestra TODAS las prendas y TODAS las tallas) */}
+                    <div className="pt-2 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          value={invCategoryFilter}
+                          onChange={(e) => setInvCategoryFilter(e.target.value)}
+                          className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800"
+                        >
+                          <option value="ALL">Categoría: Todas (Ropa, Accesorios e Insumos)</option>
+                          <option value="Prenda en Blanco">Solo Ropa (Remeras, Hoodies, Croptops, Raglans)</option>
+                          <option value="Base Accesorio">Solo Base Accesorios (Mini CD / Fanbox)</option>
+                          <option value="Insumos">Solo Insumos Taller / NFC</option>
+                        </select>
+
+                        <select
+                          value={invSizeFilter}
+                          onChange={(e) => setInvSizeFilter(e.target.value)}
+                          className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800"
+                        >
+                          <option value="ALL">Talla: Todas (XS a 2XL + Única)</option>
+                          {['XS', 'S', 'M', 'L', 'XL', '2XL', 'Única'].map(sz => (
+                            <option key={sz} value={sz}>Talla {sz}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setInvShowOnlyOrdered(false)}
+                          className={`h-8 px-3 rounded-lg border text-xs font-medium cursor-pointer ${
+                            !invShowOnlyOrdered
+                              ? 'bg-zinc-900 text-white border-zinc-900'
+                              : 'bg-zinc-50 text-zinc-600 border-zinc-200'
+                          }`}
+                        >
+                          Ver todas las tallas ({shoppingNeeds.rows.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setInvShowOnlyOrdered(true)}
+                          className={`h-8 px-3 rounded-lg border text-xs font-medium cursor-pointer ${
+                            invShowOnlyOrdered
+                              ? 'bg-zinc-900 text-white border-zinc-900'
+                              : 'bg-zinc-50 text-zinc-600 border-zinc-200'
+                          }`}
+                        >
+                          Solo con pedidos / stock
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
@@ -4088,74 +4717,120 @@ export default function App() {
                           <tr className="border-b border-zinc-200 bg-zinc-50/80 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                             <th className="py-2.5 px-4">Categoría</th>
                             <th className="py-2.5 px-4">Prenda Base / Insumo</th>
-                            <th className="py-2.5 px-4 text-center">Talla / Especificación</th>
+                            <th className="py-2.5 px-4 text-center">Talla / Corte Pedido</th>
                             <th className="py-2.5 px-4 text-center">Total Pedido</th>
                             <th className="py-2.5 px-4 text-center">Ya Comprado / En Stock</th>
                             <th className="py-2.5 px-4 text-right">Falta Comprar</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-200 text-xs tabular-nums">
-                          {shoppingNeeds.rows.map(row => (
-                            <tr key={row.key} className="hover:bg-zinc-50/80">
-                              <td className="py-2.5 px-4 text-zinc-500">{row.categoryLabel}</td>
-                              <td className="py-2.5 px-4 font-medium text-zinc-900">{row.blankName}</td>
-                              <td className="py-2.5 px-4 text-center">
-                                <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
-                                  {row.sizeOrSpec}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-4 text-center font-semibold text-zinc-900">{row.required}</td>
-                              <td className="py-2.5 px-4 text-center">
-                                <div className="inline-flex items-center gap-1">
-                                  <button
-                                    onClick={() =>
-                                      setBoughtSupplies(prev => ({
-                                        ...prev,
-                                        [row.key]: Math.max(0, row.bought - 1)
-                                      }))
-                                    }
-                                    className="w-6 h-6 rounded border border-zinc-200 bg-white hover:bg-zinc-100 font-bold"
-                                  >
-                                    -
-                                  </button>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={row.bought}
-                                    onChange={(e) =>
-                                      setBoughtSupplies(prev => ({
-                                        ...prev,
-                                        [row.key]: Math.max(0, Number(e.target.value) || 0)
-                                      }))
-                                    }
-                                    className="w-14 h-6 text-center bg-zinc-50 border border-zinc-200 rounded font-semibold"
-                                  />
-                                  <button
-                                    onClick={() =>
-                                      setBoughtSupplies(prev => ({
-                                        ...prev,
-                                        [row.key]: row.bought + 1
-                                      }))
-                                    }
-                                    className="w-6 h-6 rounded border border-zinc-200 bg-white hover:bg-zinc-100 font-bold"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-4 text-right">
-                                {row.missing > 0 ? (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-semibold">
-                                    Comprar {row.missing} uds
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium">
-                                    ✓ Completo
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                          {shoppingNeeds.rows
+                            .filter((row: any) => {
+                              if (invShowOnlyOrdered && row.required === 0 && row.bought === 0) return false;
+                              if (invCategoryFilter === 'Prenda en Blanco' && row.categoryLabel !== 'Prenda en Blanco') return false;
+                              if (invCategoryFilter === 'Base Accesorio' && row.categoryLabel !== 'Base Accesorio') return false;
+                              if (invCategoryFilter === 'Insumos' && !row.categoryLabel.includes('Insumo')) return false;
+                              if (invSizeFilter !== 'ALL' && row.sizeOrSpec !== invSizeFilter) return false;
+                              return true;
+                            })
+                            .map((row: any) => {
+                              const femCount = row.genderBreakdown?.Femenino || 0;
+                              const mascCount = row.genderBreakdown?.Masculino || 0;
+                              const unspecCount = row.genderBreakdown?.['Sin especificar'] || 0;
+                              return (
+                                <tr key={row.key} className="hover:bg-zinc-50/80">
+                                  <td className="py-2.5 px-4 text-zinc-500">{row.categoryLabel}</td>
+                                  <td className="py-2.5 px-4">
+                                    <div className="font-medium text-zinc-900">{row.blankName}</div>
+                                    {Array.isArray(row.refNames) && row.refNames.length > 0 && (
+                                      <div className="text-[10px] text-zinc-400">
+                                        Ref: {row.refNames.join(' · ')}
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 px-4 text-center">
+                                    <div className="inline-flex flex-wrap items-center justify-center gap-1">
+                                      <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
+                                        {row.sizeOrSpec}
+                                      </span>
+                                      {femCount > 0 && (
+                                        <span className="px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-[10px] text-rose-800">
+                                          {femCount} Fem
+                                        </span>
+                                      )}
+                                      {mascCount > 0 && (
+                                        <span className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-[10px] text-sky-800">
+                                          {mascCount} Masc
+                                        </span>
+                                      )}
+                                      {unspecCount > 0 && (
+                                        <span className="px-1.5 py-0.5 rounded bg-zinc-50 border border-zinc-200 text-[10px] text-zinc-600">
+                                          {unspecCount} S/E
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-4 text-center font-semibold text-zinc-900">{row.required}</td>
+                                  <td className="py-2.5 px-4 text-center">
+                                    <div className="inline-flex items-center gap-1">
+                                      <button
+                                        onClick={() =>
+                                          setBoughtSupplies(prev => ({
+                                            ...prev,
+                                            [row.key]: Math.max(0, row.bought - 1)
+                                          }))
+                                        }
+                                        className="w-6 h-6 rounded border border-zinc-200 bg-white hover:bg-zinc-100 font-bold cursor-pointer"
+                                      >
+                                        -
+                                      </button>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={row.bought}
+                                        onChange={(e) =>
+                                          setBoughtSupplies(prev => ({
+                                            ...prev,
+                                            [row.key]: Math.max(0, Number(e.target.value) || 0)
+                                          }))
+                                        }
+                                        className="w-14 h-6 text-center bg-zinc-50 border border-zinc-200 rounded font-semibold"
+                                      />
+                                      <button
+                                        onClick={() =>
+                                          setBoughtSupplies(prev => ({
+                                            ...prev,
+                                            [row.key]: row.bought + 1
+                                          }))
+                                        }
+                                        className="w-6 h-6 rounded border border-zinc-200 bg-white hover:bg-zinc-100 font-bold cursor-pointer"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-4 text-right">
+                                    {row.missing > 0 ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-semibold">
+                                        Comprar {row.missing} uds
+                                      </span>
+                                    ) : row.required > 0 ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium">
+                                        ✓ Completo
+                                      </span>
+                                    ) : row.bought > 0 ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-sky-800 font-medium">
+                                        En stock ({row.bought} uds)
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-zinc-50 border border-zinc-200 text-zinc-400">
+                                        0 pedidos
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
                         </tbody>
                       </table>
                     </div>
@@ -4166,34 +4841,83 @@ export default function App() {
               {/* SUB-TAB B: MATRIZ DE ESTAMPADO Y PRODUCCIÓN */}
               {invSubtab === 'make' && (
                 <div className="space-y-3">
-                  <div className="bg-white border border-zinc-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-sm font-semibold text-zinc-900">
-                        B. Matriz de Producción y Estampado (Por Referencia, Variante y Talla XS–2XL)
-                      </h2>
-                      <p className="text-xs text-zinc-500">
-                        Marca con <strong className="text-zinc-900">[-]</strong> y <strong className="text-zinc-900">[+]</strong> las prendas que ya salieron de estampado y pedrería.
-                      </p>
+                  <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <h2 className="text-sm font-semibold text-zinc-900">
+                          B. Matriz de Producción y Estampado (Todas las Referencias, Variantes y Tallas XS–2XL)
+                        </h2>
+                        <p className="text-xs text-zinc-500">
+                          Marca con <strong className="text-zinc-900">[-]</strong> y <strong className="text-zinc-900">[+]</strong> las prendas que ya salieron de estampado y pedrería.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const pending = productionMatrix.rows.filter((r: any) => r.missing > 0);
+                          if (!pending.length) {
+                            notify('¡Todas las prendas ya están estampadas!');
+                            return;
+                          }
+                          const txt =
+                            `*ORDEN DE TALLER / ESTAMPADO — MYFANBOX*\n` +
+                            pending
+                              .map((r: any) => {
+                                const gParts = Object.entries(r.genderBreakdown || {})
+                                  .filter(([, count]) => Number(count) > 0)
+                                  .map(([g, count]) => `${count} ${g}`)
+                                  .join(', ');
+                                return `• ${r.productName} (${r.variantName}) — Talla ${r.size}${gParts ? ` [${gParts}]` : ''} -> HACER: ${r.missing} uds`;
+                              })
+                              .join('\n');
+                          copyToClipboard(txt, 'Orden de taller copiada al portapapeles');
+                        }}
+                        className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copiar orden para estampador</span>
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        const pending = productionMatrix.rows.filter(r => r.missing > 0);
-                        if (!pending.length) {
-                          notify('¡Todas las prendas ya están estampadas!');
-                          return;
-                        }
-                        const txt =
-                          `*ORDEN DE TALLER / ESTAMPADO — MYFANBOX*\n` +
-                          pending
-                            .map(r => `• ${r.productName} (${r.variantName}) — Talla ${r.size} -> HACER: ${r.missing} uds`)
-                            .join('\n');
-                        copyToClipboard(txt, 'Orden de taller copiada al portapapeles');
-                      }}
-                      className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 shrink-0"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copiar orden para estampador</span>
-                    </button>
+
+                    {/* Filtros rápidos de Matriz de Producción */}
+                    <div className="pt-2 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          value={invSizeFilter}
+                          onChange={(e) => setInvSizeFilter(e.target.value)}
+                          className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800"
+                        >
+                          <option value="ALL">Talla: Todas (XS a 2XL + Única)</option>
+                          {['XS', 'S', 'M', 'L', 'XL', '2XL', 'Única'].map(sz => (
+                            <option key={sz} value={sz}>Talla {sz}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setInvShowOnlyOrdered(false)}
+                          className={`h-8 px-3 rounded-lg border text-xs font-medium cursor-pointer ${
+                            !invShowOnlyOrdered
+                              ? 'bg-zinc-900 text-white border-zinc-900'
+                              : 'bg-zinc-50 text-zinc-600 border-zinc-200'
+                          }`}
+                        >
+                          Ver todas las tallas ({productionMatrix.rows.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setInvShowOnlyOrdered(true)}
+                          className={`h-8 px-3 rounded-lg border text-xs font-medium cursor-pointer ${
+                            invShowOnlyOrdered
+                              ? 'bg-zinc-900 text-white border-zinc-900'
+                              : 'bg-zinc-50 text-zinc-600 border-zinc-200'
+                          }`}
+                        >
+                          Solo con pedidos / hechas
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
@@ -4203,7 +4927,7 @@ export default function App() {
                           <tr className="border-b border-zinc-200 bg-zinc-50/80 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                             <th className="py-2.5 px-4">Referencia Oficial</th>
                             <th className="py-2.5 px-4">Variante / Detalle</th>
-                            <th className="py-2.5 px-4 text-center">Talla</th>
+                            <th className="py-2.5 px-4 text-center">Talla / Corte</th>
                             <th className="py-2.5 px-4 text-center">Pedidas</th>
                             <th className="py-2.5 px-4 text-center">Ya Hechas</th>
                             <th className="py-2.5 px-4 min-w-[130px]">Avance</th>
@@ -4211,71 +4935,113 @@ export default function App() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-200 text-xs tabular-nums">
-                          {productionMatrix.rows.map(row => (
-                            <tr key={row.key} className="hover:bg-zinc-50/80">
-                              <td className="py-2.5 px-4 font-medium text-zinc-900">{row.productName}</td>
-                              <td className="py-2.5 px-4 text-zinc-600">{row.variantName}</td>
-                              <td className="py-2.5 px-4 text-center">
-                                <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
-                                  {row.size}
-                                </span>
-                                <span className="ml-1 px-2 py-0.5 rounded bg-zinc-50 border border-zinc-200 text-[10px] text-zinc-600">
-                                  {row.gender || 'Sin especificar'}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-4 text-center font-semibold text-zinc-900">{row.orderedQty}</td>
-                              <td className="py-2.5 px-4 text-center">
-                                <div className="inline-flex items-center gap-1.5">
-                                  <button
-                                    onClick={() =>
-                                      setMadeItems(prev => ({
-                                        ...prev,
-                                        [row.key]: Math.max(0, row.made - 1)
-                                      }))
-                                    }
-                                    className="w-6 h-6 rounded border border-zinc-200 bg-white hover:bg-zinc-100 font-bold"
-                                  >
-                                    -
-                                  </button>
-                                  <span className="w-12 text-center font-semibold">
-                                    {row.made}/{row.orderedQty}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      setMadeItems(prev => ({
-                                        ...prev,
-                                        [row.key]: row.made + 1
-                                      }))
-                                    }
-                                    className="w-6 h-6 rounded border border-zinc-200 bg-white hover:bg-zinc-100 font-bold"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-4">
-                                <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
-                                  <div
-                                    className={`h-full transition-all ${
-                                      row.progress >= 100 ? 'bg-emerald-600' : 'bg-zinc-900'
-                                    }`}
-                                    style={{ width: `${row.progress}%` }}
-                                  />
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-4 text-right">
-                                {row.missing > 0 ? (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 font-semibold">
-                                    Hacer {row.missing}
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium">
-                                    ✓ Listas
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
+                          {productionMatrix.rows
+                            .filter((row: any) => {
+                              if (invShowOnlyOrdered && row.orderedQty === 0 && row.made === 0) return false;
+                              if (invSizeFilter !== 'ALL' && row.size !== invSizeFilter) return false;
+                              return true;
+                            })
+                            .map((row: any) => {
+                              const femCount = row.genderBreakdown?.Femenino || 0;
+                              const mascCount = row.genderBreakdown?.Masculino || 0;
+                              const unspecCount = row.genderBreakdown?.['Sin especificar'] || 0;
+                              return (
+                                <tr key={row.key} className="hover:bg-zinc-50/80">
+                                  <td className="py-2.5 px-4 font-medium text-zinc-900">{row.productName}</td>
+                                  <td className="py-2.5 px-4 text-zinc-600">{row.variantName}</td>
+                                  <td className="py-2.5 px-4 text-center">
+                                    <div className="inline-flex flex-wrap items-center justify-center gap-1">
+                                      <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
+                                        {row.size}
+                                      </span>
+                                      {femCount > 0 && (
+                                        <span className="px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-[10px] text-rose-800">
+                                          {femCount} Fem
+                                        </span>
+                                      )}
+                                      {mascCount > 0 && (
+                                        <span className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-[10px] text-sky-800">
+                                          {mascCount} Masc
+                                        </span>
+                                      )}
+                                      {unspecCount > 0 && (
+                                        <span className="px-1.5 py-0.5 rounded bg-zinc-50 border border-zinc-200 text-[10px] text-zinc-600">
+                                          {unspecCount} S/E
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-4 text-center font-semibold text-zinc-900">{row.orderedQty}</td>
+                                  <td className="py-2.5 px-4 text-center">
+                                    <div className="inline-flex items-center gap-1.5">
+                                      <button
+                                        onClick={() =>
+                                          setMadeItems(prev => ({
+                                            ...prev,
+                                            [row.key]: Math.max(0, row.made - 1)
+                                          }))
+                                        }
+                                        className="w-6 h-6 rounded border border-zinc-200 bg-white hover:bg-zinc-100 font-bold cursor-pointer"
+                                      >
+                                        -
+                                      </button>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={row.made}
+                                        onChange={(e) =>
+                                          setMadeItems(prev => ({
+                                            ...prev,
+                                            [row.key]: Math.max(0, Number(e.target.value) || 0)
+                                          }))
+                                        }
+                                        className="w-14 h-6 text-center bg-zinc-50 border border-zinc-200 rounded font-semibold"
+                                      />
+                                      <button
+                                        onClick={() =>
+                                          setMadeItems(prev => ({
+                                            ...prev,
+                                            [row.key]: row.made + 1
+                                          }))
+                                        }
+                                        className="w-6 h-6 rounded border border-zinc-200 bg-white hover:bg-zinc-100 font-bold cursor-pointer"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-4">
+                                    <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full transition-all ${
+                                          row.progress >= 100 ? 'bg-emerald-600' : 'bg-zinc-900'
+                                        }`}
+                                        style={{ width: `${row.progress}%` }}
+                                      />
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-4 text-right">
+                                    {row.missing > 0 ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 font-semibold">
+                                        Hacer {row.missing}
+                                      </span>
+                                    ) : row.orderedQty > 0 ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium">
+                                        ✓ Listas
+                                      </span>
+                                    ) : row.made > 0 ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-sky-800 font-medium">
+                                        En stock ({row.made} uds)
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-zinc-50 border border-zinc-200 text-zinc-400">
+                                        0 pedidos
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
                         </tbody>
                       </table>
                     </div>
