@@ -149,8 +149,32 @@ function sanitizeCatalogRecord(rawProd: any, idx = 0) {
   };
 }
 
-function sanitizeOrderRecord(rawOrder: any, idx = 0) {
+const CEDULA_STORAGE_KEY = 'mfb_order_cedulas_v2';
+
+function readStoredCedulas(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(CEDULA_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveStoredCedula(orderId: string, uuid: string, cedula: string) {
+  if (!cedula) return;
+  try {
+    const current = readStoredCedulas();
+    if (orderId) current[orderId] = cedula;
+    if (uuid) current[uuid.toLowerCase()] = cedula;
+    localStorage.setItem(CEDULA_STORAGE_KEY, JSON.stringify(current));
+  } catch {}
+}
+
+function sanitizeOrderRecord(rawOrder: any, idx = 0, settingsCedulas: Record<string, string> = {}) {
   if (!rawOrder || typeof rawOrder !== 'object') return rawOrder;
+  const orderId = toSafeText(rawOrder?.id, `MFB-${1001 + idx}`);
+  const orderUuid = isValidUUID(toSafeText(rawOrder?.uuid)) ? toSafeText(rawOrder?.uuid).toLowerCase() : generateUUIDv4();
+
   const rawPay = toSafeText(rawOrder?.paymentStatus ?? rawOrder?.payment_status, 'Pendiente');
   const paymentStatus = PAYMENT_STATUSES.includes(rawPay) ? rawPay : 'Pendiente';
 
@@ -161,6 +185,21 @@ function sanitizeOrderRecord(rawOrder: any, idx = 0) {
   const carrier = CARRIERS.includes(rawCarrier) ? rawCarrier : 'Interrapidísimo';
 
   const rawItems = Array.isArray(rawOrder?.items) ? rawOrder.items : [];
+  const itemCedula = rawItems.map((it: any) => toSafeText(it?.customerCedula ?? it?.cedula, '')).find(Boolean) || '';
+  const storedCedulas = readStoredCedulas();
+  const resolvedCedula =
+    toSafeText(rawOrder?.cedula ?? rawOrder?.documentId ?? rawOrder?.document_id, '') ||
+    itemCedula ||
+    toSafeText(settingsCedulas?.[orderId] ?? settingsCedulas?.[orderUuid], '') ||
+    toSafeText(storedCedulas?.[orderId] ?? storedCedulas?.[orderUuid], '');
+
+  if (resolvedCedula) {
+    saveStoredCedula(orderId, orderUuid, resolvedCedula);
+  }
+
+  const itemManualPin = rawItems.some((it: any) => Boolean(it?.manualPin));
+  const resolvedManualPin = Boolean(rawOrder?.manualPin ?? rawOrder?.manual_pin ?? itemManualPin);
+
   const items = rawItems.map((it: any, iIdx: number) => {
     const rawGender = toSafeText(it?.gender, 'Sin especificar');
     const gender = GARMENT_GENDERS.includes(rawGender) ? rawGender : 'Sin especificar';
@@ -175,7 +214,9 @@ function sanitizeOrderRecord(rawOrder: any, idx = 0) {
       gender,
       qty: Math.max(1, Number(it?.qty) || 1),
       unitPrice: Number(it?.unitPrice ?? it?.unit_price) || 0,
-      packed: Boolean(it?.packed)
+      packed: Boolean(it?.packed),
+      customerCedula: resolvedCedula,
+      manualPin: resolvedManualPin
     };
   });
 
@@ -185,10 +226,10 @@ function sanitizeOrderRecord(rawOrder: any, idx = 0) {
 
   return {
     ...rawOrder,
-    id: toSafeText(rawOrder?.id, `MFB-${1001 + idx}`),
-    uuid: isValidUUID(toSafeText(rawOrder?.uuid)) ? toSafeText(rawOrder?.uuid).toLowerCase() : generateUUIDv4(),
+    id: orderId,
+    uuid: orderUuid,
     customerName: toSafeText(rawOrder?.customerName ?? rawOrder?.customer_name, 'Cliente MyFanBox'),
-    cedula: toSafeText(rawOrder?.cedula ?? rawOrder?.documentId ?? rawOrder?.document_id, ''),
+    cedula: resolvedCedula,
     instagram: toSafeText(rawOrder?.instagram, ''),
     phone: toSafeText(rawOrder?.phone, ''),
     city: toSafeText(rawOrder?.city, 'Medellín'),
@@ -198,8 +239,8 @@ function sanitizeOrderRecord(rawOrder: any, idx = 0) {
     formattedAddress: toSafeText(rawOrder?.formattedAddress ?? rawOrder?.formatted_address, ''),
     lat: typeof rawOrder?.lat === 'number' && !isNaN(rawOrder.lat) ? rawOrder.lat : Number(rawOrder?.lat) || undefined,
     lng: typeof rawOrder?.lng === 'number' && !isNaN(rawOrder.lng) ? rawOrder.lng : Number(rawOrder?.lng) || undefined,
-    manualPin: Boolean(rawOrder?.manualPin ?? rawOrder?.manual_pin),
-    addressVerified: Boolean(rawOrder?.addressVerified ?? rawOrder?.address_verified ?? rawOrder?.manualPin),
+    manualPin: resolvedManualPin,
+    addressVerified: Boolean(rawOrder?.addressVerified ?? rawOrder?.address_verified ?? resolvedManualPin),
     paymentStatus,
     shippingStatus,
     carrier,
@@ -537,6 +578,177 @@ function inferColombianAddressMetadata(city, addressText = '') {
     neighborhood: matchedZone?.neighborhood || 'Zona Urbana',
     lat: matchedZone?.lat || cityGeo.lat,
     lng: matchedZone?.lng || cityGeo.lng
+  };
+}
+
+// Inferencia instantánea de Ciudad, Barrio y Código Postal en base a Coordenadas (Lat, Lng)
+function inferMetadataFromCoordinates(lat: number, lng: number) {
+  const safeLat = Number(lat);
+  const safeLng = Number(lng);
+  if (!Number.isFinite(safeLat) || !Number.isFinite(safeLng)) {
+    return {
+      city: 'Medellín',
+      neighborhood: 'El Poblado',
+      postalCode: '050021',
+      streetAddress: 'Cra 43A #11-40'
+    };
+  }
+
+  let bestZone = COLOMBIA_VERIFIED_ZONES[0];
+  let minZoneDist = Infinity;
+  for (const z of COLOMBIA_VERIFIED_ZONES) {
+    const d = Math.hypot(safeLat - z.lat, safeLng - z.lng);
+    if (d < minZoneDist) {
+      minZoneDist = d;
+      bestZone = z;
+    }
+  }
+
+  let bestCityName = 'Medellín';
+  let minCityDist = Infinity;
+  for (const [cName, cGeo] of Object.entries(COLOMBIA_CITIES_GEO)) {
+    const d = Math.hypot(safeLat - cGeo.lat, safeLng - cGeo.lng);
+    if (d < minCityDist) {
+      minCityDist = d;
+      bestCityName = cName;
+    }
+  }
+
+  if (minZoneDist <= 0.18) {
+    return {
+      city: bestZone.city,
+      neighborhood: bestZone.neighborhood,
+      postalCode: bestZone.postalCode,
+      streetAddress: bestZone.addressSample
+    };
+  }
+
+  const cityObj = COLOMBIA_CITIES_GEO[bestCityName] || COLOMBIA_CITIES_GEO['Medellín'];
+  return {
+    city: bestCityName,
+    neighborhood: 'Zona Urbana',
+    postalCode: cityObj.defaultPostal || '050001',
+    streetAddress: `Ubicación GPS (${safeLat.toFixed(4)}, ${safeLng.toFixed(4)})`
+  };
+}
+
+// Geocodificación Inversa en Vivo: A partir de (lat, lng) obtiene Ciudad, Barrio, Código Postal y Dirección
+async function reverseGeocodeFromCoordinates(lat: number, lng: number, googleApiKey = '') {
+  const localFallback = inferMetadataFromCoordinates(lat, lng);
+  const safeLat = Number(Number(lat).toFixed(5));
+  const safeLng = Number(Number(lng).toFixed(5));
+
+  // 1. Si hay Google Maps API Key configurada, consultar reverse geocoding de Google
+  if (googleApiKey && googleApiKey.trim().length > 10) {
+    try {
+      const gUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${safeLat},${safeLng}&language=es&key=${encodeURIComponent(
+        googleApiKey.trim()
+      )}`;
+      const gRes = await fetch(gUrl);
+      if (gRes.ok) {
+        const gData = await gRes.json();
+        const first = gData?.results?.[0];
+        if (first) {
+          const comps = first.address_components || [];
+          const findComp = (types: string[]) =>
+            comps.find((c: any) => types.some(t => c.types?.includes(t)))?.long_name;
+          const rawCity =
+            findComp(['locality', 'administrative_area_level_2']) || localFallback.city;
+          const matchedCity =
+            Object.keys(COLOMBIA_CITIES_GEO).find(
+              k => k.toLowerCase() === rawCity.toLowerCase() || rawCity.toLowerCase().includes(k.toLowerCase())
+            ) || rawCity;
+          const neighborhood =
+            findComp(['neighborhood', 'sublocality', 'sublocality_level_1', 'ward']) ||
+            localFallback.neighborhood;
+          const postalCode = findComp(['postal_code']) || localFallback.postalCode;
+          const route = findComp(['route']);
+          const streetNum = findComp(['street_number']);
+          const streetAddress =
+            route && streetNum
+              ? `${route} # ${streetNum}`
+              : route || first.formatted_address?.split(',')[0] || localFallback.streetAddress;
+
+          return {
+            city: matchedCity,
+            neighborhood,
+            postalCode,
+            streetAddress,
+            formattedAddress: first.formatted_address || `${streetAddress}, ${neighborhood}, ${matchedCity}`,
+            lat: safeLat,
+            lng: safeLng
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Google reverse geocode fallback:', err);
+    }
+  }
+
+  // 2. Consulta gratuita a OpenStreetMap Nominatim Reverse Geocoding
+  try {
+    const nomUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(
+      safeLat
+    )}&lon=${encodeURIComponent(safeLng)}&zoom=18&addressdetails=1`;
+    const res = await fetch(nomUrl, { headers: { 'Accept-Language': 'es' } });
+    if (res.ok) {
+      const data = await res.json();
+      const addr = data?.address || {};
+      const rawCity =
+        addr.city ||
+        addr.town ||
+        addr.municipality ||
+        addr.village ||
+        addr.county ||
+        localFallback.city;
+      const matchedCity =
+        Object.keys(COLOMBIA_CITIES_GEO).find(
+          k => k.toLowerCase() === String(rawCity).toLowerCase() || String(rawCity).toLowerCase().includes(k.toLowerCase())
+        ) || String(rawCity);
+
+      const neighborhood =
+        addr.neighbourhood ||
+        addr.suburb ||
+        addr.quarter ||
+        addr.residential ||
+        addr.city_district ||
+        addr.hamlet ||
+        localFallback.neighborhood;
+
+      const inferredByBarrio = inferColombianAddressMetadata(matchedCity, `${neighborhood} ${data?.display_name || ''}`);
+      const postalCode = addr.postcode || inferredByBarrio.postalCode || localFallback.postalCode;
+
+      const road = addr.road || addr.pedestrian || addr.footway || '';
+      const houseNumber = addr.house_number || '';
+      const streetAddress = road
+        ? houseNumber
+          ? `${road} # ${houseNumber}`
+          : road
+        : data?.display_name
+        ? String(data.display_name).split(',').slice(0, 2).join(',').trim()
+        : localFallback.streetAddress;
+
+      return {
+        city: matchedCity,
+        neighborhood: String(neighborhood),
+        postalCode: String(postalCode),
+        streetAddress: String(streetAddress),
+        formattedAddress:
+          data?.display_name ||
+          `${streetAddress}, Barrio ${neighborhood}, ${matchedCity}, Colombia (CP ${postalCode})`,
+        lat: safeLat,
+        lng: safeLng
+      };
+    }
+  } catch (err) {
+    console.warn('Nominatim reverse geocode fallback:', err);
+  }
+
+  return {
+    ...localFallback,
+    formattedAddress: `${localFallback.streetAddress}, Barrio ${localFallback.neighborhood}, ${localFallback.city}, Colombia (CP ${localFallback.postalCode})`,
+    lat: safeLat,
+    lng: safeLng
   };
 }
 
@@ -1061,8 +1273,12 @@ export default function App() {
     const nextCatalog = Array.isArray(payload.catalog)
       ? payload.catalog.map((c, idx) => sanitizeCatalogRecord(c, idx))
       : [];
+    const settingsCedulas =
+      payload.settings?.orderCedulas && typeof payload.settings.orderCedulas === 'object'
+        ? payload.settings.orderCedulas
+        : {};
     const nextOrders = Array.isArray(payload.orders)
-      ? payload.orders.map((o, idx) => sanitizeOrderRecord(o, idx))
+      ? payload.orders.map((o, idx) => sanitizeOrderRecord(o, idx, settingsCedulas))
       : [];
     setCatalog(nextCatalog);
     setOrders(nextOrders);
@@ -1161,7 +1377,14 @@ export default function App() {
               collectionName,
               googleMapsApiKey,
               theme,
-              customTheme
+              customTheme,
+              orderCedulas: orders.reduce((acc: Record<string, string>, o: any) => {
+                if (o?.cedula) {
+                  if (o.id) acc[o.id] = String(o.cedula);
+                  if (o.uuid) acc[String(o.uuid).toLowerCase()] = String(o.cedula);
+                }
+                return acc;
+              }, {})
             }
           })
         });
@@ -1552,7 +1775,16 @@ export default function App() {
           orders,
           boughtSupplies,
           madeItems,
-          settings: { comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName, googleMapsApiKey, theme, customTheme }
+          settings: {
+            comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName, googleMapsApiKey, theme, customTheme,
+            orderCedulas: orders.reduce((acc: Record<string, string>, o: any) => {
+              if (o?.cedula) {
+                if (o.id) acc[o.id] = String(o.cedula);
+                if (o.uuid) acc[String(o.uuid).toLowerCase()] = String(o.cedula);
+              }
+              return acc;
+            }, {})
+          }
         })
       });
       setNeonStatus('connected');
@@ -2171,6 +2403,7 @@ export default function App() {
       return;
     }
 
+    const cleanCedula = (draftCustomer.cedula || '').trim();
     let finalItems = [...draftItems];
     if (finalItems.length === 0) {
       const prod = catalog.find(c => c.id === selProdId) || catalog[0];
@@ -2193,6 +2426,13 @@ export default function App() {
       });
     }
 
+    // Inyectar customerCedula y manualPin en cada ítem para que NeonDB (JSONB items) lo persista siempre
+    finalItems = finalItems.map(it => ({
+      ...it,
+      customerCedula: cleanCedula,
+      manualPin: Boolean(draftCustomer.manualPin)
+    }));
+
     const subtotal = finalItems.reduce((acc, it) => acc + it.unitPrice * it.qty, 0);
     const hasGarment = finalItems.some(it => catalog.find(c => c.id === it.productId)?.category === 'Prenda');
     const hasKeychain = finalItems.some(it => it.productName.toLowerCase().includes('llavero'));
@@ -2200,10 +2440,13 @@ export default function App() {
     const total = Math.max(0, subtotal - discount);
 
     if (editingOrder) {
+      const orderUuid = isValidUUID(editingOrder.uuid) ? editingOrder.uuid : generateUUIDv4();
+      saveStoredCedula(editingOrder.id, orderUuid, cleanCedula);
       const updatedOrder = {
         ...editingOrder,
-        uuid: isValidUUID(editingOrder.uuid) ? editingOrder.uuid : generateUUIDv4(),
+        uuid: orderUuid,
         ...draftCustomer,
+        cedula: cleanCedula,
         items: finalItems,
         discount,
         total
@@ -2216,10 +2459,14 @@ export default function App() {
         const n = parseInt((o.id || '').replace(/\D/g, ''), 10);
         return !isNaN(n) && n > max ? n : max;
       }, 1000);
+      const newId = `MFB-${maxNum + 1}`;
+      const newUuid = generateUUIDv4();
+      saveStoredCedula(newId, newUuid, cleanCedula);
       const newOrder = {
-        id: `MFB-${maxNum + 1}`,
-        uuid: generateUUIDv4(),
+        id: newId,
+        uuid: newUuid,
         ...draftCustomer,
+        cedula: cleanCedula,
         items: finalItems,
         discount,
         total,
@@ -4419,15 +4666,45 @@ export default function App() {
                           title={`${selectedMapEntry.order.id} · ${selectedMapEntry.order.customerName}`}
                           subtitle={`${selectedMapEntry.order.address || ''}, ${selectedMapEntry.order.city}`}
                           heightClass="h-[360px]"
-                          onPinChange={(newLat, newLng) => {
+                          onPinChange={async (newLat, newLng) => {
+                            const targetId = selectedMapEntry.order.id;
+                            const quick = inferMetadataFromCoordinates(newLat, newLng);
                             setOrders(prev =>
                               prev.map(o =>
-                                o.id === selectedMapEntry.order.id
-                                  ? { ...o, lat: newLat, lng: newLng, manualPin: true, addressVerified: true }
+                                o.id === targetId
+                                  ? {
+                                      ...o,
+                                      lat: newLat,
+                                      lng: newLng,
+                                      city: quick.city,
+                                      neighborhood: quick.neighborhood,
+                                      postalCode: quick.postalCode,
+                                      manualPin: true,
+                                      addressVerified: true
+                                    }
                                   : o
                               )
                             );
-                            notify(`Pin manual fijado en ${newLat}, ${newLng}`);
+                            notify(`Pin manual fijado en ${newLat}, ${newLng} (${quick.neighborhood}, CP ${quick.postalCode})`);
+                            const rev = await reverseGeocodeFromCoordinates(newLat, newLng, googleMapsApiKey);
+                            setOrders(prev =>
+                              prev.map(o =>
+                                o.id === targetId
+                                  ? {
+                                      ...o,
+                                      lat: rev.lat,
+                                      lng: rev.lng,
+                                      city: rev.city,
+                                      neighborhood: rev.neighborhood,
+                                      postalCode: rev.postalCode,
+                                      address: rev.streetAddress || o.address,
+                                      formattedAddress: rev.formattedAddress,
+                                      manualPin: true,
+                                      addressVerified: true
+                                    }
+                                  : o
+                              )
+                            );
                           }}
                         />
                       ) : (
@@ -5057,237 +5334,176 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Bloque de Dirección + Ciudad + Barrio + Código Postal + Botón Corroborar */}
+                {/* Bloque Único: Pin de Ubicación Manual con Coordenadas (Autocompleta Ciudad, Barrio, Código Postal y Dirección) */}
                 <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                    <div className="sm:col-span-3">
-                      <label className="block font-medium text-zinc-700 mb-1">Ciudad *</label>
-                      <select
-                        value={draftCustomer.city}
-                        onChange={(e) => {
-                          const newCity = e.target.value;
-                          const meta = inferColombianAddressMetadata(newCity, draftCustomer.address);
-                          setDraftCustomer({
-                            ...draftCustomer,
-                            city: newCity,
-                            neighborhood: meta.neighborhood,
-                            postalCode: meta.postalCode,
-                            lat: meta.lat,
-                            lng: meta.lng,
-                            addressVerified: false
-                          });
-                        }}
-                        className="w-full h-9 px-2.5 bg-white border border-zinc-200 rounded-lg text-zinc-900 font-medium"
-                      >
-                        {Object.keys(COLOMBIA_CITIES_GEO).map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="sm:col-span-5">
-                      <label className="block font-medium text-zinc-700 mb-1">
-                        Dirección Exacta (Calle / Carrera / # / Edificio) *
-                      </label>
-                      <input
-                        type="text"
-                        value={draftCustomer.address}
-                        onChange={(e) =>
-                          setDraftCustomer({
-                            ...draftCustomer,
-                            address: e.target.value,
-                            addressVerified: false
-                          })
-                        }
-                        placeholder="Ej: Cra 43A #11-40 Apto 502"
-                        className="w-full h-9 px-3 bg-white border border-zinc-200 rounded-lg text-zinc-900"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block font-medium text-zinc-700 mb-1">Barrio / Zona</label>
-                      <input
-                        type="text"
-                        value={draftCustomer.neighborhood}
-                        onChange={(e) => setDraftCustomer({ ...draftCustomer, neighborhood: e.target.value })}
-                        placeholder="El Poblado"
-                        className="w-full h-9 px-2.5 bg-white border border-zinc-200 rounded-lg text-zinc-900"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block font-medium text-zinc-700 mb-1">Código Postal</label>
-                      <input
-                        type="text"
-                        value={draftCustomer.postalCode}
-                        onChange={(e) => setDraftCustomer({ ...draftCustomer, postalCode: e.target.value })}
-                        placeholder="050021"
-                        className="w-full h-9 px-2.5 bg-white border border-zinc-200 rounded-lg text-zinc-900 font-mono font-semibold"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Botones de Verificación con Google Maps */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={isSearchingAddress}
-                        onClick={handleVerifyAddressInModal}
-                        className="h-8 px-3 rounded-lg bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 inline-flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span>
-                          {isSearchingAddress
-                            ? 'Buscando en Google Maps / Directorio...'
-                            : '🔍 Buscar Opciones y Código Postal'}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraftCustomer(prev => ({
-                            ...prev,
-                            addressVerified: true,
-                            formattedAddress:
-                              prev.formattedAddress ||
-                              `${prev.address}, Barrio ${prev.neighborhood}, ${prev.city}, Colombia (CP ${prev.postalCode})`
-                          }))
-                        }
-                        className="h-8 px-3 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-xs font-semibold hover:bg-emerald-100 inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Confirmar Dirección ✓</span>
-                      </button>
-                    </div>
-
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                        `${draftCustomer.address || ''}, ${draftCustomer.neighborhood || ''}, ${draftCustomer.city}, Colombia`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-medium text-sky-700 hover:underline inline-flex items-center gap-1"
-                    >
-                      <span>Abrir en Google Maps</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <span className="text-[11px] font-semibold text-zinc-800 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Poner Pin de Ubicación Manualmente o Coordenadas (Autocompleta Ciudad, Barrio y Código Postal)</span>
+                    </span>
+                    <span className="font-mono text-[11px] text-zinc-500">
+                      📍 {draftCustomer.lat}, {draftCustomer.lng}
+                    </span>
                   </div>
 
-                  {/* Lista de Opciones Sugeridas para Corroborar */}
-                  {addressCandidates.length > 0 && (
-                    <div className="pt-2 border-t border-zinc-200 space-y-1.5">
-                      <div className="text-[11px] font-semibold text-zinc-700">
-                        Haz clic en una opción para autocompletar dirección normalizada, barrio, código postal y coordenadas:
-                      </div>
-                      <div className="grid grid-cols-1 gap-1.5 max-h-36 overflow-y-auto">
-                        {addressCandidates.map(cand => (
-                          <button
-                            key={cand.id}
-                            type="button"
-                            onClick={() => handleSelectAddressCandidate(cand)}
-                            className="w-full text-left p-2 rounded-lg bg-white border border-zinc-200 hover:border-zinc-900 flex items-center justify-between gap-2 transition-colors cursor-pointer"
-                          >
-                            <div className="min-w-0">
-                              <div className="font-semibold text-zinc-900 truncate">
-                                {cand.formattedAddress}
-                              </div>
-                              <div className="text-[10px] text-zinc-500">
-                                Barrio: <strong>{cand.neighborhood}</strong> · Coordenadas: {cand.lat}, {cand.lng} ({cand.source})
-                              </div>
-                            </div>
-                            <span className="px-2 py-0.5 rounded bg-sky-50 border border-sky-200 font-mono text-[11px] font-bold text-sky-900 shrink-0">
-                              CP {cand.postalCode}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Mapa con Pin de Ubicación Manual (Clic o arrastrar marcador + Coordenadas) */}
-                  <div className="pt-2 border-t border-zinc-200 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-[11px] font-semibold text-zinc-800 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Poner Pin de Ubicación Manualmente (Haz clic en la calle o arrastra el marcador)</span>
-                      </span>
-                      <span className="font-mono text-[11px] text-zinc-500">
-                        📍 {draftCustomer.lat}, {draftCustomer.lng}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <input
-                        type="text"
-                        value={modalCoordPaste}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setModalCoordPaste(val);
-                          const parsed = parseCoordsFromInput(val);
-                          if (parsed) {
-                            setDraftCustomer(prev => ({
-                              ...prev,
-                              lat: parsed.lat,
-                              lng: parsed.lng,
-                              manualPin: true,
-                              addressVerified: true
-                            }));
-                          }
-                        }}
-                        placeholder="Pegar link Google Maps o lat, lng..."
-                        className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={draftCustomer.lat}
-                        onChange={(e) =>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input
+                      type="text"
+                      value={modalCoordPaste}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        setModalCoordPaste(val);
+                        const parsed = parseCoordsFromInput(val);
+                        if (parsed) {
+                          const quick = inferMetadataFromCoordinates(parsed.lat, parsed.lng);
                           setDraftCustomer(prev => ({
                             ...prev,
-                            lat: parseFloat(e.target.value) || 0,
+                            lat: parsed.lat,
+                            lng: parsed.lng,
+                            city: quick.city,
+                            neighborhood: quick.neighborhood,
+                            postalCode: quick.postalCode,
+                            address: prev.address || quick.streetAddress,
                             manualPin: true,
                             addressVerified: true
-                          }))
-                        }
-                        placeholder="Latitud"
-                        className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={draftCustomer.lng}
-                        onChange={(e) =>
+                          }));
+                          const rev = await reverseGeocodeFromCoordinates(parsed.lat, parsed.lng, googleMapsApiKey);
                           setDraftCustomer(prev => ({
                             ...prev,
-                            lng: parseFloat(e.target.value) || 0,
+                            lat: rev.lat,
+                            lng: rev.lng,
+                            city: rev.city,
+                            neighborhood: rev.neighborhood,
+                            postalCode: rev.postalCode,
+                            address: rev.streetAddress || prev.address,
+                            formattedAddress: rev.formattedAddress,
                             manualPin: true,
                             addressVerified: true
-                          }))
+                          }));
                         }
-                        placeholder="Longitud"
-                        className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
-                      />
-                    </div>
-
-                    <InteractiveManualPinMap
-                      lat={draftCustomer.lat}
-                      lng={draftCustomer.lng}
-                      title={draftCustomer.customerName || 'Cliente MyFanBox'}
-                      subtitle={`${draftCustomer.address || ''}, ${draftCustomer.city}`}
-                      heightClass="h-48"
-                      onPinChange={(newLat, newLng) => {
+                      }}
+                      placeholder="Pegar link Google Maps o lat, lng..."
+                      className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
+                    />
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={draftCustomer.lat}
+                      onChange={async (e) => {
+                        const newLat = parseFloat(e.target.value) || 0;
+                        const quick = inferMetadataFromCoordinates(newLat, draftCustomer.lng);
                         setDraftCustomer(prev => ({
                           ...prev,
                           lat: newLat,
-                          lng: newLng,
+                          city: quick.city,
+                          neighborhood: quick.neighborhood,
+                          postalCode: quick.postalCode,
                           manualPin: true,
                           addressVerified: true
                         }));
-                        setModalCoordPaste(`${newLat}, ${newLng}`);
+                        const rev = await reverseGeocodeFromCoordinates(newLat, draftCustomer.lng, googleMapsApiKey);
+                        setDraftCustomer(prev => ({
+                          ...prev,
+                          city: rev.city,
+                          neighborhood: rev.neighborhood,
+                          postalCode: rev.postalCode,
+                          address: rev.streetAddress || prev.address,
+                          formattedAddress: rev.formattedAddress
+                        }));
                       }}
+                      placeholder="Latitud"
+                      className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
                     />
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={draftCustomer.lng}
+                      onChange={async (e) => {
+                        const newLng = parseFloat(e.target.value) || 0;
+                        const quick = inferMetadataFromCoordinates(draftCustomer.lat, newLng);
+                        setDraftCustomer(prev => ({
+                          ...prev,
+                          lng: newLng,
+                          city: quick.city,
+                          neighborhood: quick.neighborhood,
+                          postalCode: quick.postalCode,
+                          manualPin: true,
+                          addressVerified: true
+                        }));
+                        const rev = await reverseGeocodeFromCoordinates(draftCustomer.lat, newLng, googleMapsApiKey);
+                        setDraftCustomer(prev => ({
+                          ...prev,
+                          city: rev.city,
+                          neighborhood: rev.neighborhood,
+                          postalCode: rev.postalCode,
+                          address: rev.streetAddress || prev.address,
+                          formattedAddress: rev.formattedAddress
+                        }));
+                      }}
+                      placeholder="Longitud"
+                      className="h-8 px-2.5 bg-white border border-zinc-200 rounded-lg font-mono text-[11px]"
+                    />
+                  </div>
+
+                  <InteractiveManualPinMap
+                    lat={draftCustomer.lat}
+                    lng={draftCustomer.lng}
+                    title={draftCustomer.customerName || 'Cliente MyFanBox'}
+                    subtitle={`${draftCustomer.address || ''}, ${draftCustomer.city}`}
+                    heightClass="h-52"
+                    onPinChange={async (newLat, newLng) => {
+                      setModalCoordPaste(`${newLat}, ${newLng}`);
+                      const quick = inferMetadataFromCoordinates(newLat, newLng);
+                      setDraftCustomer(prev => ({
+                        ...prev,
+                        lat: newLat,
+                        lng: newLng,
+                        city: quick.city,
+                        neighborhood: quick.neighborhood,
+                        postalCode: quick.postalCode,
+                        address: prev.address || quick.streetAddress,
+                        manualPin: true,
+                        addressVerified: true
+                      }));
+                      const rev = await reverseGeocodeFromCoordinates(newLat, newLng, googleMapsApiKey);
+                      setDraftCustomer(prev => ({
+                        ...prev,
+                        lat: rev.lat,
+                        lng: rev.lng,
+                        city: rev.city,
+                        neighborhood: rev.neighborhood,
+                        postalCode: rev.postalCode,
+                        address: rev.streetAddress,
+                        formattedAddress: rev.formattedAddress,
+                        manualPin: true,
+                        addressVerified: true
+                      }));
+                    }}
+                  />
+
+                  {/* Resumen automático detectado por las coordenadas + campo editable para Apto/Casa/Detalle */}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1">
+                    <div className="sm:col-span-3 px-2.5 py-1.5 rounded-lg bg-white border border-zinc-200">
+                      <span className="block text-[10px] text-zinc-400">Ciudad (Auto por Pin)</span>
+                      <span className="font-semibold text-zinc-900">{draftCustomer.city || '—'}</span>
+                    </div>
+                    <div className="sm:col-span-3 px-2.5 py-1.5 rounded-lg bg-white border border-zinc-200">
+                      <span className="block text-[10px] text-zinc-400">Barrio / Zona (Auto por Pin)</span>
+                      <span className="font-semibold text-zinc-900 truncate block">{draftCustomer.neighborhood || '—'}</span>
+                    </div>
+                    <div className="sm:col-span-2 px-2.5 py-1.5 rounded-lg bg-white border border-zinc-200">
+                      <span className="block text-[10px] text-zinc-400">Código Postal</span>
+                      <span className="font-mono font-bold text-sky-700">{draftCustomer.postalCode || '—'}</span>
+                    </div>
+                    <div className="sm:col-span-4">
+                      <input
+                        type="text"
+                        value={draftCustomer.address}
+                        onChange={(e) => setDraftCustomer({ ...draftCustomer, address: e.target.value })}
+                        placeholder="Dirección / Apto / Casa (Autocompletada)"
+                        className="w-full h-full min-h-[38px] px-2.5 bg-white border border-zinc-200 rounded-lg text-zinc-900 text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
