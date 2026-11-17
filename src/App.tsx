@@ -3396,7 +3396,7 @@ export default function App() {
                       <Download className="w-3.5 h-3.5" />
                       <span>Exportar CSV</span>
                     </button>
-                    <button
+                    <!--
                       onClick={() => {
                         setOrders([]);
                         setBoughtSupplies({});
@@ -3408,6 +3408,7 @@ export default function App() {
                     >
                       Empezar de 0
                     </button>
+                    -->
                   </div>
                 </div>
 
