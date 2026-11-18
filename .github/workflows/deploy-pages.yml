@@ -47,6 +47,9 @@ jobs:
             exit 1
           fi
           npm run build
+          if [ -f CNAME ]; then
+            cp CNAME dist/CNAME
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
