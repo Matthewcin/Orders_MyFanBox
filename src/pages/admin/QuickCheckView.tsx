@@ -50,9 +50,12 @@ function TypewriterHeading({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-900 leading-tight min-h-[1.25em]">
+    <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-zinc-900 leading-tight whitespace-nowrap overflow-hidden">
       <span>{displayed}</span>
-      <span className="inline-block w-[3px] h-[0.88em] bg-zinc-900 ml-1 align-middle animate-pulse" />
+      <span
+        aria-hidden="true"
+        className="inline-block w-[3px] h-[0.8em] bg-zinc-900 ml-1.5 align-[-0.06em] animate-pulse"
+      />
     </h1>
   );
 }

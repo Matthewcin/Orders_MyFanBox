@@ -129,14 +129,17 @@ function TypewriterHeading({ text }: { text: string }) {
       if (index >= text.length) {
         clearInterval(interval);
       }
-    }, 22);
+    }, 18);
     return () => clearInterval(interval);
   }, [text]);
 
   return (
-    <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-zinc-900 leading-tight min-h-[1.25em]">
+    <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-zinc-900 leading-tight whitespace-nowrap overflow-hidden">
       <span>{displayed}</span>
-      <span className="inline-block w-[3px] h-[0.9em] bg-zinc-900 ml-1 align-middle animate-pulse" />
+      <span
+        aria-hidden="true"
+        className="inline-block w-[3px] h-[0.8em] bg-zinc-900 ml-1.5 align-[-0.06em] animate-pulse"
+      />
     </h1>
   );
 }

@@ -537,31 +537,37 @@ export default function OrdersView({
                       />
                     </td>
 
-                    <td className="p-3 align-top whitespace-nowrap">
-                      <div className="font-mono font-bold text-zinc-900">{order.id}</div>
-                      <div className="text-[11px] text-zinc-500 mt-0.5">{order.createdAt || '—'}</div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard?.writeText(`${window.location.origin}/details/${order.uuid}`);
-                          notify(`Link privado de ${order.id} copiado`);
-                        }}
-                        title="Copiar enlace de seguimiento"
-                        className="mt-1 inline-flex items-center gap-1 font-mono text-[10px] text-zinc-400 hover:text-zinc-900 cursor-pointer"
-                      >
-                        <Copy className="w-2.5 h-2.5" />
-                        <span>{String(order.uuid || '').slice(0, 8)}</span>
-                      </button>
-                      <div className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-medium text-zinc-500">
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ backgroundColor: visual.dotColor }}
-                        />
-                        <span>{visual.label}</span>
+                    <td className="p-3 align-top">
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="font-mono font-bold text-zinc-900 leading-tight">
+                          {order.id}
+                        </span>
+                        <span className="text-[11px] text-zinc-500 leading-tight">
+                          {order.createdAt || '—'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(`${window.location.origin}/details/${order.uuid}`);
+                            notify(`Link privado de ${order.id} copiado`);
+                          }}
+                          title="Copiar enlace de seguimiento"
+                          className="inline-flex items-center gap-1 font-mono text-[10px] text-zinc-400 hover:text-zinc-900 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5" />
+                          <span>{String(order.uuid || '').slice(0, 8)}</span>
+                        </button>
+                        <span className="mt-0.5 inline-flex items-center gap-1.5 text-[10px] font-medium text-zinc-500 leading-tight">
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: visual.dotColor }}
+                          />
+                          <span>{visual.label}</span>
+                        </span>
                       </div>
                     </td>
 
-                    <td className="p-3 align-top min-w-[200px]">
+                    <td className="p-3 align-top min-w-[185px]">
                       <div className="font-semibold text-zinc-900">
                         {order.customerName}{' '}
                         {order.cedula && (
@@ -593,7 +599,7 @@ export default function OrdersView({
                       </div>
                     </td>
 
-                    <td className="p-3 align-top min-w-[240px]">
+                    <td className="p-3 align-top min-w-[215px]">
                       <div className="space-y-1">
                         {order.items.map((it, idx) => (
                           <div key={it.id || idx} className="text-[11px] leading-snug">
@@ -653,8 +659,8 @@ export default function OrdersView({
                       </select>
                     </td>
 
-                    <td className="p-3 align-top text-right whitespace-nowrap">
-                      <div className="inline-flex items-center gap-1.5">
+                    <td className="p-3 align-top text-right">
+                      <div className="inline-flex flex-wrap items-center justify-end gap-1 max-w-[168px]">
                         <button
                           type="button"
                           onClick={() => navigate(`/details/${order.uuid}`)}
@@ -662,7 +668,7 @@ export default function OrdersView({
                           title="Abrir seguimiento / factura"
                         >
                           <ExternalLink className="w-3 h-3" />
-                          <span>Ver Detalles</span>
+                          <span>/details/</span>
                         </button>
                         <button
                           type="button"
@@ -671,7 +677,7 @@ export default function OrdersView({
                           title="Escribir por WhatsApp"
                         >
                           <MessageCircle className="w-3 h-3" />
-                          <span>Enviar Mensaje a WA</span>
+                          <span>WA</span>
                         </button>
                         <button
                           type="button"
