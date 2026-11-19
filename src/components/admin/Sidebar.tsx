@@ -96,7 +96,7 @@ export default function Sidebar({
               />
               <div>
                 <div className="text-xs font-semibold tracking-tight text-zinc-900 leading-none flex items-center gap-1.5">
-                  <span>{brandName} Ops</span>
+                  <span>{brandName}</span>
                   <span className="px-1.5 py-0.5 text-[9px] font-mono bg-emerald-50 text-emerald-800 rounded border border-emerald-200">
                     ADMIN
                   </span>
