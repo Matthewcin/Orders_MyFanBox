@@ -337,24 +337,24 @@ export default function OrderDetails() {
             {
               step: 1,
               title: 'Pedido confirmado',
-              desc: `Orden ${o.id} registrada el ${o.createdAt || 'hoy'}.`
+              desc: `Orden #${o.id} registrada el ${o.createdAt || 'hoy'}.`
             },
             {
               step: 2,
-              title: 'En taller y estampado',
-              desc: 'Preparamos cada prenda, talla y detalle especial.'
+              title: 'En preparación',
+              desc: 'Verificamos talles, productos y cada detalle para que todo llegue perfecto.'
             },
             {
               step: 3,
               title: 'Empacado y revisado',
-              desc: 'Control final de calidad y listo para despacho.'
+              desc: 'Control final de calidad realizado. Tu paquete está listo para salir.'
             },
             {
               step: 4,
-              title: isDelivered ? 'Entregado en destino' : 'En camino a tu ciudad',
+              title: isDelivered ? 'Entregado en destino' : 'En camino hacia ti',
               desc: isDelivered
-                ? `Paquete entregado en ${o.city} con ${o.carrier}.`
-                : `Despacho GRATIS con ${o.carrier} hacia ${o.city}.`
+                ? `Paquete entregado en ${o.city} a través de ${o.carrier}.`
+                : `Envío sin cargo con ${o.carrier} con destino a ${o.city}.`
             }
           ];
 
