@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { consultarGuiaInterrapidisimo } from './interrapidisimo.mjs';
 
 const { Pool } = pg;
 const app = express();
@@ -530,6 +531,15 @@ app.post('/api/admin/sql', requireAdmin, async (req, res) => {
   } finally {
     client.release();
   }
+});
+
+app.get('/api/tracking/interrapidisimo', async (req, res) => {
+  const guia = String(req.query.guia || '').trim();
+  if (!guia) {
+    return res.status(400).json({ ok: false, error: 'Falta el parámetro guia.' });
+  }
+  const result = await consultarGuiaInterrapidisimo(guia);
+  return res.json(result);
 });
 
 app.get('/api/orders/:uuid', async (req, res) => {

@@ -38,6 +38,7 @@ import {
   readStoredAppTheme,
   saveStoredAppTheme
 } from '../utils/themes';
+import { getPcCachedGuide, savePcCachedGuide } from '../utils/pcTrackingGuides';
 import { Order } from '../types';
 
 interface PublicStoreConfig {
@@ -112,6 +113,7 @@ export default function OrderDetails() {
   const [dataConfirmedByClient, setDataConfirmedByClient] = useState(false);
   const [storeConfig, setStoreConfig] = useState<PublicStoreConfig>(() => loadLocalStoreConfig());
   const [clientTheme, setClientTheme] = useState<AppTheme>(() => readStoredAppTheme());
+  const [liveTrackingEvent, setLiveTrackingEvent] = useState('');
 
   const activeThemePalette = useMemo(() => {
     return APP_THEME_PALETTES[clientTheme] || APP_THEME_PALETTES.myfanbox;
@@ -136,6 +138,7 @@ export default function OrderDetails() {
 
     let cancelled = false;
     setDetailSecurityError('');
+    setLiveTrackingEvent('');
     apiRequest(`/api/orders/${encodeURIComponent(id)}`, null)
       .then(payload => {
         if (cancelled) return;
@@ -167,6 +170,59 @@ export default function OrderDetails() {
       });
     return () => { cancelled = true; };
   }, [id]);
+
+  useEffect(() => {
+    if (!remoteDetailOrder) return;
+
+    const guia = String(remoteDetailOrder.trackingNumber || '').trim();
+    const isInter = String(remoteDetailOrder.carrier || '')
+      .toLowerCase()
+      .includes('inter');
+
+    if (!isInter || !guia) return;
+
+    const cached = getPcCachedGuide(guia);
+    if (cached) {
+      if (cached.lastEvent) setLiveTrackingEvent(cached.lastEvent);
+      if (cached.shippingStatus && cached.shippingStatus !== remoteDetailOrder.shippingStatus) {
+        setRemoteDetailOrder(prev =>
+          prev ? { ...prev, shippingStatus: cached.shippingStatus! } : prev
+        );
+      }
+      return;
+    }
+
+    if (String(remoteDetailOrder.shippingStatus || '').toLowerCase().includes('entregado')) {
+      return;
+    }
+
+    let cancelled = false;
+    apiRequest(`/api/tracking/interrapidisimo?guia=${encodeURIComponent(guia)}`, null)
+      .then(res => {
+        if (cancelled || !res?.ok) return;
+
+        const eventText = [res.lastEvent, res.lastLocation].filter(Boolean).join(' · ');
+        const nextStatus = res.shippingStatus || remoteDetailOrder.shippingStatus;
+
+        if (eventText) setLiveTrackingEvent(eventText);
+
+        if (res.shippingStatus && res.shippingStatus !== remoteDetailOrder.shippingStatus) {
+          setRemoteDetailOrder(prev =>
+            prev ? { ...prev, shippingStatus: res.shippingStatus } : prev
+          );
+        }
+
+        savePcCachedGuide(guia, {
+          shippingStatus: nextStatus,
+          lastEvent: eventText
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [remoteDetailOrder?.id, remoteDetailOrder?.trackingNumber, remoteDetailOrder?.carrier]);
 
   const handleCopy = (value: string, key: string) => {
     if (!value) return;
@@ -513,6 +569,11 @@ export default function OrderDetails() {
                           <div className="text-base sm:text-lg font-mono font-bold text-zinc-900 mt-0.5 break-all">
                             {o.trackingNumber || 'Guía en proceso de asignación'}
                           </div>
+                          {liveTrackingEvent && (
+                            <div className="text-[11px] text-zinc-500 mt-1">
+                              Último movimiento: <strong className="text-zinc-700">{liveTrackingEvent}</strong>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
