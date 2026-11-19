@@ -4,6 +4,7 @@ import {
   ShoppingBag,
   Layers,
   LayoutGrid,
+  ClipboardCheck,
   Truck,
   MapPin,
   Calculator,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import MyFanBoxBrandLogo from '../MyFanBoxBrandLogo';
-import { EYE_CARE_THEMES } from '../../utils/constants';
+import { APP_THEMES } from '../../utils/themes';
 import { formatCOP } from '../../utils/helpers';
 
 interface SidebarProps {
@@ -54,6 +55,7 @@ export default function Sidebar({
   } = useAdmin();
 
   const netProfitProjected = metrics.grossRevenue - metrics.totalProductionCost;
+  const pendingCheckCount = metrics.countPorPreparar + metrics.countPorEnviar;
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard?.writeText(text);
@@ -128,6 +130,21 @@ export default function Sidebar({
               </span>
               <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${activeTab === 'orders' ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-100 text-zinc-600'}`}>
                 {metrics.activeOrdersCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('quickcheck'); setMobileMenuOpen(false); }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                activeTab === 'quickcheck' ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <ClipboardCheck className="w-3.5 h-3.5" />
+                <span>¿Está hecho?</span>
+              </span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${activeTab === 'quickcheck' ? 'bg-zinc-800 text-sky-300' : 'bg-sky-50 text-sky-800 border border-sky-200'}`}>
+                {pendingCheckCount}
               </span>
             </button>
 
@@ -265,25 +282,25 @@ export default function Sidebar({
 
             <div className="pt-3 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <Palette className="w-3 h-3" />
-              <span>Temas Descanso Visual</span>
+              <span>Tema Visual</span>
             </div>
-            <div className="grid grid-cols-2 gap-1 px-2">
-              {EYE_CARE_THEMES.map(t => (
+            <div className="grid grid-cols-1 gap-1 px-2">
+              {APP_THEMES.map(t => (
                 <button
                   key={t.id}
                   onClick={() => setTheme(t.id)}
                   title={t.desc}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
                     theme === t.id
                       ? 'bg-zinc-900 text-white border-zinc-900'
                       : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:text-zinc-900'
                   }`}
                 >
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 border"
-                    style={{ backgroundColor: t.dot, borderColor: t.border }}
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ background: t.dot, border: `1.5px solid ${t.border}` }}
                   />
-                  <span className="truncate">{t.short}</span>
+                  <span className="truncate">{t.name}</span>
                 </button>
               ))}
             </div>

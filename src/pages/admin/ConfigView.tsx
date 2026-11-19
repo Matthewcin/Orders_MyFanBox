@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { SlidersHorizontal, Truck } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import MyFanBoxBrandLogo from '../../components/MyFanBoxBrandLogo';
-import { COLOMBIA_CITIES_GEO, CARRIERS, EYE_CARE_THEMES, THEME_PALETTES } from '../../utils/constants';
-import { getContrastRatio } from '../../utils/helpers';
+import { COLOMBIA_CITIES_GEO, CARRIERS } from '../../utils/constants';
+import { APP_THEMES } from '../../utils/themes';
 
 export default function ConfigView() {
   const {
@@ -31,33 +31,10 @@ export default function ConfigView() {
     setInstagramHandle,
     theme,
     setTheme,
-    customTheme,
-    setCustomTheme,
     isSavingData,
     handlePushAllToNeon,
     notify
   } = useAdmin();
-
-  const baseThemeRef = THEME_PALETTES[theme] || THEME_PALETTES['medium-dark'];
-  const activeThemePalette = useMemo(() => {
-    const src = theme === 'custom' ? customTheme : baseThemeRef;
-    const isDark = getContrastRatio(src.surface || '#1C232D', '#FFFFFF') > 4.2;
-    return {
-      background: src.background || '#141920',
-      surface: src.surface || '#1C232D',
-      surfaceAlt: src.surfaceAlt || '#242D3A',
-      hover: (src as any).hover || (isDark ? '#2E3A4B' : '#E2E8F0'),
-      hoverText: (src as any).hoverText || (isDark ? '#F8FAFC' : '#0F172A'),
-      selectedBg: (src as any).selectedBg || (isDark ? '#243B4A' : '#D8ECE8'),
-      selectedText: (src as any).selectedText || (isDark ? '#F8FAFC' : '#133A32'),
-      text: src.text || (isDark ? '#F1F5F9' : '#182230'),
-      muted: src.muted || (isDark ? '#94A3B8' : '#536273'),
-      primary: src.primary || '#2A7B6F',
-      primaryText: src.primaryText || '#FFFFFF',
-      border: src.border || (isDark ? '#323E4F' : '#D5DDE5'),
-      isDark
-    };
-  }, [theme, customTheme, baseThemeRef]);
 
   return (
     <div className="space-y-4 max-w-5xl">
@@ -242,157 +219,28 @@ export default function ConfigView() {
       <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-zinc-900">Apariencia</h2>
-          <span className="text-[11px] text-zinc-500">{EYE_CARE_THEMES.length} temas disponibles</span>
+          <span className="text-[11px] text-zinc-500">3 temas oficiales</span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-          {EYE_CARE_THEMES.map(t => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {APP_THEMES.map(t => (
             <button
               key={t.id}
+              type="button"
               onClick={() => setTheme(t.id)}
-              title={t.desc}
-              className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs transition-all cursor-pointer ${
+              className={`flex items-center gap-3 rounded-xl border p-3.5 text-left text-xs transition-all cursor-pointer ${
                 theme === t.id ? 'border-zinc-900 ring-1 ring-zinc-900 bg-zinc-50' : 'border-zinc-200 hover:border-zinc-400'
               }`}
             >
-              <span className="w-5 h-5 rounded-full border shrink-0" style={{ backgroundColor: t.dot, borderColor: t.border }} />
-              <span className="min-w-0">
-                <span className="block font-semibold text-zinc-900 truncate">{t.name}</span>
-                <span className="block text-[10px] text-zinc-500 truncate">{t.desc}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900">
-              Editor Visual de Tema (Colores, Hovers y Selección)
-            </h2>
-            <p className="text-xs text-zinc-500 mt-1">
-              Personaliza los 12 canales de color en vivo. Los cambios se sincronizan con NeonDB.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setTheme('custom')}
-            className="rounded-lg px-3 py-2 text-xs font-semibold bg-zinc-900 text-white cursor-pointer"
-          >
-            Aplicar mi tema
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {[
-            ['background', 'Fondo general'],
-            ['surface', 'Tarjetas y paneles'],
-            ['surfaceAlt', 'Superficie secundaria'],
-            ['border', 'Bordes y separadores'],
-            ['hover', 'Fondo Hover (Cursor)'],
-            ['hoverText', 'Texto Hover (Cursor)'],
-            ['selectedBg', 'Fondo Seleccionado'],
-            ['selectedText', 'Texto Seleccionado'],
-            ['text', 'Texto principal'],
-            ['muted', 'Texto secundario'],
-            ['primary', 'Color de acción'],
-            ['primaryText', 'Texto sobre acciones']
-          ].map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2 rounded-xl border border-zinc-200 p-2.5 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50">
-              <input
-                type="color"
-                value={(activeThemePalette as any)[key] || '#1C232D'}
-                onChange={e => {
-                  const val = e.target.value;
-                  setCustomTheme((prev: any) => ({ ...(theme === 'custom' ? prev : activeThemePalette), [key]: val }));
-                  if (theme !== 'custom') setTheme('custom');
-                }}
-                className="w-9 h-9 rounded-lg border-0 bg-transparent cursor-pointer shrink-0"
+              <span
+                className="w-6 h-6 rounded-full shrink-0"
+                style={{ background: t.dot, border: `1.5px solid ${t.border}` }}
               />
               <span className="min-w-0">
-                <span className="block font-semibold truncate">{label}</span>
-                <span className="block font-mono text-[10px] text-zinc-500">{(activeThemePalette as any)[key]}</span>
+                <span className="block font-semibold text-zinc-900 truncate">{t.name}</span>
+                <span className="block text-[11px] text-zinc-500 truncate">{t.desc}</span>
               </span>
-            </label>
-          ))}
-        </div>
-
-        <div
-          className="rounded-xl p-4 border space-y-2"
-          style={{ background: customTheme.background, color: customTheme.text, borderColor: customTheme.border }}
-        >
-          <div className="rounded-lg border p-3" style={{ background: customTheme.surface, borderColor: customTheme.border }}>
-            <div className="font-semibold text-sm">Vista previa de MyFanBox</div>
-            <div className="text-xs mt-1" style={{ color: customTheme.muted }}>
-              Texto secundario · pedidos · inventario
-            </div>
-            <button
-              type="button"
-              onClick={() => setTheme('custom')}
-              className="mt-3 rounded-lg px-3 py-2 text-xs font-semibold cursor-pointer"
-              style={{ background: customTheme.primary, color: customTheme.primaryText }}
-            >
-              Acción principal
             </button>
-          </div>
-          <div className="text-[10px]" style={{ color: customTheme.muted }}>
-            Vista previa de superficies, tipografía y acento.
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2 text-[11px]">
-          <span
-            className={`rounded-lg px-2.5 py-1.5 border ${
-              getContrastRatio(customTheme.text, customTheme.surface) >= 4.5
-                ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                : 'border-amber-300 bg-amber-50 text-amber-900'
-            }`}
-          >
-            Texto / tarjeta: {getContrastRatio(customTheme.text, customTheme.surface).toFixed(2)}:1{' '}
-            {getContrastRatio(customTheme.text, customTheme.surface) >= 4.5 ? '· Buen contraste' : '· Conviene aumentarlo'}
-          </span>
-          <span
-            className={`rounded-lg px-2.5 py-1.5 border ${
-              getContrastRatio(customTheme.primaryText, customTheme.primary) >= 4.5
-                ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                : 'border-amber-300 bg-amber-50 text-amber-900'
-            }`}
-          >
-            Botón: {getContrastRatio(customTheme.primaryText, customTheme.primary).toFixed(2)}:1{' '}
-            {getContrastRatio(customTheme.primaryText, customTheme.primary) >= 4.5 ? '· Buen contraste' : '· Conviene aumentarlo'}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              setCustomTheme({
-                background: '#F4F1EA',
-                surface: '#FFFFFF',
-                surfaceAlt: '#E9E4DA',
-                hover: '#E2DCD0',
-                hoverText: '#141416',
-                selectedBg: '#D8ECE8',
-                selectedText: '#133A32',
-                text: '#24211D',
-                muted: '#625C53',
-                primary: '#315C52',
-                primaryText: '#FFFFFF',
-                border: '#CFC7B9'
-              })
-            }
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-xs cursor-pointer"
-          >
-            Restaurar paleta equilibrada
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('custom')}
-            className="rounded-lg bg-zinc-900 text-white px-3 py-2 text-xs font-semibold cursor-pointer"
-          >
-            Usar este tema
-          </button>
+          ))}
         </div>
       </section>
 

@@ -10,6 +10,7 @@ import OrderModeModal from '../components/admin/OrderModeModal';
 import SimpleOrderWizard from '../components/admin/SimpleOrderWizard';
 import SecurityModal from '../components/admin/SecurityModal';
 import OrdersView from './admin/OrdersView';
+import QuickCheckView from './admin/QuickCheckView';
 import InventoryView from './admin/InventoryView';
 import BentoInventoryView from './admin/BentoInventoryView';
 import ShippingView from './admin/ShippingView';
@@ -17,8 +18,7 @@ import MapView from './admin/MapView';
 import CostsView from './admin/CostsView';
 import NeonDBView from './admin/NeonDBView';
 import ConfigView from './admin/ConfigView';
-import { THEME_PALETTES, THEME_STORAGE_KEY } from '../utils/constants';
-import { getContrastRatio } from '../utils/helpers';
+import { APP_THEME_PALETTES } from '../utils/themes';
 import { Order } from '../types';
 
 function AdminDashboardContent() {
@@ -29,7 +29,6 @@ function AdminDashboardContent() {
     loginError,
     handleAdminLoginSubmit,
     theme,
-    customTheme,
     toast
   } = useAdmin();
 
@@ -48,37 +47,15 @@ function AdminDashboardContent() {
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const baseThemeRef = THEME_PALETTES[theme] || THEME_PALETTES['medium-dark'];
   const activeThemePalette = useMemo(() => {
-    const src = theme === 'custom' ? customTheme : baseThemeRef;
-    const isDark = getContrastRatio(src.surface || '#1C232D', '#FFFFFF') > 4.2;
-    return {
-      background: src.background || '#141920',
-      surface: src.surface || '#1C232D',
-      surfaceAlt: src.surfaceAlt || '#242D3A',
-      hover: (src as any).hover || (isDark ? '#2E3A4B' : '#E2E8F0'),
-      hoverText: (src as any).hoverText || (isDark ? '#F8FAFC' : '#0F172A'),
-      selectedBg: (src as any).selectedBg || (isDark ? '#243B4A' : '#D8ECE8'),
-      selectedText: (src as any).selectedText || (isDark ? '#F8FAFC' : '#133A32'),
-      text: src.text || (isDark ? '#F1F5F9' : '#182230'),
-      muted: src.muted || (isDark ? '#94A3B8' : '#536273'),
-      primary: src.primary || '#2A7B6F',
-      primaryText: src.primaryText || '#FFFFFF',
-      border: src.border || (isDark ? '#323E4F' : '#D5DDE5'),
-      isDark
-    };
-  }, [theme, customTheme, baseThemeRef]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch {}
+    return APP_THEME_PALETTES[theme] || APP_THEME_PALETTES.myfanbox;
   }, [theme]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isAdmin) return;
       if (modeSelectorOpen || simpleWizardOpen || orderModalOpen || securityModalOpen) return;
+      if (activeTab === 'quickcheck') return;
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
         if (e.key === 'Escape') {
@@ -97,6 +74,7 @@ function AdminDashboardContent() {
       else if (e.key === '6') setActiveTab('neondb');
       else if (e.key === '7') setActiveTab('config');
       else if (e.key === '8' || e.key.toLowerCase() === 'b') setActiveTab('bento');
+      else if (e.key === '9' || e.key.toLowerCase() === 'r') setActiveTab('quickcheck');
       else if (e.key.toLowerCase() === 'n') {
         e.preventDefault();
         setModeSelectorOpen(true);
@@ -104,7 +82,7 @@ function AdminDashboardContent() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAdmin, modeSelectorOpen, simpleWizardOpen, orderModalOpen, securityModalOpen]);
+  }, [isAdmin, activeTab, modeSelectorOpen, simpleWizardOpen, orderModalOpen, securityModalOpen]);
 
   const onLoginFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,6 +218,13 @@ function AdminDashboardContent() {
                 setEditingOrder(order);
                 setOrderModalOpen(true);
               }}
+              onOpenQuickCheck={() => setActiveTab('quickcheck')}
+            />
+          )}
+          {activeTab === 'quickcheck' && (
+            <QuickCheckView
+              onGoToOrders={() => setActiveTab('orders')}
+              onGoToBento={() => setActiveTab('bento')}
             />
           )}
           {activeTab === 'inventory' && <InventoryView />}

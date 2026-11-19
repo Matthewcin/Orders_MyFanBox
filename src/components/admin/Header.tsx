@@ -1,7 +1,7 @@
 import React from 'react';
-import { Menu, Search, Palette, Database, Plus } from 'lucide-react';
+import { Menu, Search, Database, Plus } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
-import { EYE_CARE_THEMES } from '../../utils/constants';
+import { APP_THEMES } from '../../utils/themes';
 
 interface HeaderProps {
   activeTab: string;
@@ -64,6 +64,7 @@ export default function Header({
         <div className="hidden xl:flex items-center bg-zinc-100 p-0.5 rounded-lg border border-zinc-200">
           {[
             { id: 'orders', label: 'Ventas' },
+            { id: 'quickcheck', label: '¿Hecho?' },
             { id: 'inventory', label: 'Inventario' },
             { id: 'bento', label: 'Bento' },
             { id: 'shipping', label: 'Envíos' },
@@ -85,20 +86,29 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <div className="flex items-center gap-1 bg-zinc-100 px-1.5 py-1 rounded-lg border border-zinc-200">
-          <Palette className="w-3.5 h-3.5 text-zinc-500 hidden sm:inline" />
-          <select
-            value={theme}
-            onChange={(e) => setTheme(e.target.value)}
-            aria-label="Cambiar tema visual"
-            className="h-6 px-1.5 text-[11px] font-medium bg-transparent text-zinc-800 focus:outline-none cursor-pointer"
-          >
-            {EYE_CARE_THEMES.map(t => (
-              <option key={t.id} value={t.id}>
-                Tema: {t.name}
-              </option>
-            ))}
-          </select>
+        <div className="hidden sm:inline-flex items-center gap-1 p-0.5 rounded-full bg-zinc-100 border border-zinc-200">
+          {APP_THEMES.map(t => {
+            const selected = theme === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTheme(t.id)}
+                title={t.desc}
+                className={`h-7 px-2.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                  selected
+                    ? 'bg-zinc-900 text-white shadow-2xs'
+                    : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ background: t.dot, border: `1.5px solid ${t.border}` }}
+                />
+                <span>{t.short}</span>
+              </button>
+            );
+          })}
         </div>
 
         <button

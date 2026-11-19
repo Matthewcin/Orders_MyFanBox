@@ -3,6 +3,7 @@ import { Product, ProductVariant, Order, OrderItem } from '../types';
 import { apiRequest } from '../api';
 import { sanitizeCatalogRecord, sanitizeOrderRecord, isOrderActive, getPaidAmount, getPendingAmount, generateUUIDv4, saveStoredCedula } from '../utils/helpers';
 import { DEFAULT_ADMIN_USER, ADMIN_SESSION_KEY, OFFICIAL_CATALOG_FALLBACK, ALL_GARMENT_SIZES } from '../utils/constants';
+import { AppTheme, normalizeAppTheme, readStoredAppTheme, saveStoredAppTheme } from '../utils/themes';
 
 interface AdminContextProps {
   isAdmin: boolean;
@@ -45,10 +46,8 @@ interface AdminContextProps {
   setPaymentBancolombia: React.Dispatch<React.SetStateAction<string>>;
   instagramHandle: string;
   setInstagramHandle: React.Dispatch<React.SetStateAction<string>>;
-  theme: string;
-  setTheme: React.Dispatch<React.SetStateAction<string>>;
-  customTheme: any;
-  setCustomTheme: React.Dispatch<React.SetStateAction<any>>;
+  theme: AppTheme;
+  setTheme: React.Dispatch<React.SetStateAction<AppTheme>>;
   adminConfig: any;
   setAdminConfig: React.Dispatch<React.SetStateAction<any>>;
 
@@ -106,8 +105,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [paymentNequi, setPaymentNequi] = useState('');
   const [paymentBancolombia, setPaymentBancolombia] = useState('');
   const [instagramHandle, setInstagramHandle] = useState('@myfanbox');
-  const [theme, setTheme] = useState('medium-dark');
-  const [customTheme, setCustomTheme] = useState({ background: '#141920', surface: '#1C232D', surfaceAlt: '#242D3A', hover: '#2E3A4B', hoverText: '#F8FAFC', selectedBg: '#1F3A3D', selectedText: '#E6FFFA', text: '#F1F5F9', muted: '#94A3B8', primary: '#2A7B6F', primaryText: '#FFFFFF', border: '#323E4F' });
+  const [theme, setTheme] = useState<AppTheme>(() => readStoredAppTheme());
   const [adminConfig, setAdminConfig] = useState({ username: DEFAULT_ADMIN_USER, hideDefaultHint: true });
 
   const [toast, setToast] = useState<{ message: string; type: string; id: number } | null>(null);
@@ -118,6 +116,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const t = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    saveStoredAppTheme(theme);
+  }, [theme]);
 
   const applyDatabaseSnapshot = useCallback((payload: any) => {
     setCatalog(Array.isArray(payload.catalog) ? payload.catalog.map((c: any, idx: number) => sanitizeCatalogRecord(c, idx)) : []);
@@ -136,8 +138,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setPaymentNequi(payload.settings?.paymentNequi || '');
     setPaymentBancolombia(payload.settings?.paymentBancolombia || '');
     setInstagramHandle(payload.settings?.instagramHandle || '@myfanbox');
-    if (payload.settings?.theme) setTheme(payload.settings.theme);
-    if (payload.settings?.customTheme) setCustomTheme(prev => ({ ...prev, ...payload.settings.customTheme }));
+    if (payload.settings?.theme) setTheme(normalizeAppTheme(payload.settings.theme));
     if (payload.adminConfig) setAdminConfig(payload.adminConfig);
     setIsDataReady(true);
     setDataError('');
@@ -211,7 +212,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     paymentBancolombia,
     instagramHandle,
     theme,
-    customTheme,
     orderCedulas: orders.reduce((acc: any, o: any) => {
       if (o?.cedula) {
         if (o.id) acc[o.id] = String(o.cedula);
@@ -222,7 +222,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }), [
     comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName,
     googleMapsApiKey, supportWhatsapp, paymentNequi, paymentBancolombia, instagramHandle,
-    theme, customTheme, orders
+    theme, orders
   ]);
 
   useEffect(() => {
@@ -423,7 +423,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       brandName, setBrandName, brandLogoUrl, setBrandLogoUrl, collectionName, setCollectionName,
       googleMapsApiKey, setGoogleMapsApiKey, supportWhatsapp, setSupportWhatsapp,
       paymentNequi, setPaymentNequi, paymentBancolombia, setPaymentBancolombia,
-      instagramHandle, setInstagramHandle, theme, setTheme, customTheme, setCustomTheme,
+      instagramHandle, setInstagramHandle, theme, setTheme,
       adminConfig, setAdminConfig, metrics, shoppingNeeds, productionMatrix,
       handleAdminLoginSubmit, handleAdminLogout, handleInitNeonTables, handlePushAllToNeon, handlePullFromNeon, executeNeonQuery,
       handleUpdateOrderPayment, handleUpdateOrderShipping, handleUpdateOrderField, handleRegenerateOrderUUID, handleToggleItemPacked, saveNewOrder, updateExistingOrder, deleteOrder,

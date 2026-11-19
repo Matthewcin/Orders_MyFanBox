@@ -1,23 +1,27 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  ClipboardCheck,
+  Copy,
   Download,
-  Fingerprint,
-  FileText,
-  MessageCircle,
   Edit3,
-  Trash2,
-  ChevronLeft,
-  ChevronRight
+  ExternalLink,
+  MessageCircle,
+  Trash2
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { Order } from '../../types';
-import { PAYMENT_STATUSES, SHIPPING_STATUSES, GARMENT_GENDERS } from '../../utils/constants';
+import {
+  PAYMENT_STATUSES,
+  SHIPPING_STATUSES,
+  ALL_GARMENT_SIZES,
+  GARMENT_GENDERS
+} from '../../utils/constants';
 import {
   formatCOP,
-  isOrderActive,
   getPaidAmount,
   getPendingAmount,
+  isOrderActive,
   isValidUUID,
   generateUUIDv4
 } from '../../utils/helpers';
@@ -26,13 +30,18 @@ interface OrdersViewProps {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   onEditOrder: (order: Order) => void;
+  onOpenQuickCheck: () => void;
 }
 
-export default function OrdersView({ searchQuery, setSearchQuery, onEditOrder }: OrdersViewProps) {
+export default function OrdersView({
+  searchQuery,
+  setSearchQuery,
+  onEditOrder,
+  onOpenQuickCheck
+}: OrdersViewProps) {
   const navigate = useNavigate();
   const {
     orders,
-    setOrders,
     catalog,
     metrics,
     productionMatrix,
@@ -42,84 +51,160 @@ export default function OrdersView({ searchQuery, setSearchQuery, onEditOrder }:
     notify
   } = useAdmin();
 
-  const [quickStatusFilter, setQuickStatusFilter] = useState('ALL');
+  const [quickFilter, setQuickFilter] = useState('ALL');
   const [payFilter, setPayFilter] = useState('ALL');
   const [shipFilter, setShipFilter] = useState('ALL');
   const [productFilter, setProductFilter] = useState('ALL');
   const [sizeFilter, setSizeFilter] = useState('ALL');
   const [genderFilter, setGenderFilter] = useState('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
-  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const missingInventoryMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    (productionMatrix.rows || []).forEach((r: any) => {
+      map[r.key] = Number(r.missing) || 0;
+    });
+    return map;
+  }, [productionMatrix]);
+
+  const getOrderVisualState = (order: Order) => {
+    if (!isOrderActive(order)) {
+      return {
+        kind: 'inactive' as const,
+        label: order.paymentStatus,
+        rowStyle: {
+          backgroundColor: 'rgba(113, 113, 122, 0.05)',
+          boxShadow: 'inset 3px 0 0 rgba(113, 113, 122, 0.5)',
+          opacity: 0.62
+        },
+        dotColor: '#71717a'
+      };
+    }
+
+    if (order.shippingStatus === 'Enviado') {
+      return {
+        kind: 'shipped' as const,
+        label: 'Enviado',
+        rowStyle: {
+          backgroundColor: 'rgba(16, 185, 129, 0.075)',
+          boxShadow: 'inset 3px 0 0 rgba(16, 185, 129, 0.78)'
+        },
+        dotColor: '#10b981'
+      };
+    }
+
+    if (order.shippingStatus === 'Por enviar') {
+      return {
+        kind: 'ready' as const,
+        label: 'Listo · Por enviar',
+        rowStyle: {
+          backgroundColor: 'rgba(14, 165, 233, 0.085)',
+          boxShadow: 'inset 3px 0 0 rgba(14, 165, 233, 0.8)'
+        },
+        dotColor: '#0ea5e9'
+      };
+    }
+
+    const needsInventory = (order.items || []).some(it => {
+      if (it.packed) return false;
+      const p = catalog.find(c => c.id === it.productId);
+      const v =
+        p?.variants.find(vx => vx.id === it.variantId || vx.name === it.variantName) ||
+        p?.variants[0];
+      const key = `${p?.id || it.productId}|||${v?.id || it.variantId || it.variantName}|||${it.size || 'M'}`;
+      return (missingInventoryMap[key] || 0) > 0;
+    });
+
+    if (needsInventory) {
+      return {
+        kind: 'needs-inventory' as const,
+        label: 'Falta en inventario',
+        rowStyle: {
+          backgroundColor: 'rgba(245, 158, 11, 0.065)',
+          boxShadow: 'inset 3px 0 0 rgba(245, 158, 11, 0.72)'
+        },
+        dotColor: '#f59e0b'
+      };
+    }
+
+    return {
+      kind: 'in-stock' as const,
+      label: 'En inventario · Empacar',
+      rowStyle: {
+        backgroundColor: 'rgba(139, 92, 246, 0.07)',
+        boxShadow: 'inset 3px 0 0 rgba(139, 92, 246, 0.75)'
+      },
+      dotColor: '#8b5cf6'
+    };
+  };
 
   const filteredOrders = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return orders.filter(o => {
+    return orders.filter(order => {
+      if (quickFilter === 'Pendiente' && order.paymentStatus !== 'Pendiente') return false;
+      if (quickFilter === 'Semi-pagado (50%)' && order.paymentStatus !== 'Semi-pagado (50%)') return false;
+      if (quickFilter === 'Pagado' && order.paymentStatus !== 'Pagado') return false;
+      if (quickFilter === 'Por preparar' && (!isOrderActive(order) || order.shippingStatus !== 'Por preparar')) return false;
+      if (quickFilter === 'Por enviar' && (!isOrderActive(order) || order.shippingStatus !== 'Por enviar')) return false;
+      if (quickFilter === 'Enviado' && (!isOrderActive(order) || order.shippingStatus !== 'Enviado')) return false;
+      if (quickFilter === 'Cancelado' && order.paymentStatus !== 'Cancelado') return false;
+      if (quickFilter === 'Reembolsado' && order.paymentStatus !== 'Reembolsado') return false;
+
+      if (payFilter !== 'ALL' && order.paymentStatus !== payFilter) return false;
+      if (shipFilter !== 'ALL' && order.shippingStatus !== shipFilter) return false;
+      if (productFilter !== 'ALL' && !order.items.some(i => i.productId === productFilter || i.productName === productFilter)) return false;
+      if (sizeFilter !== 'ALL' && !order.items.some(i => i.size === sizeFilter)) return false;
+      if (genderFilter !== 'ALL' && !order.items.some(i => (i.gender || 'Sin especificar') === genderFilter)) return false;
+
       if (q) {
-        const hay = `${o.id} ${o.uuid} ${o.customerName} ${o.cedula || ''} ${o.instagram} ${o.phone} ${o.city} ${o.address} ${o.trackingNumber} ${o.notes}`.toLowerCase();
-        if (!hay.includes(q)) return false;
+        const haystack = [
+          order.id,
+          order.uuid,
+          order.customerName,
+          order.cedula,
+          order.instagram,
+          order.phone,
+          order.city,
+          order.neighborhood,
+          order.address,
+          order.trackingNumber,
+          order.carrier,
+          order.notes,
+          ...order.items.map(i => `${i.productName} ${i.variantName} ${i.size} ${i.gender}`)
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
       }
-
-      if (quickStatusFilter !== 'ALL') {
-        if (PAYMENT_STATUSES.includes(quickStatusFilter)) {
-          if (o.paymentStatus !== quickStatusFilter) return false;
-        } else if (SHIPPING_STATUSES.includes(quickStatusFilter)) {
-          if (!isOrderActive(o) || o.shippingStatus !== quickStatusFilter) return false;
-        } else if (quickStatusFilter === 'ALERT_COBROS') {
-          if (!isOrderActive(o) || (o.shippingStatus !== 'Por enviar' && o.shippingStatus !== 'Enviado') || getPendingAmount(o) <= 0) {
-            return false;
-          }
-        }
-      }
-
-      if (payFilter !== 'ALL' && o.paymentStatus !== payFilter) return false;
-      if (shipFilter !== 'ALL' && o.shippingStatus !== shipFilter) return false;
-      if (productFilter !== 'ALL' && !o.items.some(it => it.productId === productFilter)) return false;
-      if (sizeFilter !== 'ALL' && !o.items.some(it => it.size === sizeFilter)) return false;
-      if (genderFilter !== 'ALL' && !o.items.some(it => (it.gender || 'Sin especificar') === genderFilter)) return false;
 
       return true;
     });
-  }, [orders, searchQuery, quickStatusFilter, payFilter, shipFilter, productFilter, sizeFilter, genderFilter]);
+  }, [orders, searchQuery, quickFilter, payFilter, shipFilter, productFilter, sizeFilter, genderFilter]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, quickStatusFilter, payFilter, shipFilter, productFilter, sizeFilter, genderFilter]);
+  const allVisibleSelected =
+    filteredOrders.length > 0 && filteredOrders.every(o => selectedIds.includes(o.id));
 
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
-  const paginatedOrders = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredOrders.slice(start, start + pageSize);
-  }, [filteredOrders, currentPage, pageSize]);
-
-  const getPayStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'Pagado': return 'bg-emerald-50 text-emerald-800 border-emerald-200';
-      case 'Semi-pagado (50%)': return 'bg-amber-50 text-amber-800 border-amber-200';
-      case 'Pendiente': return 'bg-rose-50 text-rose-800 border-rose-200';
-      case 'Reembolsado': return 'bg-purple-50 text-purple-800 border-purple-200';
-      case 'Cancelado': return 'bg-zinc-100 text-zinc-400 border-zinc-200 line-through';
-      default: return 'bg-zinc-100 text-zinc-700 border-zinc-200';
+  const toggleSelectAll = () => {
+    if (allVisibleSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredOrders.map(o => o.id));
     }
   };
 
-  const getShipStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'Enviado': return 'bg-emerald-50 text-emerald-800 border-emerald-200';
-      case 'Por enviar': return 'bg-sky-50 text-sky-800 border-sky-200 font-semibold';
-      case 'Por preparar': return 'bg-zinc-100 text-zinc-800 border-zinc-300';
-      default: return 'bg-zinc-100 text-zinc-700 border-zinc-200';
-    }
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
   };
 
-  const getCustomerTrackingUrl = (order: Order) => {
-    const orderUuid = isValidUUID(order.uuid) ? order.uuid : generateUUIDv4();
-    return `${window.location.origin}/details/${orderUuid}`;
+  const handleBulkShipping = (newStatus: string) => {
+    selectedIds.forEach(id => handleUpdateOrderShipping(id, newStatus));
+    setSelectedIds([]);
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard?.writeText(text);
-    notify(label);
+  const handleBulkPayment = (newStatus: string) => {
+    selectedIds.forEach(id => handleUpdateOrderPayment(id, newStatus));
+    setSelectedIds([]);
   };
 
   const handleOpenWhatsApp = (order: Order) => {
@@ -134,15 +219,21 @@ export default function OrdersView({ searchQuery, setSearchQuery, onEditOrder }:
 
     const firstName = order.customerName.split(' ')[0];
     const itemsList = order.items
-      .map(i => `• ${i.qty}x ${i.productName} (${i.variantName} - Talla ${i.size}${i.gender && i.gender !== 'Sin especificar' ? ` · ${i.gender}` : ''})`)
+      .map(i => {
+        const genderPart = i.gender && i.gender !== 'Sin especificar' ? ` · ${i.gender}` : '';
+        return `• ${i.qty}x ${i.productName} (${i.variantName} - Talla ${i.size}${genderPart})`;
+      })
       .join('\n');
     const paid = getPaidAmount(order);
     const pending = getPendingAmount(order);
-    const trackingUrl = getCustomerTrackingUrl(order);
+    const orderUuid = isValidUUID(order.uuid) ? order.uuid : generateUUIDv4();
+    const trackingUrl = `${window.location.origin}/details/${orderUuid}`;
+    const trackingText = order.trackingNumber ? order.trackingNumber : 'Asignada';
+    const addressText = order.address ? order.address : 'Confirmar dirección';
 
     let statusMessage = '';
     if (order.shippingStatus === 'Enviado') {
-      statusMessage = `¡Tu pedido de *MyFanBox* ya fue *ENVIADO*! 📦\n🚚 Envío GRATIS.\nTransportadora: *${order.carrier}*\nNúmero de guía: *${order.trackingNumber || 'Asignada'}*`;
+      statusMessage = `¡Tu pedido de *MyFanBox* ya fue *ENVIADO*! 📦\n🚚 Envío GRATIS.\nTransportadora: *${order.carrier}*\nNúmero de guía: *${trackingText}*`;
     } else if (order.shippingStatus === 'Por enviar' && pending > 0) {
       statusMessage = `¡Tu pedido de *MyFanBox* ya está listo y empacado *POR ENVIAR*! ✨\n🚚 Recuerda: el envío es GRATIS.\nPara despacharlo hoy mismo con *${order.carrier}*, queda pendiente el saldo restante del 50% por valor de *${formatCOP(pending)}*.`;
     } else if (order.paymentStatus === 'Pendiente') {
@@ -153,138 +244,122 @@ export default function OrdersView({ searchQuery, setSearchQuery, onEditOrder }:
       statusMessage = `Tu pedido está 100% pagado (*${formatCOP(order.total)}*) y en estado: *${order.shippingStatus}*.`;
     }
 
-    const fullText = `¡Hola ${firstName}! Te escribimos de *MyFanBox* sobre tu pedido *${order.id}*:\n\n${statusMessage}\n\n🚚 *Todos nuestros envíos son GRATIS.*\n\n*Detalle de tu orden:*\n${itemsList}\n📍 Destino: ${order.city} (${order.address || 'Confirmar dirección'})\n\n🔒 *Enlace privado de tu factura y seguimiento en vivo:*\n${trackingUrl}`;
+    const fullText = `¡Hola ${firstName}! Te escribimos de *MyFanBox* sobre tu pedido *${order.id}*:\n\n${statusMessage}\n\n🚚 *Todos nuestros envíos son GRATIS.*\n\n*Detalle de tu orden:*\n${itemsList}\n📍 Destino: ${order.city} (${addressText})\n\n🔒 *Enlace privado de tu factura y seguimiento en vivo:*\n${trackingUrl}`;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(fullText)}`, '_blank', 'noopener,noreferrer');
   };
 
-  const handleBulkStatusUpdate = (type: 'payment' | 'shipping', newValue: string) => {
-    if (selectedOrderIds.length === 0) return;
-    setOrders(prev =>
-      prev.map(o => {
-        if (!selectedOrderIds.includes(o.id)) return o;
-        if (type === 'payment') return { ...o, paymentStatus: newValue };
-        const updatedItems =
-          newValue === 'Por enviar' || newValue === 'Enviado'
-            ? o.items.map(it => ({ ...it, packed: true }))
-            : o.items;
-        return { ...o, shippingStatus: newValue, items: updatedItems };
-      })
-    );
-    notify(`${selectedOrderIds.length} pedidos actualizados a "${newValue}"`);
-    setSelectedOrderIds([]);
-  };
-
-  const handleExportCSV = () => {
+  const handleExportCsv = () => {
     const headers = [
-      'ID', 'Fecha', 'Cliente', 'Cedula', 'Instagram', 'WhatsApp', 'Ciudad', 'Direccion', 'Latitud', 'Longitud',
-      'Prendas', 'Total_COP', 'Pagado_COP', 'Saldo_Pendiente_COP',
-      'Estado_Pago', 'Estado_Envio', 'Transportadora', 'Guia', 'Notas'
+      'Orden',
+      'Fecha',
+      'Cliente',
+      'Cedula',
+      'Telefono',
+      'Instagram',
+      'Ciudad',
+      'Barrio',
+      'Direccion',
+      'Prendas',
+      'Total',
+      'EstadoPago',
+      'EstadoEnvio',
+      'Transportadora',
+      'Guia',
+      'UUID'
     ];
     const rows = filteredOrders.map(o => [
-      o.id, o.createdAt, o.customerName, o.cedula || '', o.instagram, o.phone, o.city, o.address, o.lat ?? '', o.lng ?? '',
-      o.items.map(i => `${i.qty}x ${i.productName} [${i.variantName} - Talla ${i.size} - ${i.gender || 'Sin especificar'}]`).join(' | '),
-      o.total, getPaidAmount(o), getPendingAmount(o), o.paymentStatus, o.shippingStatus, o.carrier, o.trackingNumber, o.notes || ''
-    ].map(val => `"${String(val ?? '').replace(/"/g, '""')}"`).join(','));
-
-    const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      o.id,
+      o.createdAt,
+      o.customerName,
+      o.cedula || '',
+      o.phone || '',
+      o.instagram || '',
+      o.city || '',
+      o.neighborhood || '',
+      o.address || '',
+      o.items.map(i => `${i.qty}x ${i.productName} (${i.variantName} ${i.size} ${i.gender})`).join(' | '),
+      o.total,
+      o.paymentStatus,
+      o.shippingStatus,
+      o.carrier,
+      o.trackingNumber || '',
+      o.uuid
+    ]);
+    const csvContent = [headers, ...rows]
+      .map(cols => cols.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `MyFanBox_Pedidos_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `myfanbox_pedidos_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    notify(`${filteredOrders.length} pedidos exportados a Excel/CSV`);
+    notify('CSV exportado');
   };
 
+  const quickTabs = [
+    { id: 'ALL', label: 'Todos', count: orders.length, dot: '' },
+    { id: 'Pendiente', label: 'Pendiente', count: metrics.countPendiente, dot: '#f43f5e' },
+    { id: 'Semi-pagado (50%)', label: 'Semi-pagado (50%)', count: metrics.countSemi, dot: '#f59e0b' },
+    { id: 'Pagado', label: 'Pagado', count: metrics.countPagado, dot: '#10b981' },
+    { id: 'Por preparar', label: 'Por preparar', count: metrics.countPorPreparar, dot: '#a1a1aa' },
+    { id: 'Por enviar', label: 'Por enviar', count: metrics.countPorEnviar, dot: '#0ea5e9' },
+    { id: 'Enviado', label: 'Enviado', count: metrics.countEnviado, dot: '#10b981' },
+    { id: 'Cancelado', label: 'Cancelado', count: metrics.cancelledOrders, dot: '#71717a' },
+    { id: 'Reembolsado', label: 'Reembolsado', count: metrics.refundedOrders, dot: '#a855f7' }
+  ];
+
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-        <div className="bg-white border border-zinc-200 rounded-xl p-3">
-          <div className="text-[11px] text-zinc-500 font-medium">Pedidos Activos</div>
-          <div className="text-lg font-semibold text-zinc-900 tabular-nums mt-0.5">{metrics.activeOrdersCount}</div>
-          <div className="text-[10px] text-zinc-400 mt-0.5">{metrics.cancelledOrders} canc · {metrics.refundedOrders} reemb</div>
-        </div>
-
-        <div className="bg-white border border-zinc-200 rounded-xl p-3">
-          <div className="text-[11px] text-zinc-500 font-medium">Recaudado (En Caja)</div>
-          <div className="text-lg font-semibold text-emerald-700 tabular-nums mt-0.5">{formatCOP(metrics.collectedCash)}</div>
-          <div className="text-[10px] text-zinc-400 mt-0.5">{metrics.countPagado} pagados + {metrics.countSemi} al 50%</div>
-        </div>
-
-        <div className="bg-white border border-zinc-200 rounded-xl p-3">
-          <div className="text-[11px] text-zinc-500 font-medium">Saldo por Cobrar</div>
-          <div className="text-lg font-semibold text-amber-700 tabular-nums mt-0.5">{formatCOP(metrics.pendingToCollect)}</div>
-          <div className="text-[10px] text-zinc-400 mt-0.5">{metrics.countPendiente} sin abono · {metrics.countSemi} deben 50%</div>
-        </div>
-
-        <div className="bg-white border border-zinc-200 rounded-xl p-3">
-          <div className="text-[11px] text-zinc-500 font-medium">Por Preparar / Hacer</div>
-          <div className="text-lg font-semibold text-zinc-900 tabular-nums mt-0.5">{metrics.countPorPreparar}</div>
-          <div className="text-[10px] text-zinc-400 mt-0.5">{productionMatrix.totalMissingToMake} prendas por estampar</div>
-        </div>
-
-        <div className="bg-white border border-zinc-200 rounded-xl p-3">
-          <div className="text-[11px] text-zinc-500 font-medium">Por Enviar / Enviados</div>
-          <div className="text-lg font-semibold text-sky-700 tabular-nums mt-0.5">
-            {metrics.countPorEnviar} <span className="text-zinc-300 font-normal">/</span> <span className="text-emerald-700">{metrics.countEnviado}</span>
-          </div>
-          <div className="text-[10px] text-zinc-400 mt-0.5">Paquetes listos vs despachados</div>
-        </div>
-
-        <div className="bg-white border border-zinc-200 rounded-xl p-3">
-          <div className="text-[11px] text-zinc-500 font-medium">Alerta Cobro Pre-Envío</div>
-          <div className="text-lg font-semibold text-rose-700 tabular-nums mt-0.5">{metrics.shipWithDebtCount}</div>
-          <div className="text-[10px] text-zinc-400 mt-0.5">Listos pero deben 50% o 100%</div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-zinc-200 rounded-xl p-3.5 space-y-3">
+    <div className="space-y-3">
+      <section className="bg-white border border-zinc-200 rounded-2xl p-3.5 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            {[
-              { id: 'ALL', label: 'Todos', count: orders.length, dot: 'bg-zinc-900' },
-              { id: 'Pendiente', label: 'Pendiente', count: metrics.countPendiente, dot: 'bg-rose-500' },
-              { id: 'Semi-pagado (50%)', label: 'Semi-pagado (50%)', count: metrics.countSemi, dot: 'bg-amber-500' },
-              { id: 'Pagado', label: 'Pagado', count: metrics.countPagado, dot: 'bg-emerald-500' },
-              { id: 'Por preparar', label: 'Por preparar', count: metrics.countPorPreparar, dot: 'bg-zinc-500' },
-              { id: 'Por enviar', label: 'Por enviar', count: metrics.countPorEnviar, dot: 'bg-sky-500' },
-              { id: 'Enviado', label: 'Enviado', count: metrics.countEnviado, dot: 'bg-emerald-600' },
-              { id: 'Cancelado', label: 'Cancelado', count: metrics.cancelledOrders, dot: 'bg-zinc-400' },
-              { id: 'Reembolsado', label: 'Reembolsado', count: metrics.refundedOrders, dot: 'bg-purple-500' },
-              ...(metrics.shipWithDebtCount > 0
-                ? [{ id: 'ALERT_COBROS', label: '⚠️ Cobrar antes de enviar', count: metrics.shipWithDebtCount, dot: 'bg-amber-600' }]
-                : [])
-            ].map(pill => {
-              const active = quickStatusFilter === pill.id;
+          <div className="flex flex-wrap items-center gap-1.5">
+            {quickTabs.map(tab => {
+              const active = quickFilter === tab.id;
               return (
                 <button
-                  key={pill.id}
-                  onClick={() => {
-                    setQuickStatusFilter(pill.id);
-                    setPayFilter('ALL');
-                    setShipFilter('ALL');
-                  }}
-                  className={`h-7 px-2.5 rounded-lg text-xs font-medium whitespace-nowrap flex items-center gap-1.5 border transition-all cursor-pointer ${
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setQuickFilter(tab.id)}
+                  className={`h-8 px-2.5 rounded-lg border text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer ${
                     active
                       ? 'bg-zinc-900 text-white border-zinc-900'
-                      : 'bg-zinc-50 text-zinc-600 border-zinc-200 hover:text-zinc-900 hover:bg-zinc-100'
+                      : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                   }`}
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-white' : pill.dot}`} />
-                  <span>{pill.label}</span>
-                  <span className={`text-[10px] font-mono px-1 rounded ${active ? 'bg-zinc-700 text-zinc-100' : 'bg-white text-zinc-500'}`}>
-                    {pill.count}
+                  {tab.dot && (
+                    <span
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: tab.dot }}
+                    />
+                  )}
+                  <span>{tab.label}</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${
+                      active ? 'bg-zinc-800 text-zinc-200' : 'bg-white border border-zinc-200 text-zinc-500'
+                    }`}
+                  >
+                    {tab.count}
                   </span>
                 </button>
               );
             })}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleExportCSV}
-              className="h-7 px-2.5 rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-700 hover:bg-zinc-50 flex items-center gap-1 cursor-pointer"
+              type="button"
+              onClick={onOpenQuickCheck}
+              className="h-8 px-3 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <ClipboardCheck className="w-3.5 h-3.5" />
+              <span>¿Está hecho?</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="h-8 px-3 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-medium text-zinc-700 inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Exportar CSV</span>
@@ -292,294 +367,328 @@ export default function OrdersView({ searchQuery, setSearchQuery, onEditOrder }:
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 pt-2 border-t border-zinc-100">
-          <select
-            value={payFilter}
-            onChange={(e) => { setPayFilter(e.target.value); setQuickStatusFilter('ALL'); }}
-            className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 focus:outline-none focus:bg-white focus:border-zinc-900"
-          >
-            <option value="ALL">Estado de Pago: Todos</option>
-            {PAYMENT_STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
-          </select>
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-100">
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={payFilter}
+              onChange={e => setPayFilter(e.target.value)}
+              className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900"
+            >
+              <option value="ALL">Estado de Pago: Todos</option>
+              {PAYMENT_STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
+            </select>
 
-          <select
-            value={shipFilter}
-            onChange={(e) => { setShipFilter(e.target.value); setQuickStatusFilter('ALL'); }}
-            className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 focus:outline-none focus:bg-white focus:border-zinc-900"
-          >
-            <option value="ALL">Estado de Envío: Todos</option>
-            {SHIPPING_STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
-          </select>
+            <select
+              value={shipFilter}
+              onChange={e => setShipFilter(e.target.value)}
+              className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900"
+            >
+              <option value="ALL">Estado de Envío: Todos</option>
+              {SHIPPING_STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
+            </select>
 
-          <select
-            value={productFilter}
-            onChange={(e) => setProductFilter(e.target.value)}
-            className="h-8 px-2.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 focus:outline-none focus:bg-white focus:border-zinc-900"
-          >
-            <option value="ALL">Prenda del Catálogo: Todas</option>
-            {catalog.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+            <select
+              value={productFilter}
+              onChange={e => setProductFilter(e.target.value)}
+              className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900 max-w-[200px]"
+            >
+              <option value="ALL">Prenda del Catálogo: Todas</option>
+              {catalog.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
 
-          <div className="grid grid-cols-2 gap-1.5">
             <select
               value={sizeFilter}
-              onChange={(e) => setSizeFilter(e.target.value)}
-              className="h-8 px-2 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 focus:outline-none focus:bg-white focus:border-zinc-900"
+              onChange={e => setSizeFilter(e.target.value)}
+              className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900"
             >
               <option value="ALL">Talla: Todas</option>
-              {['XS', 'S', 'M', 'L', 'XL', '2XL', 'Única'].map(sz => <option key={sz} value={sz}>Talla {sz}</option>)}
+              {[...ALL_GARMENT_SIZES, 'Única'].map(sz => <option key={sz} value={sz}>{sz}</option>)}
             </select>
 
             <select
               value={genderFilter}
-              onChange={(e) => setGenderFilter(e.target.value)}
-              className="h-8 px-2 text-xs bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-800 focus:outline-none focus:bg-white focus:border-zinc-900"
+              onChange={e => setGenderFilter(e.target.value)}
+              className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-xs text-zinc-900"
             >
               <option value="ALL">Corte: Todos</option>
               {GARMENT_GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
             </select>
-          </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2">
-            {(searchQuery || quickStatusFilter !== 'ALL' || payFilter !== 'ALL' || shipFilter !== 'ALL' || productFilter !== 'ALL' || sizeFilter !== 'ALL' || genderFilter !== 'ALL') && (
+            {(quickFilter !== 'ALL' || payFilter !== 'ALL' || shipFilter !== 'ALL' || productFilter !== 'ALL' || sizeFilter !== 'ALL' || genderFilter !== 'ALL' || searchQuery) && (
               <button
+                type="button"
                 onClick={() => {
-                  setSearchQuery('');
-                  setQuickStatusFilter('ALL');
+                  setQuickFilter('ALL');
                   setPayFilter('ALL');
                   setShipFilter('ALL');
                   setProductFilter('ALL');
                   setSizeFilter('ALL');
                   setGenderFilter('ALL');
+                  setSearchQuery('');
                 }}
-                className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-700 hover:bg-zinc-50 cursor-pointer"
+                className="h-8 px-2.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-900 underline cursor-pointer"
               >
                 Limpiar filtros
               </button>
             )}
-            <span className="text-xs font-mono text-zinc-500">
-              {filteredOrders.length} resultado{filteredOrders.length === 1 ? '' : 's'}
-            </span>
           </div>
+
+          <span className="text-xs font-mono text-zinc-500">
+            {filteredOrders.length} resultados
+          </span>
         </div>
 
-        {selectedOrderIds.length > 0 && (
-          <div className="pt-2 border-t border-zinc-200 flex flex-wrap items-center justify-between gap-2 bg-zinc-900 text-white px-3 py-2 rounded-lg text-xs">
-            <span className="font-medium">{selectedOrderIds.length} pedidos seleccionados</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-100 text-[11px] text-zinc-500">
+          <div className="flex flex-wrap items-center gap-3.5">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: '#f59e0b' }} />
+              <span>Falta en inventario</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: '#8b5cf6' }} />
+              <span>En inventario (falta empacar)</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: '#0ea5e9' }} />
+              <span>Hecho · Por enviar</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: '#10b981' }} />
+              <span>Enviado</span>
+            </span>
+          </div>
+
+          {selectedIds.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-zinc-400 mr-1">Cambiar pago a:</span>
-              {['Pagado', 'Semi-pagado (50%)', 'Pendiente', 'Cancelado'].map(st => (
-                <button
-                  key={st}
-                  onClick={() => handleBulkStatusUpdate('payment', st)}
-                  className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-100 cursor-pointer"
-                >
-                  {st}
-                </button>
-              ))}
-              <span className="text-zinc-400 mx-1">| Envío a:</span>
-              {SHIPPING_STATUSES.map(st => (
-                <button
-                  key={st}
-                  onClick={() => handleBulkStatusUpdate('shipping', st)}
-                  className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-100 cursor-pointer"
-                >
-                  {st}
-                </button>
-              ))}
-              <button onClick={() => setSelectedOrderIds([])} className="ml-2 text-zinc-400 hover:text-white cursor-pointer">
-                Cancelar
+              <span className="font-semibold text-zinc-900">{selectedIds.length} seleccionados:</span>
+              <button
+                type="button"
+                onClick={() => handleBulkShipping('Por enviar')}
+                className="px-2 py-1 rounded-md border border-zinc-200 bg-zinc-50 text-zinc-800 hover:bg-zinc-100 cursor-pointer"
+              >
+                Por enviar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkShipping('Enviado')}
+                className="px-2 py-1 rounded-md border border-zinc-200 bg-zinc-50 text-zinc-800 hover:bg-zinc-100 cursor-pointer"
+              >
+                Enviado
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkPayment('Pagado')}
+                className="px-2 py-1 rounded-md border border-zinc-200 bg-zinc-50 text-zinc-800 hover:bg-zinc-100 cursor-pointer"
+              >
+                Pagado
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="px-2 py-1 text-zinc-400 hover:text-zinc-900 cursor-pointer"
+              >
+                ✕
               </button>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </section>
 
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
+      <section className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50/80 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-                <th className="py-2.5 px-3 w-9 text-center">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-zinc-50 border-b border-zinc-200 text-[10px] uppercase tracking-wider text-zinc-500">
+              <tr>
+                <th className="p-3 w-8">
                   <input
                     type="checkbox"
-                    checked={paginatedOrders.length > 0 && paginatedOrders.every(o => selectedOrderIds.includes(o.id))}
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedOrderIds(paginatedOrders.map(o => o.id));
-                      else setSelectedOrderIds([]);
-                    }}
-                    className="rounded border-zinc-300"
+                    checked={allVisibleSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded border-zinc-300 cursor-pointer"
                   />
                 </th>
-                <th className="py-2.5 px-3 w-24">Orden</th>
-                <th className="py-2.5 px-3 min-w-[180px]">Cliente & Ciudad</th>
-                <th className="py-2.5 px-3 min-w-[260px]">Prendas Pedidas</th>
-                <th className="py-2.5 px-3 min-w-[140px]">Total / Saldo</th>
-                <th className="py-2.5 px-3 min-w-[165px]">Estado de Pago</th>
-                <th className="py-2.5 px-3 min-w-[165px]">Estado de Envío</th>
-                <th className="py-2.5 px-3 text-right min-w-[115px]">Acciones</th>
+                <th className="p-3">Orden</th>
+                <th className="p-3">Cliente & Ciudad</th>
+                <th className="p-3">Prendas Pedidas</th>
+                <th className="p-3">Total / Saldo</th>
+                <th className="p-3">Estado de Pago</th>
+                <th className="p-3">Estado de Envío</th>
+                <th className="p-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 text-xs">
-              {paginatedOrders.map(order => {
-                const active = isOrderActive(order);
+            <tbody className="divide-y divide-zinc-200">
+              {filteredOrders.map(order => {
                 const paid = getPaidAmount(order);
                 const pending = getPendingAmount(order);
-                const showDebtWarning =
-                  active &&
-                  (order.shippingStatus === 'Por enviar' || order.shippingStatus === 'Enviado') &&
-                  pending > 0;
+                const visual = getOrderVisualState(order);
 
                 return (
                   <tr
                     key={order.id}
-                    className={`hover:bg-zinc-50/90 transition-colors ${!active ? 'bg-zinc-50/50 opacity-70' : ''}`}
+                    style={visual.rowStyle}
+                    className="transition-colors hover:brightness-105"
                   >
-                    <td className="py-3 px-3 align-top text-center">
+                    <td className="p-3 align-top">
                       <input
                         type="checkbox"
-                        checked={selectedOrderIds.includes(order.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) setSelectedOrderIds(prev => [...prev, order.id]);
-                          else setSelectedOrderIds(prev => prev.filter(id => id !== order.id));
-                        }}
-                        className="rounded border-zinc-300"
+                        checked={selectedIds.includes(order.id)}
+                        onChange={() => toggleSelectOne(order.id)}
+                        className="rounded border-zinc-300 cursor-pointer mt-1"
                       />
                     </td>
 
-                    <td className="py-3 px-3 align-top">
-                      <div className="font-mono font-semibold text-zinc-900">{order.id}</div>
-                      <div className="text-[11px] text-zinc-400 tabular-nums mt-0.5">{order.createdAt}</div>
-                      <div
-                        onClick={() => copyToClipboard(getCustomerTrackingUrl(order), `Enlace privado UUID de ${order.id} copiado`)}
-                        title={`UUID secreto: ${order.uuid}`}
-                        className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-[9px] font-mono text-zinc-500 hover:text-zinc-900 cursor-pointer"
+                    <td className="p-3 align-top whitespace-nowrap">
+                      <div className="font-mono font-bold text-zinc-900">{order.id}</div>
+                      <div className="text-[11px] text-zinc-500 mt-0.5">{order.createdAt || '—'}</div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(`${window.location.origin}/details/${order.uuid}`);
+                          notify(`Link privado de ${order.id} copiado`);
+                        }}
+                        title="Copiar enlace de seguimiento"
+                        className="mt-1 inline-flex items-center gap-1 font-mono text-[10px] text-zinc-400 hover:text-zinc-900 cursor-pointer"
                       >
-                        <Fingerprint className="w-2.5 h-2.5 text-sky-600" />
-                        <span>{order.uuid.slice(0, 8)}…</span>
+                        <Copy className="w-2.5 h-2.5" />
+                        <span>{String(order.uuid || '').slice(0, 8)}</span>
+                      </button>
+                      <div className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-medium text-zinc-500">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: visual.dotColor }}
+                        />
+                        <span>{visual.label}</span>
                       </div>
                     </td>
 
-                    <td className="py-3 px-3 align-top">
-                      <div className="font-medium text-zinc-900 flex items-center gap-1.5 flex-wrap">
-                        <span>{order.customerName}</span>
+                    <td className="p-3 align-top min-w-[200px]">
+                      <div className="font-semibold text-zinc-900">
+                        {order.customerName}{' '}
                         {order.cedula && (
-                          <span className="px-1.5 py-0.2 rounded bg-zinc-100 border border-zinc-200 text-[10px] font-mono text-zinc-700">
+                          <span className="font-mono text-[10px] text-zinc-500 font-normal">
                             C.C. {order.cedula}
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-zinc-500 flex flex-wrap items-center gap-1.5 mt-0.5">
-                        <span>{order.instagram}</span>
-                        <span>·</span>
-                        <span className="font-mono">{order.phone}</span>
+                      <div className="text-[11px] text-zinc-500 mt-0.5">
+                        {order.instagram ? `${order.instagram} · ` : ''}
+                        {order.phone || 'Sin teléfono'}
                       </div>
-                      <div className="text-[11px] text-zinc-400 mt-0.5 truncate max-w-[210px]">
-                        {order.city} {order.neighborhood ? `(${order.neighborhood})` : ''} — {order.address}
+                      <div className="text-[11px] text-zinc-600 mt-0.5">
+                        {order.city}
+                        {order.neighborhood ? ` (${order.neighborhood})` : ''}
+                        {order.address ? ` — ${order.address}` : ''}
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {order.postalCode && (
-                          <span className="px-1.5 py-0.2 rounded bg-zinc-100 border border-zinc-200 text-[10px] font-mono text-zinc-700">
+                          <span className="text-[10px] font-mono text-zinc-400">
                             CP {order.postalCode}
                           </span>
                         )}
-                        <span
-                          className={`px-1.5 py-0.2 rounded text-[10px] font-medium border ${
-                            order.addressVerified
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : 'bg-amber-50 text-amber-800 border-amber-200'
-                          }`}
-                        >
-                          {order.addressVerified ? '✓ Mapa OK' : 'Por corroborar'}
-                        </span>
+                        {order.addressVerified && (
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-semibold">
+                            ✓ Mapa OK
+                          </span>
+                        )}
                       </div>
                     </td>
 
-                    <td className="py-3 px-3 align-top space-y-1">
-                      {order.items.map((it, idx) => (
-                        <div key={idx} className={`flex items-center gap-1.5 leading-snug ${!active ? 'line-through text-zinc-400' : ''}`}>
-                          <span className="font-mono font-semibold text-zinc-900">{it.qty}×</span>
-                          <span className="font-medium text-zinc-900">{it.productName}</span>
-                          <span className="text-zinc-500 truncate max-w-[130px]">· {it.variantName}</span>
-                          <span className="px-1.5 py-0.2 bg-zinc-100 border border-zinc-200 rounded text-[10px] font-semibold text-zinc-800">
-                            {it.size}
-                          </span>
-                          <span className="px-1.5 py-0.2 bg-zinc-50 border border-zinc-200 rounded text-[10px] text-zinc-600">
-                            {it.gender || 'Sin especificar'}
-                          </span>
+                    <td className="p-3 align-top min-w-[240px]">
+                      <div className="space-y-1">
+                        {order.items.map((it, idx) => (
+                          <div key={it.id || idx} className="text-[11px] leading-snug">
+                            <span className="font-semibold text-zinc-900">
+                              {it.qty}× {it.productName}
+                            </span>
+                            <span className="text-zinc-500">
+                              {' '}· {it.variantName} · <strong className="text-zinc-800">{it.size}</strong> · {it.gender || 'Sin especificar'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      {order.notes && (
+                        <div className="mt-1.5 text-[10px] text-amber-700 font-medium">
+                          Nota: {order.notes}
                         </div>
-                      ))}
-                      {order.notes && <div className="text-[11px] text-zinc-500 italic">Nota: {order.notes}</div>}
-                    </td>
-
-                    <td className="py-3 px-3 align-top tabular-nums">
-                      <div className="font-semibold text-zinc-900">{formatCOP(order.total)}</div>
-                      {!active ? (
-                        <div className="text-[11px] text-zinc-400">{order.paymentStatus}</div>
-                      ) : pending > 0 ? (
-                        <>
-                          <div className="text-[11px] font-medium text-amber-700 mt-0.5">Debe: {formatCOP(pending)}</div>
-                          <div className="text-[10px] text-zinc-400">Abonó: {formatCOP(paid)}</div>
-                        </>
-                      ) : (
-                        <div className="text-[11px] font-medium text-emerald-700 mt-0.5">Pagado 100%</div>
                       )}
                     </td>
 
-                    <td className="py-3 px-3 align-top">
+                    <td className="p-3 align-top whitespace-nowrap tabular-nums">
+                      <div className="font-bold text-zinc-900">{formatCOP(order.total)}</div>
+                      {!isOrderActive(order) ? (
+                        <div className="text-[11px] text-zinc-400 mt-0.5">{order.paymentStatus}</div>
+                      ) : pending === 0 ? (
+                        <div className="text-[11px] text-emerald-700 font-medium mt-0.5">
+                          Pagado 100%
+                        </div>
+                      ) : (
+                        <div className="text-[11px] mt-0.5 space-y-0.5">
+                          <div className="text-amber-700 font-semibold">
+                            Debe: {formatCOP(pending)}
+                          </div>
+                          <div className="text-zinc-500">
+                            Abonó: {formatCOP(paid)}
+                          </div>
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="p-3 align-top">
                       <select
                         value={order.paymentStatus}
-                        onChange={(e) => handleUpdateOrderPayment(order.id, e.target.value)}
-                        className={`h-7 px-2 rounded-lg border text-xs font-medium cursor-pointer focus:outline-none ${getPayStatusBadgeClass(order.paymentStatus)}`}
+                        onChange={e => handleUpdateOrderPayment(order.id, e.target.value)}
+                        className="h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-900 cursor-pointer"
                       >
                         {PAYMENT_STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
                       </select>
                     </td>
 
-                    <td className="py-3 px-3 align-top">
+                    <td className="p-3 align-top">
                       <select
                         value={order.shippingStatus}
-                        onChange={(e) => handleUpdateOrderShipping(order.id, e.target.value)}
-                        className={`h-7 px-2 rounded-lg border text-xs font-medium cursor-pointer focus:outline-none ${getShipStatusBadgeClass(order.shippingStatus)}`}
+                        onChange={e => handleUpdateOrderShipping(order.id, e.target.value)}
+                        className="h-8 px-2 rounded-lg border border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-900 cursor-pointer"
                       >
                         {SHIPPING_STATUSES.map(st => <option key={st} value={st}>{st}</option>)}
                       </select>
-
-                      {showDebtWarning && (
-                        <div className="mt-1.5 px-2 py-1 rounded-md bg-amber-100 border border-amber-300 text-[10px] font-semibold text-amber-900 leading-tight">
-                          ⚠️ Cobrar saldo de {formatCOP(pending)} antes de enviar
-                        </div>
-                      )}
                     </td>
 
-                    <td className="py-3 px-3 align-top text-right">
-                      <div className="inline-flex items-center gap-1">
+                    <td className="p-3 align-top text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5">
                         <button
+                          type="button"
                           onClick={() => navigate(`/details/${order.uuid}`)}
-                          className="h-7 px-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 font-medium inline-flex items-center gap-1 cursor-pointer"
-                          title={`Abrir página privada /details/${order.uuid}`}
+                          className="h-7 px-2 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-[11px] font-mono text-zinc-700 inline-flex items-center gap-1 cursor-pointer"
+                          title="Abrir seguimiento / factura"
                         >
-                          <FileText className="w-3.5 h-3.5 text-sky-600" />
+                          <ExternalLink className="w-3 h-3" />
                           <span>/details/</span>
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleOpenWhatsApp(order)}
-                          className="h-7 px-2 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 font-medium inline-flex items-center gap-1 cursor-pointer"
-                          title="Enviar resumen y link UUID privado por WhatsApp"
+                          className="h-7 px-2 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-[11px] font-semibold text-emerald-700 inline-flex items-center gap-1 cursor-pointer"
+                          title="Escribir por WhatsApp"
                         >
-                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          <MessageCircle className="w-3 h-3" />
                           <span>WA</span>
                         </button>
                         <button
+                          type="button"
                           onClick={() => onEditOrder(order)}
-                          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 cursor-pointer"
+                          className="h-7 w-7 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-600 inline-flex items-center justify-center cursor-pointer"
                           title="Editar pedido"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => deleteOrder(order.id)}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`¿Eliminar el pedido ${order.id} de ${order.customerName}?`)) {
+                              deleteOrder(order.id);
+                            }
+                          }}
+                          className="h-7 w-7 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-rose-50 text-zinc-500 hover:text-rose-600 inline-flex items-center justify-center cursor-pointer"
                           title="Eliminar pedido"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -590,50 +699,17 @@ export default function OrdersView({ searchQuery, setSearchQuery, onEditOrder }:
                 );
               })}
 
-              {paginatedOrders.length === 0 && (
+              {filteredOrders.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-xs text-zinc-500">
-                    No se encontraron pedidos con los filtros actuales.
+                  <td colSpan={8} className="p-10 text-center text-xs text-zinc-500">
+                    No hay pedidos que coincidan con los filtros actuales.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-
-        <div className="px-4 py-2.5 border-t border-zinc-200 bg-zinc-50/60 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <span className="tabular-nums">
-              Página {currentPage} de {totalPages} ({filteredOrders.length} pedidos)
-            </span>
-            <select
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-              className="h-7 px-2 rounded border border-zinc-200 bg-white text-xs text-zinc-700"
-            >
-              <option value={25}>25 por página</option>
-              <option value={50}>50 por página</option>
-              <option value={150}>Ver todos (150)</option>
-            </select>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              className="h-7 px-2.5 rounded border border-zinc-200 bg-white text-zinc-700 disabled:opacity-40 flex items-center gap-1 cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" /> Anterior
-            </button>
-            <button
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              className="h-7 px-2.5 rounded border border-zinc-200 bg-white text-zinc-700 disabled:opacity-40 flex items-center gap-1 cursor-pointer"
-            >
-              Siguiente <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }

@@ -1,180 +1,211 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint, ShieldAlert, FileText, ShieldCheck, Palette } from 'lucide-react';
+import { Fingerprint, FileText, ShieldCheck, AlertCircle } from 'lucide-react';
 import MyFanBoxBrandLogo from '../components/MyFanBoxBrandLogo';
 import ThemeStyle from '../components/ThemeStyle';
-import { EYE_CARE_THEMES, THEME_STORAGE_KEY, THEME_PALETTES } from '../utils/constants';
-import { isValidUUID, getContrastRatio } from '../utils/helpers';
+import { isValidUUID } from '../utils/helpers';
+import {
+  APP_THEMES,
+  APP_THEME_PALETTES,
+  AppTheme,
+  readStoredAppTheme,
+  saveStoredAppTheme
+} from '../utils/themes';
+
+interface PublicStoreInfo {
+  brandName: string;
+  brandLogoUrl: string;
+  collectionName: string;
+}
+
+function loadStoreInfo(): PublicStoreInfo {
+  try {
+    const saved = localStorage.getItem('mfb_public_store_config');
+    const parsed = saved ? JSON.parse(saved) : {};
+    const fallbackLogo = localStorage.getItem('mfb_brand_logo') || '';
+    return {
+      brandName: parsed.brandName || 'MyFanBox',
+      brandLogoUrl: parsed.brandLogoUrl || fallbackLogo,
+      collectionName: parsed.collectionName || 'Viajando por el Mundo — Karol G'
+    };
+  } catch {
+    return {
+      brandName: 'MyFanBox',
+      brandLogoUrl: '',
+      collectionName: 'Viajando por el Mundo — Karol G'
+    };
+  }
+}
 
 export default function Catalogo() {
   const navigate = useNavigate();
-  const [guestUuidInput, setGuestUuidInput] = useState('');
-  const [guestLookupError, setGuestLookupError] = useState('');
-  const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem(THEME_STORAGE_KEY) || 'medium-dark'; } catch { return 'medium-dark'; }
-  });
-  const [brandName] = useState('MyFanBox');
-  const [collectionName] = useState('Viajando por el Mundo — Karol G');
-  const [brandLogoUrl] = useState(() => {
-    try { return localStorage.getItem('mfb_brand_logo') || ''; } catch { return ''; }
-  });
+  const [storeInfo] = useState<PublicStoreInfo>(() => loadStoreInfo());
+  const [theme, setTheme] = useState<AppTheme>(() => readStoredAppTheme());
+  const [trackingInput, setTrackingInput] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const baseThemeRef = THEME_PALETTES[theme] || THEME_PALETTES['medium-dark'];
   const activeThemePalette = useMemo(() => {
-    const src = baseThemeRef;
-    const isDark = getContrastRatio(src.surface || '#1C232D', '#FFFFFF') > 4.2;
-    return {
-      background: src.background || '#141920',
-      surface: src.surface || '#1C232D',
-      surfaceAlt: src.surfaceAlt || '#242D3A',
-      hover: (src as any).hover || (isDark ? '#2E3A4B' : '#E2E8F0'),
-      hoverText: (src as any).hoverText || (isDark ? '#F8FAFC' : '#0F172A'),
-      selectedBg: (src as any).selectedBg || (isDark ? '#243B4A' : '#D8ECE8'),
-      selectedText: (src as any).selectedText || (isDark ? '#F8FAFC' : '#133A32'),
-      text: src.text || (isDark ? '#F1F5F9' : '#182230'),
-      muted: src.muted || (isDark ? '#94A3B8' : '#536273'),
-      primary: src.primary || '#2A7B6F',
-      primaryText: src.primaryText || '#FFFFFF',
-      border: src.border || (isDark ? '#323E4F' : '#D5DDE5'),
-      isDark
-    };
-  }, [theme, baseThemeRef]);
-
-  useEffect(() => {
-    try { localStorage.setItem(THEME_STORAGE_KEY, theme); } catch (e) {}
+    return APP_THEME_PALETTES[theme] || APP_THEME_PALETTES.myfanbox;
   }, [theme]);
 
-  const handleGuestOpenUuidTracking = (e: React.FormEvent) => {
+  useEffect(() => {
+    saveStoredAppTheme(theme);
+  }, [theme]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setGuestLookupError('');
-    const raw = guestUuidInput.trim();
+    setErrorMsg('');
+
+    const raw = trackingInput.trim();
     if (!raw) {
-      setGuestLookupError('Pega tu código UUID o el enlace completo que recibiste por WhatsApp.');
+      setErrorMsg('Pega tu código único (UUID) o el enlace recibido por WhatsApp.');
       return;
     }
 
-    if (raw === '/1620' || raw === '1620' || raw === '#/1620') {
+    if (raw === '1620' || raw === '/1620' || raw.endsWith('/1620')) {
       navigate('/1620');
       return;
     }
 
-    let extractedUuid = raw;
-    if (raw.includes('/details/')) {
-      const afterDetails = raw.split('/details/')[1] || '';
-      const [idPart] = afterDetails.split('?');
-      extractedUuid = decodeURIComponent(idPart || '').trim();
-    }
+    const uuidMatch = raw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    const candidate = uuidMatch ? uuidMatch[0].toLowerCase() : raw.toLowerCase();
 
-    if (!isValidUUID(extractedUuid)) {
-      setGuestLookupError(
-        'Por seguridad, no se permite buscar por número de orden. Debes ingresar el código único UUID de 36 caracteres.'
-      );
+    if (!isValidUUID(candidate)) {
+      setErrorMsg('El código ingresado no es un UUID válido. Verifica el enlace enviado por WhatsApp.');
       return;
     }
 
-    navigate(`/details/${extractedUuid}`);
+    navigate(`/details/${candidate}`);
   };
 
   return (
-    <div data-theme={theme} className="mfb-theme-root min-h-screen bg-[#FAFAFA] text-zinc-900 flex flex-col lg:flex-row font-sans antialiased transition-colors duration-200">
+    <div
+      data-theme={theme}
+      className="mfb-theme-root min-h-screen bg-[#FAFAFA] text-zinc-900 flex flex-col font-sans antialiased transition-colors duration-300"
+    >
       <ThemeStyle theme={theme} activeThemePalette={activeThemePalette} />
-      
-      <div className="flex-1 min-h-screen flex flex-col justify-between p-4 sm:p-8 max-w-4xl mx-auto w-full">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-zinc-200">
-          <div className="flex items-center gap-3">
-            <MyFanBoxBrandLogo logoUrl={brandLogoUrl} brandName={brandName} size="lg" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold tracking-tight text-zinc-900">{brandName}</span>
-                <span className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-zinc-100 border border-zinc-200 rounded text-zinc-700">
-                  TRACKING & INVOICE
-                </span>
-              </div>
-              <p className="text-xs text-zinc-500">Colección Oficial: {collectionName}</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-xl border border-zinc-200 text-xs">
-            <Palette className="w-3.5 h-3.5 text-zinc-500" />
-            <select
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              className="bg-transparent font-medium text-zinc-800 focus:outline-none cursor-pointer"
-            >
-              {EYE_CARE_THEMES.map(t => (
-                <option key={t.id} value={t.id}>Tema: {t.name}</option>
-              ))}
-            </select>
+      <header className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-5 pb-4 border-b border-zinc-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <MyFanBoxBrandLogo
+            logoUrl={storeInfo.brandLogoUrl}
+            brandName={storeInfo.brandName}
+            size="md"
+          />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm sm:text-base font-bold text-zinc-900 leading-none">
+                {storeInfo.brandName}
+              </span>
+              <span className="px-2 py-0.5 rounded-md border border-zinc-200 bg-zinc-50 text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                TRACKING &amp; INVOICE
+              </span>
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">
+              Colección Oficial: {storeInfo.collectionName}
+            </p>
           </div>
         </div>
 
-        <div className="my-auto py-8 max-w-2xl mx-auto w-full">
-          <div className="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-9 space-y-6 shadow-xs">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-semibold">
-                <Fingerprint className="w-3.5 h-3.5" />
-                <span>Portal Oficial de Seguimiento y Facturación</span>
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">
-                Consulta el estado de tu pedido y tu Factura Digital
-              </h1>
-              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-                Para proteger tus datos personales y dirección de entrega, cada pedido de <strong>{brandName}</strong> cuenta con un <strong>código único privado (UUID)</strong>. Pega a continuación el código o el enlace que recibiste por WhatsApp:
-              </p>
-            </div>
-
-            <form onSubmit={handleGuestOpenUuidTracking} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                  Código Único de Seguimiento (UUID)
-                </label>
-                <input
-                  type="text"
-                  value={guestUuidInput}
-                  onChange={(e) => {
-                    setGuestUuidInput(e.target.value);
-                    setGuestLookupError('');
-                  }}
-                  placeholder="Ej: 4f8a2b1c-9d3e-4a1b-8c2d-7e6f5a4b3c2d"
-                  className="w-full h-11 px-3.5 font-mono text-xs bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-900 focus:bg-white focus:border-zinc-900 focus:outline-none"
+        <div className="inline-flex items-center gap-1 p-1 rounded-full bg-white border border-zinc-200">
+          {APP_THEMES.map(t => {
+            const selected = theme === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTheme(t.id)}
+                className={`h-7 px-2.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                  selected
+                    ? 'bg-zinc-900 text-white shadow-2xs'
+                    : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                <span
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ background: t.dot, border: `1.5px solid ${t.border}` }}
                 />
-              </div>
+                <span>{t.short}</span>
+              </button>
+            );
+          })}
+        </div>
+      </header>
 
-              {guestLookupError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2">
-                  <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                  <span>{guestLookupError}</span>
-                </div>
-              )}
-
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <button
-                  type="submit"
-                  className="h-10 px-5 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 inline-flex items-center gap-2 cursor-pointer"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Consultar Estado e Invoice</span>
-                </button>
-              </div>
-            </form>
-
-            <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-500 space-y-1">
-              <div className="font-semibold text-zinc-800 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Privacidad Garantizada</span>
-              </div>
-              <p>
-                Los pedidos no pueden ser buscados por número consecutivo, nombre ni teléfono. Solo quien posea el enlace privado enviado por WhatsApp tiene acceso a los detalles del envío.
-              </p>
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-10">
+        <div className="w-full max-w-2xl bg-white border border-zinc-200 rounded-2xl p-6 sm:p-10 shadow-2xs space-y-6">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-800">
+              <Fingerprint className="w-3.5 h-3.5" />
+              <span>Portal Oficial de Seguimiento y Facturación</span>
             </div>
+
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 leading-tight">
+              Consulta el estado de tu pedido y tu Factura Digital
+            </h1>
+
+            <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+              Para proteger tus datos personales y dirección de entrega, cada pedido de{' '}
+              <strong className="text-zinc-900">{storeInfo.brandName}</strong> cuenta con un{' '}
+              <strong className="text-zinc-900">código único privado (UUID)</strong>. Pega a continuación el código o el enlace que recibiste por WhatsApp:
+            </p>
+          </div>
+
+          <form onSubmit={handleSearchSubmit} className="space-y-3.5">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="mfb-uuid-input"
+                className="block text-xs font-semibold text-zinc-800"
+              >
+                Código Único de Seguimiento (UUID)
+              </label>
+              <input
+                id="mfb-uuid-input"
+                type="text"
+                value={trackingInput}
+                onChange={e => {
+                  setTrackingInput(e.target.value);
+                  if (errorMsg) setErrorMsg('');
+                }}
+                placeholder="Ej: 4f8a2b1c-9d3e-4a1b-8c2d-7e6f5a4b3c2d"
+                className="w-full h-11 px-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs sm:text-sm font-mono text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:border-zinc-900 focus:outline-none transition-colors"
+              />
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="h-11 px-5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Consultar Estado e Invoice</span>
+            </button>
+          </form>
+
+          <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 space-y-1 text-xs">
+            <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Privacidad Garantizada</span>
+            </div>
+            <p className="text-zinc-600 leading-relaxed">
+              Los pedidos no pueden ser buscados por número consecutivo, nombre ni teléfono. Solo quien posea el enlace privado enviado por WhatsApp tiene acceso a los detalles del envío.
+            </p>
           </div>
         </div>
+      </main>
 
-        <footer className="pt-4 border-t border-zinc-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
-          <span>{brandName} · {collectionName}</span>
-          <span>Seguimiento Encriptado con UUID v4</span>
-        </footer>
-      </div>
+      <footer className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 border-t border-zinc-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-500">
+        <span>
+          {storeInfo.brandName} · {storeInfo.collectionName}
+        </span>
+        <span className="font-mono">Seguimiento Encriptado con UUID v4</span>
+      </footer>
     </div>
   );
 }

@@ -16,11 +16,11 @@ import {
   Clock,
   Printer,
   ArrowRight,
-  Shirt,
-  Palette
+  Shirt
 } from 'lucide-react';
 import MyFanBoxBrandLogo from '../components/MyFanBoxBrandLogo';
 import ThemeStyle from '../components/ThemeStyle';
+import ShippingStatusAnimation from '../components/ShippingStatusAnimation';
 import { apiRequest } from '../api';
 import {
   sanitizeOrderRecord,
@@ -29,10 +29,15 @@ import {
   getPendingAmount,
   isOrderActive,
   formatCOP,
-  isValidUUID,
-  getContrastRatio
+  isValidUUID
 } from '../utils/helpers';
-import { EYE_CARE_THEMES, THEME_STORAGE_KEY, THEME_PALETTES } from '../utils/constants';
+import {
+  APP_THEMES,
+  APP_THEME_PALETTES,
+  AppTheme,
+  readStoredAppTheme,
+  saveStoredAppTheme
+} from '../utils/themes';
 import { Order } from '../types';
 
 interface PublicStoreConfig {
@@ -106,34 +111,15 @@ export default function OrderDetails() {
   const [copiedKey, setCopiedKey] = useState('');
   const [dataConfirmedByClient, setDataConfirmedByClient] = useState(false);
   const [storeConfig, setStoreConfig] = useState<PublicStoreConfig>(() => loadLocalStoreConfig());
-  const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem(THEME_STORAGE_KEY) || 'medium-dark'; } catch { return 'medium-dark'; }
-  });
+  const [clientTheme, setClientTheme] = useState<AppTheme>(() => readStoredAppTheme());
 
-  const baseThemeRef = THEME_PALETTES[theme] || THEME_PALETTES['medium-dark'];
   const activeThemePalette = useMemo(() => {
-    const src = baseThemeRef;
-    const isDark = getContrastRatio(src.surface || '#1C232D', '#FFFFFF') > 4.2;
-    return {
-      background: src.background || '#141920',
-      surface: src.surface || '#1C232D',
-      surfaceAlt: src.surfaceAlt || '#242D3A',
-      hover: (src as any).hover || (isDark ? '#2E3A4B' : '#E2E8F0'),
-      hoverText: (src as any).hoverText || (isDark ? '#F8FAFC' : '#0F172A'),
-      selectedBg: (src as any).selectedBg || (isDark ? '#243B4A' : '#D8ECE8'),
-      selectedText: (src as any).selectedText || (isDark ? '#F8FAFC' : '#133A32'),
-      text: src.text || (isDark ? '#F1F5F9' : '#182230'),
-      muted: src.muted || (isDark ? '#94A3B8' : '#536273'),
-      primary: src.primary || '#2A7B6F',
-      primaryText: src.primaryText || '#FFFFFF',
-      border: src.border || (isDark ? '#323E4F' : '#D5DDE5'),
-      isDark
-    };
-  }, [theme, baseThemeRef]);
+    return APP_THEME_PALETTES[clientTheme] || APP_THEME_PALETTES.myfanbox;
+  }, [clientTheme]);
 
   useEffect(() => {
-    try { localStorage.setItem(THEME_STORAGE_KEY, theme); } catch {}
-  }, [theme]);
+    saveStoredAppTheme(clientTheme);
+  }, [clientTheme]);
 
   useEffect(() => {
     if (!id) return;
@@ -209,6 +195,7 @@ export default function OrderDetails() {
 
   const getShipStatusBadgeClass = (status: string) => {
     switch (status) {
+      case 'Entregado': return 'bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold';
       case 'Enviado': return 'bg-emerald-50 text-emerald-800 border-emerald-200';
       case 'Por enviar': return 'bg-sky-50 text-sky-800 border-sky-200 font-semibold';
       case 'Por preparar': return 'bg-zinc-100 text-zinc-800 border-zinc-300';
@@ -218,10 +205,10 @@ export default function OrderDetails() {
 
   return (
     <div
-      data-theme={theme}
-      className="mfb-theme-root min-h-screen bg-[#FAFAFA] text-zinc-900 flex flex-col font-sans antialiased transition-colors duration-200 p-3 sm:p-6"
+      data-theme={clientTheme}
+      className="mfb-theme-root min-h-screen bg-[#FAFAFA] text-zinc-900 flex flex-col font-sans antialiased transition-colors duration-300 p-3 sm:p-6"
     >
-      <ThemeStyle theme={theme} activeThemePalette={activeThemePalette} />
+      <ThemeStyle theme={clientTheme} activeThemePalette={activeThemePalette} />
 
       <div className="max-w-3xl mx-auto w-full space-y-4">
         <div className="no-print bg-white border border-zinc-200 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs shadow-2xs">
@@ -237,18 +224,29 @@ export default function OrderDetails() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-1 bg-zinc-50 px-2 py-1 rounded-xl border border-zinc-200">
-              <Palette className="w-3.5 h-3.5 text-zinc-500" />
-              <select
-                value={theme}
-                onChange={e => setTheme(e.target.value)}
-                className="bg-transparent text-xs font-medium text-zinc-800 focus:outline-none cursor-pointer"
-              >
-                {EYE_CARE_THEMES.map(t => (
-                  <option key={t.id} value={t.id}>{t.short}</option>
-                ))}
-              </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1 p-1 rounded-full bg-zinc-50 border border-zinc-200">
+              {APP_THEMES.map(t => {
+                const selected = clientTheme === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setClientTheme(t.id)}
+                    className={`h-7 px-2.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                      selected
+                        ? 'bg-zinc-900 text-white shadow-2xs'
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ background: t.dot, border: `1.5px solid ${t.border}` }}
+                    />
+                    <span>{t.short}</span>
+                  </button>
+                );
+              })}
             </div>
             <button
               onClick={() => navigate('/')}
@@ -286,9 +284,12 @@ export default function OrderDetails() {
             0
           );
           const firstName = (o.customerName || 'Fan').trim().split(' ')[0];
+          const isDelivered = String(o.shippingStatus || '').toLowerCase().includes('entregado');
 
           const currentStep = !active
             ? 0
+            : isDelivered
+            ? 5
             : o.shippingStatus === 'Enviado'
             ? 4
             : o.shippingStatus === 'Por enviar'
@@ -297,12 +298,17 @@ export default function OrderDetails() {
             ? 2
             : 1;
 
-          const progressPct = !active ? 0 : currentStep * 25;
+          const progressPct = !active ? 0 : Math.min(100, currentStep >= 5 ? 100 : currentStep * 25);
 
           const heroCopy = !active
             ? {
                 title: `Pedido ${o.paymentStatus.toLowerCase()}`,
                 subtitle: 'Este pedido no se encuentra activo para despacho. Si tienes dudas, escríbenos por WhatsApp.'
+              }
+            : isDelivered
+            ? {
+                title: `¡Tu pedido ya fue entregado, ${firstName}!`,
+                subtitle: `Esperamos que ames tus prendas de ${storeConfig.brandName}. ¡Etiquétanos en ${storeConfig.instagramHandle || '@myfanbox'}!`
               }
             : currentStep === 4
             ? {
@@ -345,15 +351,17 @@ export default function OrderDetails() {
             },
             {
               step: 4,
-              title: 'En camino a tu ciudad',
-              desc: `Despacho GRATIS con ${o.carrier} hacia ${o.city}.`
+              title: isDelivered ? 'Entregado en destino' : 'En camino a tu ciudad',
+              desc: isDelivered
+                ? `Paquete entregado en ${o.city} con ${o.carrier}.`
+                : `Despacho GRATIS con ${o.carrier} hacia ${o.city}.`
             }
           ];
 
           const receiptMessage = `¡Hola ${storeConfig.brandName}! Soy ${o.customerName}, envío el comprobante del saldo pendiente de mi pedido ${o.id} por valor de ${formatCOP(pending)}.`;
           const correctionMessage = `¡Hola ${storeConfig.brandName}! Soy ${o.customerName} (pedido ${o.id}). Quiero corregir un dato de mi dirección o talla antes de que salga a envío: `;
 
-          const showTrackingCard = active && (o.shippingStatus === 'Enviado' || Boolean(o.trackingNumber));
+          const showTrackingCard = active && (o.shippingStatus === 'Enviado' || isDelivered || Boolean(o.trackingNumber));
           const showPreShipVerify = active && o.shippingStatus === 'Por preparar';
 
           return (
@@ -387,6 +395,14 @@ export default function OrderDetails() {
 
               {activeView === 'tracking' && (
                 <div className="space-y-4">
+                  <ShippingStatusAnimation
+                    shippingStatus={o.shippingStatus}
+                    paymentStatus={o.paymentStatus}
+                    active={active}
+                    clientTheme={clientTheme}
+                    carrier={o.carrier}
+                  />
+
                   <section className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-6 space-y-5 shadow-2xs">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="space-y-1">
@@ -420,7 +436,7 @@ export default function OrderDetails() {
                       <div className="w-full h-3 rounded-full bg-zinc-100 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            currentStep === 4 ? 'bg-emerald-600' : 'bg-zinc-900'
+                            currentStep >= 4 ? 'bg-emerald-600' : 'bg-zinc-900'
                           }`}
                           style={{ width: `${progressPct}%` }}
                         />
@@ -447,11 +463,11 @@ export default function OrderDetails() {
                           Entrega Estimada
                         </div>
                         <div className="mt-1 text-xs sm:text-sm font-bold text-emerald-700">
-                          {eta.windowDates}
+                          {isDelivered ? 'Entregado' : eta.windowDates}
                         </div>
                         <div className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>{eta.etaLabel}</span>
+                          <span>{isDelivered ? 'Completado' : eta.etaLabel}</span>
                         </div>
                       </div>
 
@@ -696,7 +712,7 @@ export default function OrderDetails() {
                     <div className="space-y-3">
                       {timelineSteps.map((st) => {
                         const completed = currentStep >= st.step;
-                        const isCurrent = currentStep === st.step;
+                        const isCurrent = currentStep === st.step || (isDelivered && st.step === 4);
                         return (
                           <div
                             key={st.step}
@@ -723,7 +739,13 @@ export default function OrderDetails() {
                                   {st.title}
                                 </span>
                                 <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                                  {isCurrent ? 'Etapa actual' : completed ? 'Completado' : 'Próximo'}
+                                  {isDelivered && st.step === 4
+                                    ? 'Completado'
+                                    : isCurrent
+                                    ? 'Etapa actual'
+                                    : completed
+                                    ? 'Completado'
+                                    : 'Próximo'}
                                 </span>
                               </div>
                               <p className="text-xs text-zinc-600 mt-0.5">{st.desc}</p>
