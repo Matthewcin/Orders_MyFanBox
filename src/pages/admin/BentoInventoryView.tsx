@@ -559,7 +559,7 @@ function BentoCategoryCard({
                     {sc.missing > 0 && (
                       <span
                         className={`text-[10px] font-mono px-1 rounded ${
-                          active ? 'bg-amber-400 text-zinc-950' : 'bg-amber-200/80 text-amber-950'
+                          active ? 'bg-amber-400 text-zinc-950' : 'bg-amber-200/80 text-zinc-950'
                         }`}
                       >
                         {sc.missing}
@@ -854,7 +854,7 @@ export default function BentoInventoryView() {
             >
               <Layers className="w-4 h-4 mb-1.5" />
               <div className="text-xs font-bold">Estampar / Hacer</div>
-              <div className={`text-[11px] mt-0.5 ${mode === 'make' ? 'text-zinc-300' : 'text-zinc-500'}`}>
+              <div className={`text-[11px] mt-0.5 ${mode === 'make' ? 'text-zinc-950' : 'text-zinc-500'}`}>
                 {productionMatrix.totalMissingToMake} pendientes
               </div>
             </button>
@@ -870,7 +870,7 @@ export default function BentoInventoryView() {
             >
               <ShoppingBag className="w-4 h-4 mb-1.5" />
               <div className="text-xs font-bold">Comprar Stock</div>
-              <div className={`text-[11px] mt-0.5 ${mode === 'buy' ? 'text-zinc-300' : 'text-zinc-500'}`}>
+              <div className={`text-[11px] mt-0.5 ${mode === 'buy' ? 'text-zinc-950' : 'text-zinc-500'}`}>
                 {shoppingNeeds.totalMissingToBuy} por comprar
               </div>
             </button>
