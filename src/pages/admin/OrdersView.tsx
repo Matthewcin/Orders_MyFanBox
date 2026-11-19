@@ -668,7 +668,7 @@ export default function OrdersView({
                           title="Abrir seguimiento / factura"
                         >
                           <ExternalLink className="w-3 h-3" />
-                          <span>/details/</span>
+                          <span>Factura</span>
                         </button>
                         <button
                           type="button"
