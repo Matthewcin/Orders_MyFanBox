@@ -12,6 +12,7 @@ import SecurityModal from '../components/admin/SecurityModal';
 import OrdersView from './admin/OrdersView';
 import QuickCheckView from './admin/QuickCheckView';
 import ProductAdderView from './admin/ProductAdderView';
+import OtherProductsView from './admin/OtherProductsView';
 import InventoryView from './admin/InventoryView';
 import BentoInventoryView from './admin/BentoInventoryView';
 import ShippingView from './admin/ShippingView';
@@ -234,6 +235,7 @@ function AdminDashboardContent() {
           {activeTab === 'map' && <MapView />}
           {activeTab === 'costs' && <CostsView />}
           {activeTab === 'product-adder' && <ProductAdderView />}
+          {activeTab === 'other-products' && <OtherProductsView />}
           {activeTab === 'neondb' && <NeonDBView />}
           {activeTab === 'config' && <ConfigView />}
         </main>
