@@ -125,6 +125,12 @@ CREATE TABLE IF NOT EXISTS mfb_app_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS mfb_other_workspace (
+  workspace_key TEXT PRIMARY KEY,
+  payload JSONB NOT NULL DEFAULT '{"products":[],"orders":[]}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_mfb_orders_payment ON mfb_orders(payment_status);
 CREATE INDEX IF NOT EXISTS idx_mfb_orders_shipping ON mfb_orders(shipping_status);
 CREATE INDEX IF NOT EXISTS idx_mfb_orders_uuid ON mfb_orders(uuid);
@@ -224,6 +230,13 @@ function loginRateLimit(req, res, next) {
 
 async function initializeDatabase() {
   await pool.query(SCHEMA_SQL);
+
+  await pool.query(
+    `INSERT INTO mfb_other_workspace (workspace_key, payload)
+     VALUES ('default', '{"products":[],"orders":[]}'::jsonb)
+     ON CONFLICT (workspace_key) DO NOTHING`
+  );
+
   const existing = await pool.query("SELECT config_key FROM mfb_admin_config WHERE config_key = 'PRIMARY_ADMIN' LIMIT 1");
   if (existing.rowCount === 0) {
     await pool.query(
@@ -234,6 +247,7 @@ async function initializeDatabase() {
     );
     console.log('Administrador inicial creado en NeonDB usando variables de entorno.');
   }
+
   const catalogCount = await pool.query('SELECT COUNT(*)::int AS count FROM mfb_catalog');
   if (Number(catalogCount.rows[0]?.count || 0) === 0) {
     const starterCatalog = JSON.parse(fs.readFileSync(new URL('./initial-catalog.json', import.meta.url), 'utf8'));
@@ -258,7 +272,7 @@ async function initializeDatabase() {
       client.release();
     }
   }
-  console.log('Esquema de MyFanBox verificado en PostgreSQL.');
+  console.log('Esquema de MyFanBox (incluido espacio aislado mfb_other_workspace) verificado en PostgreSQL.');
 }
 
 function mapCatalog(row) {
@@ -505,9 +519,15 @@ app.put('/api/admin/config', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/init', requireAdmin, async (_req, res) => {
   try {
-    await pool.query('SELECT 1');
-    res.json({ ok: true, message: 'Las tablas de MyFanBox están listas en NeonDB.' });
+    await pool.query(SCHEMA_SQL);
+    await pool.query(
+      `INSERT INTO mfb_other_workspace (workspace_key, payload)
+       VALUES ('default', '{"products":[],"orders":[]}'::jsonb)
+       ON CONFLICT (workspace_key) DO NOTHING`
+    );
+    res.json({ ok: true, message: 'Las tablas de MyFanBox (incluido espacio aislado) están listas en NeonDB.' });
   } catch (error) {
+    console.error('Error en /api/admin/init:', error);
     res.status(503).json({ error: 'NeonDB no respondió a la inicialización.' });
   }
 });
@@ -540,6 +560,59 @@ app.get('/api/tracking/interrapidisimo', async (req, res) => {
   }
   const result = await consultarGuiaInterrapidisimo(guia);
   return res.json(result);
+});
+
+app.get('/api/admin/other-workspace', requireAdmin, async (_req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT payload, updated_at FROM mfb_other_workspace WHERE workspace_key = 'default' LIMIT 1"
+    );
+    const payload = asJson(result.rows[0]?.payload, { products: [], orders: [] });
+    res.json({
+      products: Array.isArray(payload.products) ? payload.products : [],
+      orders: Array.isArray(payload.orders) ? payload.orders : [],
+      updatedAt: result.rows[0]?.updated_at || null
+    });
+  } catch (error) {
+    console.error('Error al leer mfb_other_workspace:', error);
+    res.status(500).json({ error: 'No se pudo cargar el espacio aislado desde NeonDB.' });
+  }
+});
+
+app.put('/api/admin/other-workspace', requireAdmin, async (req, res) => {
+  const products = req.body?.products;
+  const orders = req.body?.orders;
+
+  if (!Array.isArray(products) || !Array.isArray(orders) || products.length > 2000 || orders.length > 50_000) {
+    return res.status(400).json({ error: 'Formato inválido para el espacio aislado.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(771234992)');
+    const payload = { products, orders };
+    const result = await client.query(
+      `INSERT INTO mfb_other_workspace (workspace_key, payload, updated_at)
+       VALUES ('default', $1::jsonb, NOW())
+       ON CONFLICT (workspace_key)
+       DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
+       RETURNING updated_at`,
+      [JSON.stringify(payload)]
+    );
+    await client.query('COMMIT');
+    res.json({
+      ok: true,
+      saved: { products: products.length, orders: orders.length },
+      updatedAt: result.rows[0]?.updated_at || null
+    });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    console.error('Error al guardar mfb_other_workspace:', error);
+    res.status(500).json({ error: 'No se pudo guardar el espacio aislado en NeonDB.' });
+  } finally {
+    client.release();
+  }
 });
 
 app.get('/api/orders/:uuid', async (req, res) => {

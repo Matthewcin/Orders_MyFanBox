@@ -15,6 +15,7 @@ import {
   Database,
   Check
 } from 'lucide-react';
+import { apiRequest } from '../../api';
 import { useAdmin } from '../../context/AdminContext';
 import {
   PAYMENT_STATUSES,
