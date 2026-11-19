@@ -12,7 +12,11 @@ import {
   Shirt,
   Truck
 } from 'lucide-react';
-import { useAdmin } from '../../context/AdminContext';
+import {
+  useAdmin,
+  buildMadeKey,
+  isProductAccessory
+} from '../../context/AdminContext';
 import { Order } from '../../types';
 import {
   formatCOP,
@@ -101,7 +105,7 @@ export default function QuickCheckView({
     const active = orders.filter(isOrderActive);
     const filtered =
       targetScope === 'pending'
-        ? active.filter(o => o.shippingStatus !== 'Enviado')
+        ? active.filter(o => o.shippingStatus !== 'Enviado' && o.shippingStatus !== 'Entregado')
         : active;
     return sortOldestToNewest(filtered).map(o => o.id);
   };
@@ -115,10 +119,13 @@ export default function QuickCheckView({
     setTrackingDraft('');
   }, [scope]);
 
-  const missingMap = useMemo(() => {
-    const map: Record<string, number> = {};
+  const productionRowMap = useMemo(() => {
+    const map: Record<string, { missing: number; made: number }> = {};
     (productionMatrix.rows || []).forEach((r: any) => {
-      map[r.key] = Number(r.missing) || 0;
+      map[r.key] = {
+        missing: Number(r.missing) || 0,
+        made: Number(r.made) || 0
+      };
     });
     return map;
   }, [productionMatrix]);
@@ -128,7 +135,14 @@ export default function QuickCheckView({
     const v =
       p?.variants.find(vx => vx.id === item.variantId || vx.name === item.variantName) ||
       p?.variants[0];
-    return `${p?.id || item.productId}|||${v?.id || item.variantId || item.variantName}|||${item.size || 'M'}`;
+    const isAcc = isProductAccessory(p);
+    return buildMadeKey(
+      p?.id || item.productId,
+      v?.id || item.variantId || item.variantName || 'v-std',
+      isAcc ? 'Única' : (item.size || 'M'),
+      item.gender || 'Sin especificar',
+      isAcc
+    );
   };
 
   const validQueueOrders = useMemo(() => {
@@ -153,14 +167,25 @@ export default function QuickCheckView({
 
     setMadeItems(prev => {
       const next = { ...prev };
+      const remainingMissingByKey: Record<string, number> = {};
+
       order.items.forEach(it => {
         const key = getItemProductionKey(it);
-        const currentMissing = missingMap[key] || 0;
+        if (remainingMissingByKey[key] === undefined) {
+          remainingMissingByKey[key] = productionRowMap[key]?.missing || 0;
+        }
+        const currentMissing = remainingMissingByKey[key];
         if (currentMissing > 0) {
           const addQty = Math.min(Math.max(1, Number(it.qty) || 1), currentMissing);
-          next[key] = (Number(next[key]) || 0) + addQty;
+          const baseMade =
+            next[key] !== undefined
+              ? Number(next[key]) || 0
+              : productionRowMap[key]?.made || 0;
+          next[key] = baseMade + addQty;
+          remainingMissingByKey[key] = Math.max(0, currentMissing - addQty);
         }
       });
+
       return next;
     });
     setInventorySyncedIds(prev => ({ ...prev, [order.id]: true }));
@@ -599,7 +624,7 @@ export default function QuickCheckView({
                   <div className="space-y-2">
                     {currentOrder.items.map((item, idx) => {
                       const prodKey = getItemProductionKey(item);
-                      const isMissingInInv = (missingMap[prodKey] || 0) > 0;
+                      const isMissingInInv = (productionRowMap[prodKey]?.missing || 0) > 0;
                       return (
                         <button
                           key={item.id || idx}

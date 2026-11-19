@@ -17,8 +17,9 @@ export default function InventoryView() {
   } = useAdmin();
 
   const [invSubtab, setInvSubtab] = useState<'buy' | 'make' | 'pack'>('buy');
-  const [invShowOnlyOrdered, setInvShowOnlyOrdered] = useState(false);
+  const [invShowOnlyOrdered, setInvShowOnlyOrdered] = useState(true);
   const [invSizeFilter, setInvSizeFilter] = useState('ALL');
+  const [invGenderFilter, setInvGenderFilter] = useState('ALL');
   const [invCategoryFilter, setInvCategoryFilter] = useState('ALL');
 
   const copyToClipboard = (text: string, label: string) => {
@@ -37,6 +38,12 @@ export default function InventoryView() {
     }
   };
 
+  const getGenderBadgeClass = (gender: string) => {
+    if (gender === 'Femenino') return 'bg-purple-50 text-purple-800 border-purple-200';
+    if (gender === 'Masculino') return 'bg-sky-50 text-sky-800 border-sky-200';
+    return 'bg-zinc-100 text-zinc-600 border-zinc-200';
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -45,7 +52,7 @@ export default function InventoryView() {
             Inventario bajo Pedido: ¿Qué Comprar, Estampar y Empacar?
           </h1>
           <p className="text-xs text-zinc-500">
-            Calculado en vivo sobre los {metrics.activeOrdersCount} pedidos activos (excluye automáticamente Cancelados y Reembolsados).
+            Calculado en vivo sobre los {metrics.activeOrdersCount} pedidos activos, separado por talla y corte (Femenino / Masculino).
           </p>
         </div>
 
@@ -83,10 +90,10 @@ export default function InventoryView() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-zinc-900">
-                  A. Prendas en Blanco e Insumos para Comprar al Proveedor (Todas las Tallas XS–2XL)
+                  A. Prendas en Blanco e Insumos para Comprar al Proveedor
                 </h2>
                 <p className="text-xs text-zinc-500">
-                  Incluye todas las remeras, hoodies, croptops, raglans y accesorios con todas las tallas posibles para controlar stock y compras.
+                  Cada combinación de prenda base, talla y corte (Femenino / Masculino) lleva su propio conteo de stock.
                 </p>
               </div>
               <button
@@ -99,7 +106,10 @@ export default function InventoryView() {
                   const txt =
                     `*LISTA DE COMPRAS A PROVEEDOR — MYFANBOX*\n` +
                     missing
-                      .map((r: any) => `• ${r.blankName} [Talla ${r.sizeOrSpec}] -> COMPRAR: ${r.missing} uds (Pedidos: ${r.required}, En stock: ${r.bought})`)
+                      .map((r: any) => {
+                        const genderPart = r.isAccessory ? '' : ` · ${r.gender}`;
+                        return `• ${r.blankName} [Talla ${r.sizeOrSpec}${genderPart}] -> COMPRAR: ${r.missing} uds (Pedidos: ${r.required}, En stock: ${r.bought})`;
+                      })
                       .join('\n');
                   copyToClipboard(txt, 'Lista de compras para proveedor copiada');
                 }}
@@ -117,10 +127,21 @@ export default function InventoryView() {
                   onChange={(e) => setInvCategoryFilter(e.target.value)}
                   className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800"
                 >
-                  <option value="ALL">Categoría: Todas (Ropa, Accesorios e Insumos)</option>
-                  <option value="Prenda en Blanco">Solo Ropa (Remeras, Hoodies, Croptops, Raglans)</option>
-                  <option value="Base Accesorio">Solo Base Accesorios (Mini CD / Fanbox)</option>
-                  <option value="Insumos">Solo Insumos Taller / NFC</option>
+                  <option value="ALL">Categoría: Todas</option>
+                  <option value="Prenda en Blanco">Solo Ropa</option>
+                  <option value="Base Accesorio">Solo Base Accesorios</option>
+                </select>
+
+                <select
+                  value={invGenderFilter}
+                  onChange={(e) => setInvGenderFilter(e.target.value)}
+                  className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800"
+                >
+                  <option value="ALL">Corte: Todos</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Sin especificar">Sin especificar</option>
+                  <option value="Única">Accesorios (Única)</option>
                 </select>
 
                 <select
@@ -128,7 +149,7 @@ export default function InventoryView() {
                   onChange={(e) => setInvSizeFilter(e.target.value)}
                   className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800"
                 >
-                  <option value="ALL">Talla: Todas (XS a 2XL + Única)</option>
+                  <option value="ALL">Talla: Todas</option>
                   {['XS', 'S', 'M', 'L', 'XL', '2XL', 'Única'].map(sz => (
                     <option key={sz} value={sz}>Talla {sz}</option>
                   ))}
@@ -143,7 +164,7 @@ export default function InventoryView() {
                     !invShowOnlyOrdered ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-zinc-50 text-zinc-600 border-zinc-200'
                   }`}
                 >
-                  Ver todas las tallas ({shoppingNeeds.rows.length})
+                  Ver todas ({shoppingNeeds.rows.length})
                 </button>
                 <button
                   type="button"
@@ -165,6 +186,7 @@ export default function InventoryView() {
                   <tr className="border-b border-zinc-200 bg-zinc-50/80 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                     <th className="py-2.5 px-4">Categoría</th>
                     <th className="py-2.5 px-4">Prenda Base / Insumo</th>
+                    <th className="py-2.5 px-4 text-center">Corte</th>
                     <th className="py-2.5 px-4 text-center">Talla</th>
                     <th className="py-2.5 px-4 text-center">Total Pedido</th>
                     <th className="py-2.5 px-4 text-center">Ya Comprado / En Stock</th>
@@ -177,7 +199,7 @@ export default function InventoryView() {
                       if (invShowOnlyOrdered && row.required === 0 && row.bought === 0) return false;
                       if (invCategoryFilter === 'Prenda en Blanco' && row.categoryLabel !== 'Prenda en Blanco') return false;
                       if (invCategoryFilter === 'Base Accesorio' && row.categoryLabel !== 'Base Accesorio') return false;
-                      if (invCategoryFilter === 'Insumos' && !row.categoryLabel.includes('Insumo')) return false;
+                      if (invGenderFilter !== 'ALL' && row.gender !== invGenderFilter) return false;
                       if (invSizeFilter !== 'ALL' && row.sizeOrSpec !== invSizeFilter) return false;
                       return true;
                     })
@@ -185,6 +207,11 @@ export default function InventoryView() {
                       <tr key={row.key} className="hover:bg-zinc-50/80">
                         <td className="py-2.5 px-4 text-zinc-500">{row.categoryLabel}</td>
                         <td className="py-2.5 px-4 font-medium text-zinc-900">{row.blankName}</td>
+                        <td className="py-2.5 px-4 text-center">
+                          <span className={`px-2 py-0.5 rounded border text-[11px] font-semibold ${getGenderBadgeClass(row.gender)}`}>
+                            {row.gender}
+                          </span>
+                        </td>
                         <td className="py-2.5 px-4 text-center">
                           <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
                             {row.sizeOrSpec}
@@ -263,10 +290,10 @@ export default function InventoryView() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-zinc-900">
-                  B. Matriz de Producción y Estampado (Todas las Referencias, Variantes y Tallas XS–2XL)
+                  B. Matriz de Producción y Estampado (Separada por Corte y Talla)
                 </h2>
                 <p className="text-xs text-zinc-500">
-                  Marca con <strong className="text-zinc-900">[-]</strong> y <strong className="text-zinc-900">[+]</strong> las prendas que ya salieron de estampado y pedrería.
+                  Marca con <strong className="text-zinc-900">[-]</strong> y <strong className="text-zinc-900">[+]</strong> las prendas ya hechas en cada corte por separado.
                 </p>
               </div>
               <button
@@ -279,7 +306,10 @@ export default function InventoryView() {
                   const txt =
                     `*ORDEN DE TALLER / ESTAMPADO — MYFANBOX*\n` +
                     pending
-                      .map((r: any) => `• ${r.productName} (${r.variantName}) — Talla ${r.size} -> HACER: ${r.missing} uds`)
+                      .map((r: any) => {
+                        const genderPart = r.isAccessory ? '' : ` · ${r.gender}`;
+                        return `• ${r.productName} (${r.variantName}) — Talla ${r.size}${genderPart} -> HACER: ${r.missing} uds`;
+                      })
                       .join('\n');
                   copyToClipboard(txt, 'Orden de taller copiada al portapapeles');
                 }}
@@ -293,11 +323,23 @@ export default function InventoryView() {
             <div className="pt-2 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="flex flex-wrap items-center gap-2">
                 <select
+                  value={invGenderFilter}
+                  onChange={(e) => setInvGenderFilter(e.target.value)}
+                  className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800"
+                >
+                  <option value="ALL">Corte: Todos</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Sin especificar">Sin especificar</option>
+                  <option value="Única">Accesorios (Única)</option>
+                </select>
+
+                <select
                   value={invSizeFilter}
                   onChange={(e) => setInvSizeFilter(e.target.value)}
                   className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-800"
                 >
-                  <option value="ALL">Talla: Todas (XS a 2XL + Única)</option>
+                  <option value="ALL">Talla: Todas</option>
                   {['XS', 'S', 'M', 'L', 'XL', '2XL', 'Única'].map(sz => (
                     <option key={sz} value={sz}>Talla {sz}</option>
                   ))}
@@ -312,7 +354,7 @@ export default function InventoryView() {
                     !invShowOnlyOrdered ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-zinc-50 text-zinc-600 border-zinc-200'
                   }`}
                 >
-                  Ver todas las tallas ({productionMatrix.rows.length})
+                  Ver todas ({productionMatrix.rows.length})
                 </button>
                 <button
                   type="button"
@@ -334,6 +376,7 @@ export default function InventoryView() {
                   <tr className="border-b border-zinc-200 bg-zinc-50/80 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                     <th className="py-2.5 px-4">Referencia Oficial</th>
                     <th className="py-2.5 px-4">Variante / Detalle</th>
+                    <th className="py-2.5 px-4 text-center">Corte</th>
                     <th className="py-2.5 px-4 text-center">Talla</th>
                     <th className="py-2.5 px-4 text-center">Pedidas</th>
                     <th className="py-2.5 px-4 text-center">Ya Hechas</th>
@@ -345,6 +388,7 @@ export default function InventoryView() {
                   {productionMatrix.rows
                     .filter((row: any) => {
                       if (invShowOnlyOrdered && row.orderedQty === 0 && row.made === 0) return false;
+                      if (invGenderFilter !== 'ALL' && row.gender !== invGenderFilter) return false;
                       if (invSizeFilter !== 'ALL' && row.size !== invSizeFilter) return false;
                       return true;
                     })
@@ -359,6 +403,11 @@ export default function InventoryView() {
                         <tr key={row.key} className="hover:bg-zinc-50/80">
                           <td className="py-2.5 px-4 font-medium text-zinc-900">{row.productName}</td>
                           <td className="py-2.5 px-4 text-zinc-600">{row.variantName}</td>
+                          <td className="py-2.5 px-4 text-center">
+                            <span className={`px-2 py-0.5 rounded border text-[11px] font-semibold ${getGenderBadgeClass(row.gender)}`}>
+                              {row.gender}
+                            </span>
+                          </td>
                           <td className="py-2.5 px-4 text-center">
                             <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 font-semibold text-zinc-800">
                               {row.size}

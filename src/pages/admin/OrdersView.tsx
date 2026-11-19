@@ -9,7 +9,12 @@ import {
   MessageCircle,
   Trash2
 } from 'lucide-react';
-import { useAdmin } from '../../context/AdminContext';
+import {
+  useAdmin,
+  buildMadeKey,
+  isProductAccessory,
+  normalizeInventoryGender
+} from '../../context/AdminContext';
 import { Order } from '../../types';
 import {
   PAYMENT_STATUSES,
@@ -81,10 +86,10 @@ export default function OrdersView({
       };
     }
 
-    if (order.shippingStatus === 'Enviado') {
+    if (order.shippingStatus === 'Enviado' || order.shippingStatus === 'Entregado') {
       return {
         kind: 'shipped' as const,
-        label: 'Enviado',
+        label: order.shippingStatus === 'Entregado' ? 'Entregado' : 'Enviado',
         rowStyle: {
           backgroundColor: 'rgba(16, 185, 129, 0.075)',
           boxShadow: 'inset 3px 0 0 rgba(16, 185, 129, 0.78)'
@@ -111,7 +116,14 @@ export default function OrdersView({
       const v =
         p?.variants.find(vx => vx.id === it.variantId || vx.name === it.variantName) ||
         p?.variants[0];
-      const key = `${p?.id || it.productId}|||${v?.id || it.variantId || it.variantName}|||${it.size || 'M'}`;
+      const isAcc = isProductAccessory(p);
+      const key = buildMadeKey(
+        p?.id || it.productId,
+        v?.id || it.variantId || it.variantName || 'v-std',
+        isAcc ? 'Única' : (it.size || 'M'),
+        it.gender || 'Sin especificar',
+        isAcc
+      );
       return (missingInventoryMap[key] || 0) > 0;
     });
 
@@ -154,7 +166,7 @@ export default function OrdersView({
       if (shipFilter !== 'ALL' && order.shippingStatus !== shipFilter) return false;
       if (productFilter !== 'ALL' && !order.items.some(i => i.productId === productFilter || i.productName === productFilter)) return false;
       if (sizeFilter !== 'ALL' && !order.items.some(i => i.size === sizeFilter)) return false;
-      if (genderFilter !== 'ALL' && !order.items.some(i => (i.gender || 'Sin especificar') === genderFilter)) return false;
+      if (genderFilter !== 'ALL' && !order.items.some(i => normalizeInventoryGender(i.gender) === genderFilter)) return false;
 
       if (q) {
         const haystack = [

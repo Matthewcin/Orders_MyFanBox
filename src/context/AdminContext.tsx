@@ -2,8 +2,40 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Product, ProductVariant, Order, OrderItem } from '../types';
 import { apiRequest } from '../api';
 import { sanitizeCatalogRecord, sanitizeOrderRecord, isOrderActive, getPaidAmount, getPendingAmount, generateUUIDv4, saveStoredCedula } from '../utils/helpers';
-import { DEFAULT_ADMIN_USER, ADMIN_SESSION_KEY, OFFICIAL_CATALOG_FALLBACK, ALL_GARMENT_SIZES } from '../utils/constants';
+import { DEFAULT_ADMIN_USER, ADMIN_SESSION_KEY, OFFICIAL_CATALOG_FALLBACK, ALL_GARMENT_SIZES, GARMENT_GENDERS } from '../utils/constants';
 import { AppTheme, normalizeAppTheme, readStoredAppTheme, saveStoredAppTheme } from '../utils/themes';
+
+export function isProductAccessory(product?: Partial<Product> | null): boolean {
+  return String(product?.category || '').toLowerCase().includes('accesorio');
+}
+
+export function normalizeInventoryGender(gender?: string): string {
+  const raw = String(gender || '').trim().toLowerCase();
+  if (raw === 'femenino' || raw === 'mujer' || raw === 'dama') return 'Femenino';
+  if (raw === 'masculino' || raw === 'hombre' || raw === 'caballero') return 'Masculino';
+  return 'Sin especificar';
+}
+
+export function buildSupplyKey(
+  blankName: string,
+  sizeOrSpec: string,
+  gender: string,
+  isAccessory: boolean
+): string {
+  if (isAccessory) return `${blankName}___${sizeOrSpec}`;
+  return `${blankName}___${sizeOrSpec}___${normalizeInventoryGender(gender)}`;
+}
+
+export function buildMadeKey(
+  productId: string,
+  variantIdOrName: string,
+  size: string,
+  gender: string,
+  isAccessory: boolean
+): string {
+  if (isAccessory) return `${productId}|||${variantIdOrName}|||${size}`;
+  return `${productId}|||${variantIdOrName}|||${size}|||${normalizeInventoryGender(gender)}`;
+}
 
 interface AdminContextProps {
   isAdmin: boolean;
@@ -350,45 +382,133 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const shoppingNeeds = useMemo(() => {
     const map: Record<string, any> = {};
-    const ensureRow = (blankName: string, sizeOrSpec: string, categoryLabel: string) => {
-      const key = `${blankName}___${sizeOrSpec}`;
-      if (!map[key]) map[key] = { key, blankName, sizeOrSpec, categoryLabel, required: 0, bought: Number(boughtSupplies[key]) || 0 };
+    const ensureRow = (blankName: string, sizeOrSpec: string, gender: string, isAccessory: boolean, categoryLabel: string) => {
+      const normalizedGender = isAccessory ? 'Única' : normalizeInventoryGender(gender);
+      const key = buildSupplyKey(blankName, sizeOrSpec, normalizedGender, isAccessory);
+      if (!map[key]) {
+        const legacyKey = `${blankName}___${sizeOrSpec}`;
+        const bought =
+          boughtSupplies[key] !== undefined
+            ? Number(boughtSupplies[key]) || 0
+            : (!isAccessory && normalizedGender === 'Sin especificar' && boughtSupplies[legacyKey] !== undefined)
+            ? Number(boughtSupplies[legacyKey]) || 0
+            : 0;
+
+        map[key] = {
+          key,
+          blankName,
+          sizeOrSpec,
+          gender: normalizedGender,
+          isAccessory,
+          categoryLabel,
+          required: 0,
+          bought
+        };
+      }
       return map[key];
     };
+
     (catalog.length ? catalog : OFFICIAL_CATALOG_FALLBACK).forEach(p => {
-      const isAcc = p.category.toLowerCase().includes('accesorio');
+      const isAcc = isProductAccessory(p);
       const szs = isAcc ? (p.sizes.length ? p.sizes : ['Única']) : ALL_GARMENT_SIZES;
+      const genders = isAcc ? ['Única'] : GARMENT_GENDERS;
       const variants: Partial<ProductVariant>[] = p.variants.length ? p.variants : [{}];
-      variants.forEach(v => szs.forEach(sz => ensureRow(v.blankOverride || p.blankName, sz, isAcc ? 'Base Accesorio' : 'Prenda en Blanco')));
+      variants.forEach(v =>
+        szs.forEach(sz =>
+          genders.forEach(g =>
+            ensureRow(v.blankOverride || p.blankName, sz, g, isAcc, isAcc ? 'Base Accesorio' : 'Prenda en Blanco')
+          )
+        )
+      );
     });
-    orders.filter(isOrderActive).forEach(o => o.items.forEach(it => {
-      const p = catalog.find(c => c.id === it.productId);
-      const v: Partial<ProductVariant> = p?.variants.find(vx => vx.id === it.variantId || vx.name === it.variantName) || p?.variants[0] || {};
-      const isAcc = p?.category.toLowerCase().includes('accesorio');
-      const r = ensureRow(v.blankOverride || p?.blankName || 'Prenda Base', isAcc ? 'Única' : (it.size || 'M'), isAcc ? 'Base Accesorio' : 'Prenda en Blanco');
-      r.required += it.qty;
-    }));
+
+    orders.filter(isOrderActive).forEach(o =>
+      o.items.forEach(it => {
+        const p = catalog.find(c => c.id === it.productId);
+        const v: Partial<ProductVariant> = p?.variants.find(vx => vx.id === it.variantId || vx.name === it.variantName) || p?.variants[0] || {};
+        const isAcc = isProductAccessory(p);
+        const sz = isAcc ? 'Única' : (it.size || 'M');
+        const g = isAcc ? 'Única' : normalizeInventoryGender(it.gender);
+        const r = ensureRow(v.blankOverride || p?.blankName || 'Prenda Base', sz, g, isAcc, isAcc ? 'Base Accesorio' : 'Prenda en Blanco');
+        r.required += it.qty;
+      })
+    );
+
     const rows = Object.values(map).map(r => ({ ...r, missing: Math.max(0, r.required - r.bought) }));
     return { rows, totalMissingToBuy: rows.reduce((acc, r) => acc + r.missing, 0) };
   }, [orders, catalog, boughtSupplies]);
 
   const productionMatrix = useMemo(() => {
     const map: Record<string, any> = {};
+    const ensureRow = (
+      productId: string,
+      productName: string,
+      variantId: string,
+      variantName: string,
+      size: string,
+      gender: string,
+      isAccessory: boolean
+    ) => {
+      const normalizedGender = isAccessory ? 'Única' : normalizeInventoryGender(gender);
+      const key = buildMadeKey(productId, variantId, size, normalizedGender, isAccessory);
+      if (!map[key]) {
+        const legacyKey = `${productId}|||${variantId}|||${size}`;
+        const made =
+          madeItems[key] !== undefined
+            ? Number(madeItems[key]) || 0
+            : (!isAccessory && normalizedGender === 'Sin especificar' && madeItems[legacyKey] !== undefined)
+            ? Number(madeItems[legacyKey]) || 0
+            : 0;
+
+        map[key] = {
+          key,
+          productId,
+          productName,
+          variantId,
+          variantName,
+          size,
+          gender: normalizedGender,
+          isAccessory,
+          orderedQty: 0,
+          made
+        };
+      }
+      return map[key];
+    };
+
     (catalog.length ? catalog : OFFICIAL_CATALOG_FALLBACK).forEach(p => {
-      const isAcc = p.category.toLowerCase().includes('accesorio');
+      const isAcc = isProductAccessory(p);
       const szs = isAcc ? (p.sizes.length ? p.sizes : ['Única']) : ALL_GARMENT_SIZES;
-      (p.variants.length ? p.variants : [{ id: 'v-std', name: 'Estándar' }]).forEach(v => szs.forEach(sz => {
-        const key = `${p.id}|||${v.id || v.name}|||${sz}`;
-        map[key] = { key, productName: p.name, variantName: v.name || 'Estándar', size: sz, orderedQty: 0, made: Number(madeItems[key]) || 0 };
-      }));
+      const genders = isAcc ? ['Única'] : GARMENT_GENDERS;
+      (p.variants.length ? p.variants : [{ id: 'v-std', name: 'Estándar' }]).forEach(v =>
+        szs.forEach(sz =>
+          genders.forEach(g =>
+            ensureRow(p.id, p.name, v.id || v.name || 'v-std', v.name || 'Estándar', sz, g, isAcc)
+          )
+        )
+      );
     });
-    orders.filter(isOrderActive).forEach(o => o.items.forEach(it => {
-      const p = catalog.find(c => c.id === it.productId);
-      const v = p?.variants.find(vx => vx.id === it.variantId || vx.name === it.variantName) || p?.variants[0];
-      const key = `${p?.id || it.productId}|||${v?.id || it.variantId || it.variantName}|||${it.size || 'M'}`;
-      if (!map[key]) map[key] = { key, productName: it.productName, variantName: it.variantName, size: it.size, orderedQty: 0, made: Number(madeItems[key]) || 0 };
-      map[key].orderedQty += it.qty;
-    }));
+
+    orders.filter(isOrderActive).forEach(o =>
+      o.items.forEach(it => {
+        const p = catalog.find(c => c.id === it.productId);
+        const v = p?.variants.find(vx => vx.id === it.variantId || vx.name === it.variantName) || p?.variants[0];
+        const isAcc = isProductAccessory(p);
+        const sz = isAcc ? 'Única' : (it.size || 'M');
+        const g = isAcc ? 'Única' : normalizeInventoryGender(it.gender);
+        const row = ensureRow(
+          p?.id || it.productId,
+          p?.name || it.productName,
+          v?.id || it.variantId || it.variantName || 'v-std',
+          v?.name || it.variantName || 'Estándar',
+          sz,
+          g,
+          isAcc
+        );
+        row.orderedQty += it.qty;
+      })
+    );
+
     const rows = Object.values(map).map(r => ({ ...r, missing: Math.max(0, r.orderedQty - r.made) }));
     return { rows, totalMissingToMake: rows.reduce((acc, r) => acc + r.missing, 0) };
   }, [orders, catalog, madeItems]);

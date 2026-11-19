@@ -1,718 +1,549 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   LayoutGrid,
   Shirt,
   Sparkles,
-  Tag,
   Plus,
   Minus,
-  Check,
-  Copy,
-  Layers,
+  CheckCircle2,
+  Users,
   ShoppingBag,
-  CheckCircle2
+  Layers
 } from 'lucide-react';
-import { useAdmin } from '../../context/AdminContext';
-import { Product, ProductVariant, Order } from '../../types';
 import {
-  ALL_GARMENT_SIZES,
-  GARMENT_GENDERS,
-  OFFICIAL_CATALOG_FALLBACK
-} from '../../utils/constants';
+  useAdmin,
+  buildMadeKey,
+  buildSupplyKey,
+  normalizeInventoryGender,
+  isProductAccessory
+} from '../../context/AdminContext';
+import { Product, ProductVariant, Order } from '../../types';
+import { ALL_GARMENT_SIZES, GARMENT_GENDERS, OFFICIAL_CATALOG_FALLBACK } from '../../utils/constants';
 import { isOrderActive } from '../../utils/helpers';
 
-function resolveBentoCategory(prod: Product): string {
-  const rawCat = String(prod.category || '').trim();
-  const catLower = rawCat.toLowerCase();
-  if (rawCat && catLower !== 'prenda' && catLower !== 'accesorio') {
-    return rawCat;
-  }
-  const nameLower = String(prod.name || '').toLowerCase();
-  if (nameLower.includes('hoodie') || nameLower.includes('buzo') || nameLower.includes('sudadera')) {
-    return 'Hoodies y Buzos';
-  }
-  if (nameLower.includes('crop') || nameLower.includes('crot') || nameLower.includes('top')) {
-    return 'Crop Tops';
-  }
-  if (
-    nameLower.includes('llavero') ||
-    nameLower.includes('fanbox') ||
-    nameLower.includes('parche') ||
-    nameLower.includes('cd') ||
-    catLower.includes('accesorio')
-  ) {
-    return 'Accesorios y Llaveros';
-  }
-  if (
-    nameLower.includes('raglan') ||
-    nameLower.includes('camiseta') ||
-    nameLower.includes('remera') ||
-    nameLower.includes('shirt') ||
-    nameLower.includes('oversize')
-  ) {
-    return 'Camisetas y Raglans';
-  }
-  return rawCat || 'Otras Prendas';
+function inferSwatchColor(variant?: Partial<ProductVariant> | null): string {
+  const txt = `${variant?.vinylColor || ''} ${variant?.name || ''}`.toLowerCase();
+  if (txt.includes('negro') || txt.includes('black')) return '#1f1f24';
+  if (txt.includes('blanco') || txt.includes('crema') || txt.includes('beige')) return '#f3efe6';
+  if (txt.includes('celeste')) return '#7dd3fc';
+  if (txt.includes('azul') || txt.includes('ocean')) return '#3b82f6';
+  if (txt.includes('rosa') || txt.includes('pink') || txt.includes('tropi') || txt.includes('bonito')) return '#f472b6';
+  if (txt.includes('platead') || txt.includes('brillo') || txt.includes('estrella')) return '#cbd5e1';
+  if (txt.includes('morad') || txt.includes('lila') || txt.includes('bichota')) return '#c084fc';
+  if (txt.includes('verde')) return '#34d399';
+  return '#a1a1aa';
 }
 
-function inferSwatchHex(text: string): string {
-  const lower = String(text || '').toLowerCase();
-  if (lower.includes('negro') || lower.includes('black')) return '#18181b';
-  if (lower.includes('blanco') || lower.includes('white')) return '#f8fafc';
-  if (lower.includes('azul') || lower.includes('blue') || lower.includes('celeste')) return '#2563eb';
-  if (lower.includes('rosa') || lower.includes('pink') || lower.includes('fucsia')) return '#ec4899';
-  if (lower.includes('rojo') || lower.includes('red') || lower.includes('vino')) return '#dc2626';
-  if (lower.includes('verde') || lower.includes('green')) return '#16a34a';
-  if (lower.includes('amarillo') || lower.includes('yellow') || lower.includes('dorado')) return '#eab308';
-  if (lower.includes('morado') || lower.includes('lila') || lower.includes('purple')) return '#9333ea';
-  if (lower.includes('naranja') || lower.includes('orange')) return '#f97316';
-  if (lower.includes('beige') || lower.includes('crema') || lower.includes('arena')) return '#d6c7b2';
-  if (lower.includes('gris') || lower.includes('gray')) return '#71717a';
-  if (lower.includes('brillo') || lower.includes('pedrer') || lower.includes('escarch')) return '#38bdf8';
-  if (lower.includes('nfc') || lower.includes('qr')) return '#10b981';
-  return '#52525b';
-}
-
-function isAccessoryProduct(prod: Product): boolean {
-  const cat = String(prod.category || '').toLowerCase();
-  const name = String(prod.name || '').toLowerCase();
-  return (
-    cat.includes('accesorio') ||
-    name.includes('llavero') ||
-    name.includes('fanbox') ||
-    name.includes('parche')
-  );
-}
-
-function getProductSizes(prod: Product): string[] {
-  if (isAccessoryProduct(prod)) {
-    return Array.isArray(prod.sizes) && prod.sizes.length > 0 ? prod.sizes : ['Única'];
+function classifyBentoGroup(product: Product): { id: string; title: string; subtitle: string; isAccessory: boolean } {
+  const isAcc = isProductAccessory(product);
+  if (isAcc) {
+    return {
+      id: 'accessories',
+      title: 'Accesorios y Llaveros',
+      subtitle: 'Mini CDs (NFC / QR) y kits · Talla Única',
+      isAccessory: true
+    };
   }
-  const base = Array.isArray(prod.sizes) && prod.sizes.length > 0 ? prod.sizes : ALL_GARMENT_SIZES;
-  return Array.from(new Set([...ALL_GARMENT_SIZES, ...base]));
+  const n = `${product.name} ${product.code || ''}`.toLowerCase();
+  if (n.includes('hoodie') || n.includes('buzo')) {
+    return {
+      id: 'hoodies',
+      title: 'Hoodies y Buzos',
+      subtitle: 'Control separado por corte Femenino / Masculino',
+      isAccessory: false
+    };
+  }
+  if (n.includes('crop')) {
+    return {
+      id: 'croptops',
+      title: 'Croptops',
+      subtitle: 'Control separado por talla y corte',
+      isAccessory: false
+    };
+  }
+  if (n.includes('raglan') || n.includes('nmadst') || n.includes('camiseta') || n.includes('oversized') || n.includes('sparkly')) {
+    return {
+      id: 'tees',
+      title: 'Camisetas y Raglans',
+      subtitle: 'Control separado por corte Femenino / Masculino',
+      isAccessory: false
+    };
+  }
+  return {
+    id: 'other-garments',
+    title: 'Otras Prendas y Personalizadas',
+    subtitle: 'Control separado por talla y corte',
+    isAccessory: false
+  };
 }
 
-interface BentoCategoryCardProps {
-  categoryName: string;
+interface BentoCardProps {
+  groupTitle: string;
+  groupSubtitle: string;
   products: Product[];
-  activeOrders: Order[];
-  mode: 'make' | 'buy';
+  orders: Order[];
   madeItems: Record<string, number>;
   setMadeItems: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   boughtSupplies: Record<string, number>;
   setBoughtSupplies: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  spanClass: string;
-  notify: (message: string, type?: string) => void;
+  notify: (msg: string, type?: string) => void;
 }
 
 function BentoCategoryCard({
-  categoryName,
+  groupTitle,
+  groupSubtitle,
   products,
-  activeOrders,
-  mode,
+  orders,
   madeItems,
   setMadeItems,
   boughtSupplies,
   setBoughtSupplies,
-  spanClass,
   notify
-}: BentoCategoryCardProps) {
+}: BentoCardProps) {
   const [selectedProdId, setSelectedProdId] = useState<string>(products[0]?.id || '');
-  const [selectedVarId, setSelectedVarId] = useState<string>('');
-  const [selectedSize, setSelectedSize] = useState<string>('M');
-  const [selectedGender, setSelectedGender] = useState<string>('ALL');
+  const activeProduct = products.find(p => p.id === selectedProdId) || products[0];
+  const isAcc = isProductAccessory(activeProduct);
 
-  const selectedProduct = useMemo(() => {
-    return products.find(p => p.id === selectedProdId) || products[0];
-  }, [products, selectedProdId]);
+  const variants = useMemo<ProductVariant[]>(() => {
+    if (!activeProduct) return [];
+    return activeProduct.variants?.length
+      ? activeProduct.variants
+      : [{ id: 'v-std', name: 'Estándar', extraPrice: 0, extraCost: 0 }];
+  }, [activeProduct]);
 
-  const variants: Partial<ProductVariant>[] = useMemo(() => {
-    if (!selectedProduct) return [];
-    return selectedProduct.variants && selectedProduct.variants.length > 0
-      ? selectedProduct.variants
-      : [{ id: 'v-std', name: 'Estándar' }];
-  }, [selectedProduct]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(variants[0]?.id || 'v-std');
+  const activeVariant = variants.find(v => v.id === selectedVariantId) || variants[0];
 
-  const sizes = useMemo(() => {
-    if (!selectedProduct) return ['M'];
-    return getProductSizes(selectedProduct);
-  }, [selectedProduct]);
+  const availableSizes = useMemo(() => {
+    if (!activeProduct) return ['M'];
+    return isAcc ? (activeProduct.sizes?.length ? activeProduct.sizes : ['Única']) : ALL_GARMENT_SIZES;
+  }, [activeProduct, isAcc]);
 
-  useEffect(() => {
-    if (!selectedProduct) return;
-    if (!products.some(p => p.id === selectedProdId)) {
-      setSelectedProdId(selectedProduct.id);
+  const [selectedSize, setSelectedSize] = useState<string>(isAcc ? 'Única' : 'M');
+  const activeSize = availableSizes.includes(selectedSize) ? selectedSize : availableSizes[0];
+
+  const [selectedGender, setSelectedGender] = useState<string>('Femenino');
+  const activeGender = isAcc ? 'Única' : normalizeInventoryGender(selectedGender);
+
+  const activeOrders = useMemo(() => orders.filter(isOrderActive), [orders]);
+
+  const getMadeCount = (prod: Product, variant: ProductVariant, size: string, gender: string) => {
+    const acc = isProductAccessory(prod);
+    const normGender = acc ? 'Única' : normalizeInventoryGender(gender);
+    const vId = variant.id || variant.name || 'v-std';
+    const key = buildMadeKey(prod.id, vId, size, normGender, acc);
+    if (madeItems[key] !== undefined) return Number(madeItems[key]) || 0;
+    if (!acc && normGender === 'Sin especificar') {
+      const legacyKey = `${prod.id}|||${vId}|||${size}`;
+      if (madeItems[legacyKey] !== undefined) return Number(madeItems[legacyKey]) || 0;
     }
-  }, [products, selectedProdId, selectedProduct]);
-
-  useEffect(() => {
-    if (!selectedProduct) return;
-    const validVar = variants.find(v => (v.id || v.name) === selectedVarId);
-    if (!validVar) {
-      const varWithDemand = variants.find(v => {
-        const vid = v.id || v.name || 'v-std';
-        return activeOrders.some(o =>
-          o.items.some(
-            it =>
-              (it.productId === selectedProduct.id || it.productName === selectedProduct.name) &&
-              (it.variantId === vid || it.variantName === v.name)
-          )
-        );
-      });
-      const chosen = varWithDemand || variants[0];
-      setSelectedVarId(chosen?.id || chosen?.name || 'v-std');
-    }
-
-    if (!sizes.includes(selectedSize)) {
-      const sizeWithDemand = sizes.find(sz =>
-        activeOrders.some(o =>
-          o.items.some(
-            it =>
-              (it.productId === selectedProduct.id || it.productName === selectedProduct.name) &&
-              (isAccessoryProduct(selectedProduct) ? 'Única' : it.size || 'M') === sz
-          )
-        )
-      );
-      setSelectedSize(sizeWithDemand || sizes[0] || 'M');
-    }
-  }, [selectedProduct, variants, sizes, selectedVarId, selectedSize, activeOrders]);
-
-  const selectedVariant: Partial<ProductVariant> = useMemo(() => {
-    return (
-      variants.find(v => (v.id || v.name) === selectedVarId) ||
-      variants[0] || { id: 'v-std', name: 'Estándar' }
-    );
-  }, [variants, selectedVarId]);
-
-  const getProductDemand = (prod: Product) => {
-    let ordered = 0;
-    let missing = 0;
-    const prodVars: Partial<ProductVariant>[] =
-      prod.variants && prod.variants.length > 0 ? prod.variants : [{ id: 'v-std', name: 'Estándar' }];
-    const prodSizes = getProductSizes(prod);
-
-    prodVars.forEach(v => {
-      const vKey = v.id || v.name || 'v-std';
-      prodSizes.forEach(sz => {
-        let cellOrdered = 0;
-        activeOrders.forEach(o => {
-          o.items.forEach(it => {
-            const matchProd = it.productId === prod.id || it.productName === prod.name;
-            const matchVar = it.variantId === vKey || it.variantName === v.name;
-            const itemSz = isAccessoryProduct(prod) ? 'Única' : it.size || 'M';
-            if (matchProd && matchVar && itemSz === sz) {
-              cellOrdered += Math.max(1, Number(it.qty) || 1);
-            }
-          });
-        });
-        ordered += cellOrdered;
-        if (mode === 'make') {
-          const mk = `${prod.id}|||${vKey}|||${sz}`;
-          const done = Number(madeItems[mk]) || 0;
-          missing += Math.max(0, cellOrdered - done);
-        } else {
-          const blankTitle = v.blankOverride || prod.blankName || `${prod.name} (En blanco)`;
-          const bk = `${blankTitle}___${sz}`;
-          const bought = Number(boughtSupplies[bk]) || 0;
-          missing += Math.max(0, cellOrdered - bought);
-        }
-      });
-    });
-
-    return { ordered, missing };
+    return 0;
   };
 
-  const categoryTotals = useMemo(() => {
-    return products.reduce(
-      (acc, p) => {
-        const d = getProductDemand(p);
-        acc.ordered += d.ordered;
-        acc.missing += d.missing;
-        return acc;
-      },
-      { ordered: 0, missing: 0 }
-    );
-  }, [products, activeOrders, madeItems, boughtSupplies, mode]);
-
-  const variantCounts = useMemo(() => {
-    const map: Record<string, { ordered: number; missing: number }> = {};
-    if (!selectedProduct) return map;
-    const prodSizes = getProductSizes(selectedProduct);
-    variants.forEach(v => {
-      const vKey = v.id || v.name || 'v-std';
-      let ordered = 0;
-      let missing = 0;
-      prodSizes.forEach(sz => {
-        let cellOrdered = 0;
-        activeOrders.forEach(o => {
-          o.items.forEach(it => {
-            const matchProd = it.productId === selectedProduct.id || it.productName === selectedProduct.name;
-            const matchVar = it.variantId === vKey || it.variantName === v.name;
-            const itemSz = isAccessoryProduct(selectedProduct) ? 'Única' : it.size || 'M';
-            if (matchProd && matchVar && itemSz === sz) {
-              cellOrdered += Math.max(1, Number(it.qty) || 1);
-            }
-          });
-        });
-        ordered += cellOrdered;
-        if (mode === 'make') {
-          const done = Number(madeItems[`${selectedProduct.id}|||${vKey}|||${sz}`]) || 0;
-          missing += Math.max(0, cellOrdered - done);
-        } else {
-          const blankTitle = v.blankOverride || selectedProduct.blankName || `${selectedProduct.name} (En blanco)`;
-          const bought = Number(boughtSupplies[`${blankTitle}___${sz}`]) || 0;
-          missing += Math.max(0, cellOrdered - bought);
-        }
-      });
-      map[vKey] = { ordered, missing };
-    });
-    return map;
-  }, [selectedProduct, variants, activeOrders, madeItems, boughtSupplies, mode]);
-
-  const sizeCounts = useMemo(() => {
-    const map: Record<string, { ordered: number; missing: number }> = {};
-    if (!selectedProduct) return map;
-    const vKey = selectedVariant.id || selectedVariant.name || 'v-std';
-    sizes.forEach(sz => {
-      let cellOrdered = 0;
-      activeOrders.forEach(o => {
-        o.items.forEach(it => {
-          const matchProd = it.productId === selectedProduct.id || it.productName === selectedProduct.name;
-          const matchVar = it.variantId === vKey || it.variantName === selectedVariant.name;
-          const itemSz = isAccessoryProduct(selectedProduct) ? 'Única' : it.size || 'M';
-          if (matchProd && matchVar && itemSz === sz) {
-            cellOrdered += Math.max(1, Number(it.qty) || 1);
-          }
-        });
-      });
-      let missing = 0;
-      if (mode === 'make') {
-        const done = Number(madeItems[`${selectedProduct.id}|||${vKey}|||${sz}`]) || 0;
-        missing = Math.max(0, cellOrdered - done);
-      } else {
-        const blankTitle =
-          selectedVariant.blankOverride || selectedProduct.blankName || `${selectedProduct.name} (En blanco)`;
-        const bought = Number(boughtSupplies[`${blankTitle}___${sz}`]) || 0;
-        missing = Math.max(0, cellOrdered - bought);
-      }
-      map[sz] = { ordered: cellOrdered, missing };
-    });
-    return map;
-  }, [selectedProduct, selectedVariant, sizes, activeOrders, madeItems, boughtSupplies, mode]);
-
-  const currentSelectionStats = useMemo(() => {
-    if (!selectedProduct) {
-      return {
-        totalOrderedAllGenders: 0,
-        genderFilteredOrdered: 0,
-        genderBreakdown: { Femenino: 0, Masculino: 0, 'Sin especificar': 0 } as Record<string, number>,
-        matchingOrders: [] as { orderId: string; customerName: string; qty: number; gender: string }[],
-        madeKey: '',
-        supplyKey: '',
-        blankTitle: '',
-        doneQty: 0,
-        boughtQty: 0,
-        missingQty: 0
-      };
+  const getBoughtCount = (blankName: string, size: string, gender: string, acc: boolean) => {
+    const normGender = acc ? 'Única' : normalizeInventoryGender(gender);
+    const key = buildSupplyKey(blankName, size, normGender, acc);
+    if (boughtSupplies[key] !== undefined) return Number(boughtSupplies[key]) || 0;
+    if (!acc && normGender === 'Sin especificar') {
+      const legacyKey = `${blankName}___${size}`;
+      if (boughtSupplies[legacyKey] !== undefined) return Number(boughtSupplies[legacyKey]) || 0;
     }
+    return 0;
+  };
 
-    const vKey = selectedVariant.id || selectedVariant.name || 'v-std';
-    const genderBreakdown: Record<string, number> = {
-      Femenino: 0,
-      Masculino: 0,
-      'Sin especificar': 0
-    };
-    const matchingOrders: { orderId: string; customerName: string; qty: number; gender: string }[] = [];
-    let totalOrderedAllGenders = 0;
-
+  const getOrderedQtyForCombo = (prod: Product, variant: ProductVariant, size: string, gender: string) => {
+    const acc = isProductAccessory(prod);
+    const normGender = acc ? 'Única' : normalizeInventoryGender(gender);
+    let total = 0;
     activeOrders.forEach(o => {
       o.items.forEach(it => {
-        const matchProd = it.productId === selectedProduct.id || it.productName === selectedProduct.name;
-        const matchVar = it.variantId === vKey || it.variantName === selectedVariant.name;
-        const itemSz = isAccessoryProduct(selectedProduct) ? 'Única' : it.size || 'M';
-        if (matchProd && matchVar && itemSz === selectedSize) {
-          const q = Math.max(1, Number(it.qty) || 1);
-          const g = GARMENT_GENDERS.includes(it.gender) ? it.gender : 'Sin especificar';
-          totalOrderedAllGenders += q;
-          genderBreakdown[g] = (genderBreakdown[g] || 0) + q;
-          if (selectedGender === 'ALL' || g === selectedGender) {
-            matchingOrders.push({
-              orderId: o.id,
-              customerName: o.customerName,
-              qty: q,
-              gender: g
-            });
-          }
-        }
+        if (it.productId !== prod.id) return;
+        const variantMatch = it.variantId === variant.id || it.variantName === variant.name;
+        if (!variantMatch) return;
+        const itemSize = acc ? 'Única' : (it.size || 'M');
+        if (itemSize !== size) return;
+        if (!acc && normalizeInventoryGender(it.gender) !== normGender) return;
+        total += Number(it.qty) || 0;
       });
     });
-
-    const genderFilteredOrdered =
-      selectedGender === 'ALL' ? totalOrderedAllGenders : genderBreakdown[selectedGender] || 0;
-
-    const madeKey = `${selectedProduct.id}|||${vKey}|||${selectedSize}`;
-    const blankTitle =
-      selectedVariant.blankOverride || selectedProduct.blankName || `${selectedProduct.name} (En blanco)`;
-    const supplyKey = `${blankTitle}___${selectedSize}`;
-
-    const doneQty = Number(madeItems[madeKey]) || 0;
-    const boughtQty = Number(boughtSupplies[supplyKey]) || 0;
-
-    const missingQty =
-      mode === 'make'
-        ? Math.max(0, totalOrderedAllGenders - doneQty)
-        : Math.max(0, totalOrderedAllGenders - boughtQty);
-
-    return {
-      totalOrderedAllGenders,
-      genderFilteredOrdered,
-      genderBreakdown,
-      matchingOrders,
-      madeKey,
-      supplyKey,
-      blankTitle,
-      doneQty,
-      boughtQty,
-      missingQty
-    };
-  }, [
-    selectedProduct,
-    selectedVariant,
-    selectedSize,
-    selectedGender,
-    activeOrders,
-    madeItems,
-    boughtSupplies,
-    mode
-  ]);
-
-  if (!selectedProduct) return null;
-
-  const activeCountValue = mode === 'make' ? currentSelectionStats.doneQty : currentSelectionStats.boughtQty;
-
-  const handleAdjustValue = (delta: number) => {
-    if (mode === 'make') {
-      setMadeItems(prev => ({
-        ...prev,
-        [currentSelectionStats.madeKey]: Math.max(0, (Number(prev[currentSelectionStats.madeKey]) || 0) + delta)
-      }));
-    } else {
-      setBoughtSupplies(prev => ({
-        ...prev,
-        [currentSelectionStats.supplyKey]: Math.max(0, (Number(prev[currentSelectionStats.supplyKey]) || 0) + delta)
-      }));
-    }
+    return total;
   };
 
-  const handleCompleteCurrent = () => {
-    const target = currentSelectionStats.totalOrderedAllGenders;
-    if (target <= 0) return;
-    if (mode === 'make') {
-      setMadeItems(prev => ({ ...prev, [currentSelectionStats.madeKey]: target }));
-      notify(`${selectedProduct.name} (${selectedSize}) marcada como lista`);
-    } else {
-      setBoughtSupplies(prev => ({ ...prev, [currentSelectionStats.supplyKey]: target }));
-      notify(`${currentSelectionStats.blankTitle} (${selectedSize}) marcada como comprada`);
-    }
+  if (!activeProduct || !activeVariant) return null;
+
+  const blankName = activeVariant.blankOverride || activeProduct.blankName || 'Prenda Base';
+  const madeKey = buildMadeKey(activeProduct.id, activeVariant.id || activeVariant.name, activeSize, activeGender, isAcc);
+  const supplyKey = buildSupplyKey(blankName, activeSize, activeGender, isAcc);
+
+  const orderedQty = getOrderedQtyForCombo(activeProduct, activeVariant, activeSize, activeGender);
+  const madeQty = getMadeCount(activeProduct, activeVariant, activeSize, activeGender);
+  const missingToMake = Math.max(0, orderedQty - madeQty);
+
+  const requiredBlankQty = useMemo(() => {
+    let sum = 0;
+    activeOrders.forEach(o => {
+      o.items.forEach(it => {
+        const p = products.find(pr => pr.id === it.productId);
+        if (!p) return;
+        const v = p.variants?.find(vx => vx.id === it.variantId || vx.name === it.variantName) || p.variants?.[0];
+        const bName = v?.blankOverride || p.blankName || 'Prenda Base';
+        if (bName !== blankName) return;
+        const acc = isProductAccessory(p);
+        const sz = acc ? 'Única' : (it.size || 'M');
+        if (sz !== activeSize) return;
+        if (!acc && normalizeInventoryGender(it.gender) !== activeGender) return;
+        sum += Number(it.qty) || 0;
+      });
+    });
+    return sum;
+  }, [activeOrders, products, blankName, activeSize, activeGender]);
+
+  const boughtQty = getBoughtCount(blankName, activeSize, activeGender, isAcc);
+  const missingToBuy = Math.max(0, requiredBlankQty - boughtQty);
+
+  const matchingCustomers = useMemo(() => {
+    const matches: { orderId: string; customerName: string; qty: number; shippingStatus: string }[] = [];
+    activeOrders.forEach(o => {
+      o.items.forEach(it => {
+        if (it.productId !== activeProduct.id) return;
+        const variantMatch = it.variantId === activeVariant.id || it.variantName === activeVariant.name;
+        if (!variantMatch) return;
+        const sz = isAcc ? 'Única' : (it.size || 'M');
+        if (sz !== activeSize) return;
+        if (!isAcc && normalizeInventoryGender(it.gender) !== activeGender) return;
+        matches.push({
+          orderId: o.id,
+          customerName: o.customerName,
+          qty: Number(it.qty) || 1,
+          shippingStatus: o.shippingStatus
+        });
+      });
+    });
+    return matches;
+  }, [activeOrders, activeProduct, activeVariant, activeSize, activeGender, isAcc]);
+
+  const updateMade = (nextVal: number) => {
+    const safe = Math.max(0, Math.round(nextVal));
+    setMadeItems(prev => ({
+      ...prev,
+      [madeKey]: safe
+    }));
   };
 
-  const isAcc = isAccessoryProduct(selectedProduct);
+  const updateBought = (nextVal: number) => {
+    const safe = Math.max(0, Math.round(nextVal));
+    setBoughtSupplies(prev => ({
+      ...prev,
+      [supplyKey]: safe
+    }));
+  };
 
   return (
-    <div
-      className={`${spanClass} bg-white border border-zinc-200 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-2xs`}
-    >
+    <section className="bg-white border border-zinc-200 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-2xs">
       <div className="space-y-4">
-        <div className="flex items-start justify-between gap-2 pb-3 border-b border-zinc-100">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center shrink-0">
-              {isAcc ? <Sparkles className="w-4 h-4 text-zinc-700" /> : <Shirt className="w-4 h-4 text-zinc-700" />}
-            </span>
-            <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-bold text-zinc-900 truncate">{categoryName}</h2>
-              <p className="text-[11px] text-zinc-500">
-                {products.length} {products.length === 1 ? 'referencia' : 'referencias'} · {categoryTotals.ordered} pedidas
-              </p>
-            </div>
+        {/* Cabecera de categoría */}
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h2 className="text-sm sm:text-base font-bold text-zinc-900 flex items-center gap-2">
+              {isAcc ? <Sparkles className="w-4 h-4 shrink-0" /> : <Shirt className="w-4 h-4 shrink-0" />}
+              <span>{groupTitle}</span>
+            </h2>
+            <p className="text-[11px] text-zinc-500 mt-0.5">{groupSubtitle}</p>
           </div>
-
-          {categoryTotals.missing > 0 ? (
-            <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold shrink-0 tabular-nums">
-              {mode === 'make' ? `Faltan ${categoryTotals.missing}` : `Comprar ${categoryTotals.missing}`}
-            </span>
-          ) : (
-            <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold shrink-0 inline-flex items-center gap-1">
-              <Check className="w-3 h-3" /> Al día
-            </span>
-          )}
+          <span className="px-2 py-0.5 rounded-lg bg-zinc-50 border border-zinc-200 text-[10px] font-mono text-zinc-500 shrink-0">
+            {products.length} {products.length === 1 ? 'ref' : 'refs'}
+          </span>
         </div>
 
-        {products.length > 1 && (
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-              Referencia / Modelo
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {products.map(prod => {
-                const active = prod.id === selectedProduct.id;
-                const d = getProductDemand(prod);
-                return (
-                  <button
-                    key={prod.id}
-                    type="button"
-                    onClick={() => setSelectedProdId(prod.id)}
-                    className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-all inline-flex items-center gap-1.5 cursor-pointer ${
-                      active
-                        ? 'bg-zinc-900 text-white border-zinc-900'
-                        : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>{prod.name}</span>
-                    {d.missing > 0 && (
-                      <span
-                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                          active ? 'bg-amber-400 text-zinc-950' : 'bg-amber-100 text-amber-900'
-                        }`}
-                      >
-                        {d.missing}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
+        {/* 1. Selector de Modelo */}
         <div className="space-y-1.5">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-            Color / Variante en DB
+            1. Modelo
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {variants.map(v => {
-              const vKey = v.id || v.name || 'v-std';
-              const active = (selectedVariant.id || selectedVariant.name) === vKey;
-              const stats = variantCounts[vKey] || { ordered: 0, missing: 0 };
-              const swatch = inferSwatchHex(
-                `${v.name || ''} ${v.vinylColor || ''} ${v.blankOverride || ''} ${selectedProduct.blankName || ''}`
-              );
-
+            {products.map(p => {
+              const selected = p.id === activeProduct.id;
               return (
                 <button
-                  key={vKey}
+                  key={p.id}
                   type="button"
-                  onClick={() => setSelectedVarId(vKey)}
-                  className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-all inline-flex items-center gap-2 cursor-pointer ${
-                    active
+                  onClick={() => {
+                    setSelectedProdId(p.id);
+                    const nextVars = p.variants?.length ? p.variants : [{ id: 'v-std', name: 'Estándar' }];
+                    setSelectedVariantId(nextVars[0].id);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                    selected
                       ? 'bg-zinc-900 text-white border-zinc-900'
                       : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                   }`}
                 >
-                  <span
-                    className="w-3 h-3 rounded-full border border-zinc-400 shrink-0"
-                    style={{ backgroundColor: swatch }}
-                  />
-                  <span>{v.name || 'Estándar'}</span>
-                  {v.vinylColor && (
-                    <span className={`text-[10px] ${active ? 'text-zinc-300' : 'text-zinc-400'}`}>
-                      · {v.vinylColor}
-                    </span>
-                  )}
-                  {stats.missing > 0 && (
-                    <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                        active ? 'bg-amber-400 text-zinc-950' : 'bg-amber-100 text-amber-900'
-                      }`}
-                    >
-                      {stats.missing}
-                    </span>
-                  )}
+                  {p.name}
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-              Talla
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {sizes.map(sz => {
-                const active = selectedSize === sz;
-                const sc = sizeCounts[sz] || { ordered: 0, missing: 0 };
-                return (
-                  <button
-                    key={sz}
-                    type="button"
-                    onClick={() => setSelectedSize(sz)}
-                    className={`min-w-[44px] h-9 px-2.5 rounded-xl border text-xs font-bold transition-all inline-flex items-center justify-center gap-1 cursor-pointer ${
-                      active
-                        ? 'bg-zinc-900 text-white border-zinc-900'
-                        : sc.missing > 0
-                        ? 'bg-amber-50 text-amber-950 border-amber-300 hover:bg-amber-100'
-                        : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>{sz}</span>
-                    {sc.missing > 0 && (
-                      <span
-                        className={`text-[10px] font-mono px-1 rounded ${
-                          active ? 'bg-amber-400 text-zinc-950' : 'bg-amber-200/80 text-zinc-950'
-                        }`}
-                      >
-                        {sc.missing}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+        {/* 2. Selector de Variante / Color */}
+        <div className="space-y-1.5">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+            2. Color / Variante
           </div>
-
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-              Corte / Género
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { id: 'ALL', label: 'Todos', count: currentSelectionStats.totalOrderedAllGenders },
-                { id: 'Femenino', label: 'Femenino', count: currentSelectionStats.genderBreakdown.Femenino || 0 },
-                { id: 'Masculino', label: 'Masculino', count: currentSelectionStats.genderBreakdown.Masculino || 0 },
-                {
-                  id: 'Sin especificar',
-                  label: 'Sin esp.',
-                  count: currentSelectionStats.genderBreakdown['Sin especificar'] || 0
-                }
-              ].map(g => {
-                const active = selectedGender === g.id;
-                return (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => setSelectedGender(g.id)}
-                    className={`h-9 px-2.5 rounded-xl border text-xs font-medium transition-all inline-flex items-center gap-1.5 cursor-pointer ${
-                      active
-                        ? 'bg-zinc-900 text-white border-zinc-900'
-                        : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span>{g.label}</span>
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                        active ? 'bg-zinc-700 text-zinc-100' : 'bg-white border border-zinc-200 text-zinc-600'
-                      }`}
-                    >
-                      {g.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-2xl bg-zinc-50 border border-zinc-200 p-3.5 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-zinc-900 truncate">
-              {mode === 'make' ? selectedProduct.name : currentSelectionStats.blankTitle}
-            </div>
-            <div className="text-[11px] text-zinc-500">
-              {selectedVariant.name || 'Estándar'} · Talla <strong>{selectedSize}</strong>
-              {selectedGender !== 'ALL' ? ` · Solo ${selectedGender}` : ''}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 tabular-nums">
-            <div className="px-2.5 py-1 rounded-lg bg-white border border-zinc-200 text-center">
-              <div className="text-[10px] text-zinc-400 leading-none">Pedidas</div>
-              <div className="text-sm font-bold text-zinc-900 mt-0.5">
-                {currentSelectionStats.genderFilteredOrdered}
-              </div>
-            </div>
-            <div
-              className={`px-2.5 py-1 rounded-lg border text-center ${
-                currentSelectionStats.missingQty > 0
-                  ? 'bg-rose-50 border-rose-200 text-rose-800'
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              }`}
-            >
-              <div className="text-[10px] leading-none">
-                {mode === 'make' ? 'Faltan' : 'Comprar'}
-              </div>
-              <div className="text-sm font-bold mt-0.5">{currentSelectionStats.missingQty}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-200">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleAdjustValue(-1)}
-              className="w-10 h-10 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-100 flex items-center justify-center text-zinc-800 cursor-pointer"
-              title="Restar 1"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <div className="min-w-[82px] text-center">
-              <div className="text-[10px] text-zinc-500 uppercase font-semibold">
-                {mode === 'make' ? 'Ya hechas' : 'En stock'}
-              </div>
-              <div className="text-lg font-bold text-zinc-900 tabular-nums leading-tight">
-                {activeCountValue}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleAdjustValue(1)}
-              className="h-10 px-3.5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{mode === 'make' ? '1 Hecha' : '1 Comprada'}</span>
-            </button>
-          </div>
-
-          {currentSelectionStats.missingQty > 0 && (
-            <button
-              type="button"
-              onClick={handleCompleteCurrent}
-              className="h-10 px-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Marcar todo listo</span>
-            </button>
-          )}
-        </div>
-
-        {currentSelectionStats.matchingOrders.length > 0 && (
-          <div className="pt-2 border-t border-zinc-200 space-y-1.5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-              Pedidos con esta selección ({currentSelectionStats.matchingOrders.length})
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {currentSelectionStats.matchingOrders.slice(0, 6).map((m, idx) => (
-                <span
-                  key={`${m.orderId}-${idx}`}
-                  className="px-2 py-1 rounded-lg bg-white border border-zinc-200 text-[11px] text-zinc-700"
+          <div className="flex flex-wrap gap-1.5">
+            {variants.map(v => {
+              const selected = v.id === activeVariant.id;
+              const swatch = inferSwatchColor(v);
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setSelectedVariantId(v.id)}
+                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                    selected
+                      ? 'bg-zinc-900 text-white border-zinc-900'
+                      : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                  }`}
                 >
-                  <strong className="font-mono text-zinc-900">{m.qty}×</strong> {m.customerName}{' '}
-                  <span className="text-zinc-400">({m.gender})</span>
-                </span>
-              ))}
-              {currentSelectionStats.matchingOrders.length > 6 && (
-                <span className="px-2 py-1 rounded-lg bg-zinc-100 text-[11px] text-zinc-500">
-                  +{currentSelectionStats.matchingOrders.length - 6} más
-                </span>
-              )}
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 border border-zinc-400/50"
+                    style={{ backgroundColor: swatch }}
+                  />
+                  <span>{v.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3. Selector de Corte (Femenino / Masculino / Sin especificar) — Independiente */}
+        {!isAcc && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                3. Corte / Género (Stock independiente)
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                Activo: {activeGender}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {GARMENT_GENDERS.map(g => {
+                const selected = activeGender === g;
+                const gOrdered = availableSizes.reduce(
+                  (acc, sz) => acc + getOrderedQtyForCombo(activeProduct, activeVariant, sz, g),
+                  0
+                );
+                const gMade = availableSizes.reduce(
+                  (acc, sz) => acc + getMadeCount(activeProduct, activeVariant, sz, g),
+                  0
+                );
+                const gMissing = availableSizes.reduce((acc, sz) => {
+                  const ord = getOrderedQtyForCombo(activeProduct, activeVariant, sz, g);
+                  const md = getMadeCount(activeProduct, activeVariant, sz, g);
+                  return acc + Math.max(0, ord - md);
+                }, 0);
+
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setSelectedGender(g)}
+                    className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                      selected
+                        ? 'bg-zinc-900 text-white border-zinc-900'
+                        : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <div className="text-xs font-bold truncate">{g}</div>
+                    <div className="text-[10px] opacity-80 font-mono mt-0.5 flex items-center justify-between gap-1">
+                      <span>Stock: {gMade}</span>
+                      {gMissing > 0 ? (
+                        <span className={selected ? 'underline font-bold' : 'text-amber-700 font-bold'}>
+                          -{gMissing}
+                        </span>
+                      ) : gOrdered > 0 ? (
+                        <span className={selected ? 'opacity-90' : 'text-emerald-700 font-semibold'}>✓</span>
+                      ) : null}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
+
+        {/* 4. Selector de Talla (refleja el corte seleccionado) */}
+        <div className="space-y-1.5">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+            {isAcc ? '3. Talla' : `4. Talla (${activeGender})`}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {availableSizes.map(sz => {
+              const selected = sz === activeSize;
+              const szOrd = getOrderedQtyForCombo(activeProduct, activeVariant, sz, activeGender);
+              const szMade = getMadeCount(activeProduct, activeVariant, sz, activeGender);
+              const szMiss = Math.max(0, szOrd - szMade);
+              return (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => setSelectedSize(sz)}
+                  className={`min-w-[54px] px-2.5 py-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                    selected
+                      ? 'bg-zinc-900 text-white border-zinc-900'
+                      : szMiss > 0
+                      ? 'bg-amber-50 border-amber-200 text-amber-900'
+                      : szMade > 0
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                  }`}
+                >
+                  <div className="text-xs font-bold leading-none">{sz}</div>
+                  <div className="text-[9px] font-mono mt-1 opacity-85 leading-none">
+                    {szMade}/{szOrd}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Panel de contadores exactos para esta combinación */}
+        <div className="rounded-xl bg-zinc-50 border border-zinc-200 p-3.5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="font-bold text-zinc-900">
+              {activeProduct.name} · {activeVariant.name} ·{' '}
+              <span className="underline">
+                Talla {activeSize}{!isAcc ? ` (${activeGender})` : ''}
+              </span>
+            </div>
+            {missingToMake > 0 ? (
+              <span className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold">
+                Faltan {missingToMake} por hacer
+              </span>
+            ) : orderedQty > 0 ? (
+              <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold inline-flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Pedidos cubiertos
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-md bg-white border border-zinc-200 text-zinc-500 text-[11px]">
+                Stock libre: {madeQty}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* Ya Hechas / Estampadas */}
+            <div className="p-3 rounded-xl bg-white border border-zinc-200 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-zinc-700 inline-flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5" /> Ya Hechas
+                </span>
+                <span className="font-mono text-zinc-500">Pedidas: {orderedQty}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => updateMade(madeQty - 1)}
+                  className="h-9 w-9 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center cursor-pointer"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  value={madeQty}
+                  onChange={e => updateMade(Number(e.target.value) || 0)}
+                  className="flex-1 h-9 text-center rounded-lg border border-zinc-200 bg-zinc-50 font-mono text-sm font-bold text-zinc-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => updateMade(madeQty + 1)}
+                  className="h-9 w-9 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 flex items-center justify-center cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {missingToMake > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateMade(orderedQty);
+                    notify(`Completadas ${orderedQty} uds de ${activeProduct.name} (${activeSize} · ${activeGender})`);
+                  }}
+                  className="w-full h-7 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold hover:bg-emerald-100 cursor-pointer"
+                >
+                  Marcar todas hechas ({orderedQty})
+                </button>
+              )}
+            </div>
+
+            {/* Prenda en Blanco / Compradas */}
+            <div className="p-3 rounded-xl bg-white border border-zinc-200 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-zinc-700 inline-flex items-center gap-1">
+                  <ShoppingBag className="w-3.5 h-3.5" /> En Blanco
+                </span>
+                <span className="font-mono text-zinc-500">Req: {requiredBlankQty}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => updateBought(boughtQty - 1)}
+                  className="h-9 w-9 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center cursor-pointer"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  value={boughtQty}
+                  onChange={e => updateBought(Number(e.target.value) || 0)}
+                  className="flex-1 h-9 text-center rounded-lg border border-zinc-200 bg-zinc-50 font-mono text-sm font-bold text-zinc-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => updateBought(boughtQty + 1)}
+                  className="h-9 w-9 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 flex items-center justify-center cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="text-[10px] text-zinc-500 truncate" title={blankName}>
+                Base: {blankName} {missingToBuy > 0 ? `· Faltan ${missingToBuy}` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+
+      {/* Clientes que pidieron esta combinación exacta */}
+      <div className="pt-2 border-t border-zinc-100">
+        <div className="text-[11px] font-semibold text-zinc-600 flex items-center gap-1.5 mb-1.5">
+          <Users className="w-3.5 h-3.5" />
+          <span>
+            Pedidos con esta combinación exacta ({matchingCustomers.length})
+          </span>
+        </div>
+        {matchingCustomers.length === 0 ? (
+          <p className="text-[11px] text-zinc-400">
+            Sin pedidos activos para Talla {activeSize}{!isAcc ? ` · ${activeGender}` : ''}.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {matchingCustomers.map((m, idx) => (
+              <span
+                key={`${m.orderId}-${idx}`}
+                className="px-2 py-1 rounded-lg bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-700"
+              >
+                <strong className="font-mono text-zinc-900">{m.orderId}</strong> · {m.customerName} ({m.qty}×)
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -724,214 +555,64 @@ export default function BentoInventoryView() {
     setMadeItems,
     boughtSupplies,
     setBoughtSupplies,
-    shoppingNeeds,
     productionMatrix,
+    shoppingNeeds,
     notify
   } = useAdmin();
 
-  const [mode, setMode] = useState<'make' | 'buy'>('make');
-  const [onlyPendingCategories, setOnlyPendingCategories] = useState(false);
+  const effectiveCatalog = catalog.length ? catalog : OFFICIAL_CATALOG_FALLBACK;
 
-  const effectiveCatalog = catalog.length > 0 ? catalog : OFFICIAL_CATALOG_FALLBACK;
-  const activeOrders = useMemo(() => orders.filter(isOrderActive), [orders]);
-
-  const categories = useMemo(() => {
-    const groups: Record<string, Product[]> = {};
-    effectiveCatalog.forEach(prod => {
-      const catName = resolveBentoCategory(prod);
-      if (!groups[catName]) groups[catName] = [];
-      groups[catName].push(prod);
+  const groupedBento = useMemo(() => {
+    const groups: Record<string, { id: string; title: string; subtitle: string; products: Product[] }> = {};
+    effectiveCatalog.forEach(p => {
+      const info = classifyBentoGroup(p);
+      if (!groups[info.id]) {
+        groups[info.id] = { id: info.id, title: info.title, subtitle: info.subtitle, products: [] };
+      }
+      groups[info.id].products.push(p);
     });
-    return Object.entries(groups).map(([name, products]) => ({ name, products }));
+    const order = ['hoodies', 'tees', 'croptops', 'accessories', 'other-garments'];
+    return order.map(id => groups[id]).filter(Boolean);
   }, [effectiveCatalog]);
-
-  const visibleCategories = useMemo(() => {
-    if (!onlyPendingCategories) return categories;
-    return categories.filter(cat =>
-      cat.products.some(prod =>
-        activeOrders.some(o =>
-          o.items.some(it => it.productId === prod.id || it.productName === prod.name)
-        )
-      )
-    );
-  }, [categories, onlyPendingCategories, activeOrders]);
-
-  const totalOrderedUnits = useMemo(() => {
-    return activeOrders.reduce(
-      (sum, o) => sum + o.items.reduce((iSum, it) => iSum + (Number(it.qty) || 1), 0),
-      0
-    );
-  }, [activeOrders]);
-
-  const pendingNow =
-    mode === 'make' ? productionMatrix.totalMissingToMake : shoppingNeeds.totalMissingToBuy;
-  const completedNow = Math.max(0, totalOrderedUnits - pendingNow);
-  const progressPct =
-    totalOrderedUnits > 0 ? Math.min(100, Math.round((completedNow / totalOrderedUnits) * 100)) : 100;
-
-  const handleCopyQuickSummary = () => {
-    if (mode === 'make') {
-      const rows = productionMatrix.rows.filter((r: any) => r.missing > 0);
-      if (!rows.length) {
-        notify('¡No hay prendas pendientes por hacer!');
-        return;
-      }
-      const txt =
-        `*PENDIENTES DE TALLER — MYFANBOX*\n` +
-        rows
-          .map((r: any) => `• ${r.productName} (${r.variantName}) · Talla ${r.size} -> Hacer ${r.missing}`)
-          .join('\n');
-      navigator.clipboard?.writeText(txt);
-      notify('Lista de pendientes de taller copiada');
-    } else {
-      const rows = shoppingNeeds.rows.filter((r: any) => r.missing > 0);
-      if (!rows.length) {
-        notify('¡No falta nada por comprar!');
-        return;
-      }
-      const txt =
-        `*PENDIENTES DE COMPRA — MYFANBOX*\n` +
-        rows
-          .map((r: any) => `• ${r.blankName} · Talla ${r.sizeOrSpec} -> Comprar ${r.missing}`)
-          .join('\n');
-      navigator.clipboard?.writeText(txt);
-      notify('Lista de compras copiada');
-    }
-  };
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 bg-white border border-zinc-200 rounded-2xl p-5 flex flex-col justify-between gap-3">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Taller Visual · BentoBox</span>
-              </div>
-              <h1 className="text-lg font-bold text-zinc-900 mt-0.5">
-                {mode === 'make' ? '¿Qué falta por hacer?' : '¿Qué falta por comprar?'}
-              </h1>
-            </div>
-            <span className="px-3 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-xs font-bold text-zinc-900 tabular-nums">
-              {progressPct}%
-            </span>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="w-full h-2.5 rounded-full bg-zinc-100 overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 ${
-                  pendingNow === 0 ? 'bg-emerald-600' : 'bg-zinc-900'
-                }`}
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between text-xs text-zinc-500 tabular-nums">
-              <span>
-                {pendingNow === 0
-                  ? '¡Todo al día!'
-                  : mode === 'make'
-                  ? `Te faltan ${pendingNow} unidades por estampar/armar`
-                  : `Te faltan ${pendingNow} bases/insumos por comprar`}
-              </span>
-              <span className="font-mono">{totalOrderedUnits} pedidas</span>
-            </div>
-          </div>
+      <section className="bg-white border border-zinc-200 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-base sm:text-lg font-bold text-zinc-900 flex items-center gap-2">
+            <LayoutGrid className="w-5 h-5" />
+            <span>Inventario Bento por Categoría, Talla y Corte</span>
+          </h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            El stock de <strong>Femenino</strong>, <strong>Masculino</strong> y <strong>Sin especificar</strong> se guarda completamente por separado y se sincroniza en vivo con NeonDB.
+          </p>
         </div>
 
-        <div className="lg:col-span-4 bg-white border border-zinc-200 rounded-2xl p-5 flex flex-col justify-between gap-3">
-          <div className="text-xs font-semibold text-zinc-500">¿Qué estás gestionando ahora?</div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setMode('make')}
-              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                mode === 'make'
-                  ? 'bg-zinc-900 text-white border-zinc-900'
-                  : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-              }`}
-            >
-              <Layers className="w-4 h-4 mb-1.5" />
-              <div className="text-xs font-bold">Estampar / Hacer</div>
-              <div className={`text-[11px] mt-0.5 ${mode === 'make' ? 'text-zinc-950' : 'text-zinc-500'}`}>
-                {productionMatrix.totalMissingToMake} pendientes
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode('buy')}
-              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                mode === 'buy'
-                  ? 'bg-zinc-900 text-white border-zinc-900'
-                  : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-              }`}
-            >
-              <ShoppingBag className="w-4 h-4 mb-1.5" />
-              <div className="text-xs font-bold">Comprar Stock</div>
-              <div className={`text-[11px] mt-0.5 ${mode === 'buy' ? 'text-zinc-950' : 'text-zinc-500'}`}>
-                {shoppingNeeds.totalMissingToBuy} por comprar
-              </div>
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-semibold">
+            Por comprar: {shoppingNeeds.totalMissingToBuy}
+          </span>
+          <span className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 font-semibold">
+            Por estampar: {productionMatrix.totalMissingToMake}
+          </span>
         </div>
+      </section>
 
-        <div className="lg:col-span-3 bg-white border border-zinc-200 rounded-2xl p-5 flex flex-col justify-between gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-500">Acciones rápidas</span>
-            <Tag className="w-4 h-4 text-zinc-400" />
-          </div>
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => setOnlyPendingCategories(prev => !prev)}
-              className={`w-full h-9 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                onlyPendingCategories
-                  ? 'bg-zinc-900 text-white border-zinc-900'
-                  : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
-              }`}
-            >
-              {onlyPendingCategories ? 'Mostrando solo con pedidos' : 'Filtrar solo con pedidos'}
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyQuickSummary}
-              className="w-full h-9 px-3 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              <span>Copiar lista pendiente</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        {visibleCategories.map((cat, idx) => {
-          const isWide = visibleCategories.length % 2 === 1 && idx === visibleCategories.length - 1;
-          const spanClass = isWide ? 'xl:col-span-12' : 'xl:col-span-6';
-          return (
-            <BentoCategoryCard
-              key={cat.name}
-              categoryName={cat.name}
-              products={cat.products}
-              activeOrders={activeOrders}
-              mode={mode}
-              madeItems={madeItems}
-              setMadeItems={setMadeItems}
-              boughtSupplies={boughtSupplies}
-              setBoughtSupplies={setBoughtSupplies}
-              spanClass={spanClass}
-              notify={notify}
-            />
-          );
-        })}
-
-        {visibleCategories.length === 0 && (
-          <div className="xl:col-span-12 bg-white border border-dashed border-zinc-300 rounded-2xl p-10 text-center text-xs text-zinc-500">
-            No hay categorías con pedidos activos en este momento.
-          </div>
-        )}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {groupedBento.map(group => (
+          <BentoCategoryCard
+            key={group.id}
+            groupTitle={group.title}
+            groupSubtitle={group.subtitle}
+            products={group.products}
+            orders={orders}
+            madeItems={madeItems}
+            setMadeItems={setMadeItems}
+            boughtSupplies={boughtSupplies}
+            setBoughtSupplies={setBoughtSupplies}
+            notify={notify}
+          />
+        ))}
       </div>
     </div>
   );
