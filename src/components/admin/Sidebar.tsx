@@ -244,7 +244,7 @@ export default function Sidebar({
             >
               <span className="flex items-center gap-2">
                 <FileText className="w-3.5 h-3.5" />
-                <span>Portal /details/ (UUID)</span>
+                <span>Portal /details</span>
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">
                 UUID
@@ -258,7 +258,7 @@ export default function Sidebar({
             >
               <span className="flex items-center gap-2">
                 <Database className="w-3.5 h-3.5" />
-                <span>6. Base de Datos NeonDB</span>
+                <span>Base de Datos NeonDB</span>
               </span>
               <span className="flex items-center gap-1 text-[10px]">
                 <span
@@ -279,7 +279,7 @@ export default function Sidebar({
             >
               <span className="flex items-center gap-2">
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>7. Set Config</span>
+                <span>Set Config</span>
               </span>
               <span className="text-[10px] text-zinc-400">Ajustes</span>
             </button>
