@@ -37,6 +37,14 @@ interface AdminContextProps {
   setCollectionName: React.Dispatch<React.SetStateAction<string>>;
   googleMapsApiKey: string;
   setGoogleMapsApiKey: React.Dispatch<React.SetStateAction<string>>;
+  supportWhatsapp: string;
+  setSupportWhatsapp: React.Dispatch<React.SetStateAction<string>>;
+  paymentNequi: string;
+  setPaymentNequi: React.Dispatch<React.SetStateAction<string>>;
+  paymentBancolombia: string;
+  setPaymentBancolombia: React.Dispatch<React.SetStateAction<string>>;
+  instagramHandle: string;
+  setInstagramHandle: React.Dispatch<React.SetStateAction<string>>;
   theme: string;
   setTheme: React.Dispatch<React.SetStateAction<string>>;
   customTheme: any;
@@ -94,6 +102,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [brandLogoUrl, setBrandLogoUrl] = useState('');
   const [collectionName, setCollectionName] = useState('Viajando por el Mundo — Karol G');
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState('');
+  const [supportWhatsapp, setSupportWhatsapp] = useState('');
+  const [paymentNequi, setPaymentNequi] = useState('');
+  const [paymentBancolombia, setPaymentBancolombia] = useState('');
+  const [instagramHandle, setInstagramHandle] = useState('@myfanbox');
   const [theme, setTheme] = useState('medium-dark');
   const [customTheme, setCustomTheme] = useState({ background: '#141920', surface: '#1C232D', surfaceAlt: '#242D3A', hover: '#2E3A4B', hoverText: '#F8FAFC', selectedBg: '#1F3A3D', selectedText: '#E6FFFA', text: '#F1F5F9', muted: '#94A3B8', primary: '#2A7B6F', primaryText: '#FFFFFF', border: '#323E4F' });
   const [adminConfig, setAdminConfig] = useState({ username: DEFAULT_ADMIN_USER, hideDefaultHint: true });
@@ -120,12 +132,34 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (payload.settings?.brandLogoUrl) setBrandLogoUrl(payload.settings.brandLogoUrl);
     setCollectionName(payload.settings?.collectionName || 'Viajando por el Mundo — Karol G');
     setGoogleMapsApiKey(payload.settings?.googleMapsApiKey || '');
+    setSupportWhatsapp(payload.settings?.supportWhatsapp || '');
+    setPaymentNequi(payload.settings?.paymentNequi || '');
+    setPaymentBancolombia(payload.settings?.paymentBancolombia || '');
+    setInstagramHandle(payload.settings?.instagramHandle || '@myfanbox');
     if (payload.settings?.theme) setTheme(payload.settings.theme);
     if (payload.settings?.customTheme) setCustomTheme(prev => ({ ...prev, ...payload.settings.customTheme }));
     if (payload.adminConfig) setAdminConfig(payload.adminConfig);
     setIsDataReady(true);
     setDataError('');
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'mfb_public_store_config',
+        JSON.stringify({
+          brandName,
+          brandLogoUrl,
+          collectionName,
+          originHub,
+          supportWhatsapp,
+          paymentNequi,
+          paymentBancolombia,
+          instagramHandle
+        })
+      );
+    } catch {}
+  }, [brandName, brandLogoUrl, collectionName, originHub, supportWhatsapp, paymentNequi, paymentBancolombia, instagramHandle]);
 
   const loadDatabaseSnapshot = useCallback(async (token = adminToken) => {
     const payload = await apiRequest('/api/admin/bootstrap', token);
@@ -164,6 +198,33 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, [adminToken, loadDatabaseSnapshot]);
 
+  const buildSettingsPayload = useCallback(() => ({
+    comboDiscountValue,
+    originHub,
+    defaultCarrier,
+    brandName,
+    brandLogoUrl,
+    collectionName,
+    googleMapsApiKey,
+    supportWhatsapp,
+    paymentNequi,
+    paymentBancolombia,
+    instagramHandle,
+    theme,
+    customTheme,
+    orderCedulas: orders.reduce((acc: any, o: any) => {
+      if (o?.cedula) {
+        if (o.id) acc[o.id] = String(o.cedula);
+        if (o.uuid) acc[String(o.uuid).toLowerCase()] = String(o.cedula);
+      }
+      return acc;
+    }, {})
+  }), [
+    comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName,
+    googleMapsApiKey, supportWhatsapp, paymentNequi, paymentBancolombia, instagramHandle,
+    theme, customTheme, orders
+  ]);
+
   useEffect(() => {
     if (!isAdmin || !isDataReady || !adminToken) return undefined;
     const timer = setTimeout(async () => {
@@ -173,7 +234,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
           method: 'PUT',
           body: JSON.stringify({
             catalog, orders, boughtSupplies, madeItems,
-            settings: { comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName, googleMapsApiKey, theme, customTheme, orderCedulas: orders.reduce((acc: any, o: any) => { if (o?.cedula) { if (o.id) acc[o.id] = String(o.cedula); if (o.uuid) acc[String(o.uuid).toLowerCase()] = String(o.cedula); } return acc; }, {}) }
+            settings: buildSettingsPayload()
           })
         });
         setNeonStatus('connected');
@@ -188,7 +249,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       }
     }, 650);
     return () => clearTimeout(timer);
-  }, [isAdmin, isDataReady, adminToken, catalog, orders, boughtSupplies, madeItems, comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName, googleMapsApiKey, theme, customTheme, notify]);
+  }, [isAdmin, isDataReady, adminToken, catalog, orders, boughtSupplies, madeItems, buildSettingsPayload, notify]);
 
   const handleAdminLoginSubmit = async (username: string, pass: string, remember: boolean) => {
     setLoginError('');
@@ -231,7 +292,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       await apiRequest('/api/admin/data', adminToken, {
         method: 'PUT',
-        body: JSON.stringify({ catalog, orders, boughtSupplies, madeItems, settings: { comboDiscountValue, originHub, defaultCarrier, brandName, brandLogoUrl, collectionName, googleMapsApiKey, theme, customTheme, orderCedulas: orders.reduce((acc: any, o: any) => { if (o?.cedula) { if (o.id) acc[o.id] = String(o.cedula); if (o.uuid) acc[String(o.uuid).toLowerCase()] = String(o.cedula); } return acc; }, {}) } })
+        body: JSON.stringify({ catalog, orders, boughtSupplies, madeItems, settings: buildSettingsPayload() })
       });
       setNeonStatus('connected');
       setNeonLastSync(new Date().toLocaleTimeString());
@@ -358,8 +419,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     <AdminContext.Provider value={{
       isAdmin, isDataReady, isSavingData, dataError, neonStatus, neonLastSync, adminToken, loginError,
       catalog, setCatalog, orders, setOrders, boughtSupplies, setBoughtSupplies, madeItems, setMadeItems,
-      originHub, setOriginHub, defaultCarrier, setDefaultCarrier, comboDiscountValue, setComboDiscountValue, brandName, setBrandName, brandLogoUrl, setBrandLogoUrl, collectionName, setCollectionName, googleMapsApiKey, setGoogleMapsApiKey, theme, setTheme, customTheme, setCustomTheme, adminConfig, setAdminConfig,
-      metrics, shoppingNeeds, productionMatrix,
+      originHub, setOriginHub, defaultCarrier, setDefaultCarrier, comboDiscountValue, setComboDiscountValue,
+      brandName, setBrandName, brandLogoUrl, setBrandLogoUrl, collectionName, setCollectionName,
+      googleMapsApiKey, setGoogleMapsApiKey, supportWhatsapp, setSupportWhatsapp,
+      paymentNequi, setPaymentNequi, paymentBancolombia, setPaymentBancolombia,
+      instagramHandle, setInstagramHandle, theme, setTheme, customTheme, setCustomTheme,
+      adminConfig, setAdminConfig, metrics, shoppingNeeds, productionMatrix,
       handleAdminLoginSubmit, handleAdminLogout, handleInitNeonTables, handlePushAllToNeon, handlePullFromNeon, executeNeonQuery,
       handleUpdateOrderPayment, handleUpdateOrderShipping, handleUpdateOrderField, handleRegenerateOrderUUID, handleToggleItemPacked, saveNewOrder, updateExistingOrder, deleteOrder,
       toast, notify

@@ -21,6 +21,14 @@ export default function ConfigView() {
     setComboDiscountValue,
     googleMapsApiKey,
     setGoogleMapsApiKey,
+    supportWhatsapp,
+    setSupportWhatsapp,
+    paymentNequi,
+    setPaymentNequi,
+    paymentBancolombia,
+    setPaymentBancolombia,
+    instagramHandle,
+    setInstagramHandle,
     theme,
     setTheme,
     customTheme,
@@ -119,6 +127,55 @@ export default function ConfigView() {
               </button>
             )}
           </div>
+        </div>
+      </section>
+
+      <section className="bg-white border border-zinc-200 rounded-2xl p-5 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Seguimiento y Pagos del Cliente (/details/)
+          </h2>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Datos visibles en la vista de seguimiento del cliente para enviar comprobantes del 50%, corregir direcciones o etiquetar la marca.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className="text-xs text-zinc-600 space-y-1">
+            <span>WhatsApp oficial de atención (con indicativo)</span>
+            <input
+              value={supportWhatsapp}
+              onChange={e => setSupportWhatsapp(e.target.value)}
+              placeholder="Ej: +57 300 123 4567"
+              className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 font-mono"
+            />
+          </label>
+          <label className="text-xs text-zinc-600 space-y-1">
+            <span>Instagram oficial de la marca</span>
+            <input
+              value={instagramHandle}
+              onChange={e => setInstagramHandle(e.target.value)}
+              placeholder="Ej: @myfanbox"
+              className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900"
+            />
+          </label>
+          <label className="text-xs text-zinc-600 space-y-1">
+            <span>Cuenta Nequi (para copiar rápido el 50%)</span>
+            <input
+              value={paymentNequi}
+              onChange={e => setPaymentNequi(e.target.value)}
+              placeholder="Ej: 300 123 4567"
+              className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 font-mono"
+            />
+          </label>
+          <label className="text-xs text-zinc-600 space-y-1">
+            <span>Cuenta Bancolombia (Ahorros)</span>
+            <input
+              value={paymentBancolombia}
+              onChange={e => setPaymentBancolombia(e.target.value)}
+              placeholder="Ej: 123-456789-00"
+              className="w-full h-9 px-3 rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-900 font-mono"
+            />
+          </label>
         </div>
       </section>
 
