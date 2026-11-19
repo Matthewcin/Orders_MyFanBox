@@ -58,7 +58,7 @@ export default function Catalogo() {
 
     const raw = trackingInput.trim();
     if (!raw) {
-      setErrorMsg('Pega tu código único (UUID) o el enlace recibido por WhatsApp.');
+      setErrorMsg('Pega tu código de seguimiento o el enlace recibido por WhatsApp.');
       return;
     }
 
@@ -71,7 +71,7 @@ export default function Catalogo() {
     const candidate = uuidMatch ? uuidMatch[0].toLowerCase() : raw.toLowerCase();
 
     if (!isValidUUID(candidate)) {
-      setErrorMsg('El código ingresado no es un UUID válido. Verifica el enlace enviado por WhatsApp.');
+      setErrorMsg('El código de seguimiento ingresado no es válido. Verifica el enlace enviado por WhatsApp.');
       return;
     }
 

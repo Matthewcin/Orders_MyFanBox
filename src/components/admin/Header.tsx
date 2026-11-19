@@ -66,7 +66,7 @@ export default function Header({
             { id: 'orders', label: 'Ventas' },
             { id: 'quickcheck', label: '¿Hecho?' },
             { id: 'inventory', label: 'Inventario' },
-            { id: 'bento', label: 'Bento' },
+            { id: 'bento', label: 'Inventario Simple' },
             { id: 'shipping', label: 'Envíos' },
             { id: 'map', label: 'Mapa & ETA' },
             { id: 'costs', label: 'Costos' },
