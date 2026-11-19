@@ -98,11 +98,11 @@ export default function Catalogo() {
                 {storeInfo.brandName}
               </span>
               <span className="px-2 py-0.5 rounded-md border border-zinc-200 bg-zinc-50 text-[10px] font-mono uppercase tracking-wider text-zinc-500">
-                TRACKING &amp; INVOICE
+                DETALLES DE LA ORDEN
               </span>
             </div>
             <p className="text-xs text-zinc-500 mt-1">
-              Colección Oficial: {storeInfo.collectionName}
+              Colección: {storeInfo.collectionName}
             </p>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function Catalogo() {
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-800">
               <Fingerprint className="w-3.5 h-3.5" />
-              <span>Portal Oficial de Seguimiento y Facturación</span>
+              <span>Seguimiento y Facturación</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 leading-tight">
@@ -157,7 +157,7 @@ export default function Catalogo() {
                 htmlFor="mfb-uuid-input"
                 className="block text-xs font-semibold text-zinc-800"
               >
-                Código Único de Seguimiento (UUID)
+                Código de Seguimiento
               </label>
               <input
                 id="mfb-uuid-input"
@@ -184,7 +184,7 @@ export default function Catalogo() {
               className="h-11 px-5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-all cursor-pointer"
             >
               <FileText className="w-4 h-4" />
-              <span>Consultar Estado e Invoice</span>
+              <span>Consultar Estado y Facturación</span>
             </button>
           </form>
 

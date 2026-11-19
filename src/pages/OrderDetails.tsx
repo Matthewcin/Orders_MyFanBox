@@ -760,7 +760,7 @@ export default function OrderDetails() {
                     <div className="flex items-center justify-between">
                       <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-1.5">
                         <Shirt className="w-4 h-4 text-zinc-700" />
-                        <span>Tus prendas ({(o.items || []).reduce((s, it) => s + (Number(it.qty) || 1), 0)} uds)</span>
+                        <span>Tus productos ({(o.items || []).reduce((s, it) => s + (Number(it.qty) || 1), 0)} uds)</span>
                       </h2>
                       <span className="font-mono text-xs font-bold text-zinc-900">
                         {formatCOP(o.total)}
@@ -798,16 +798,16 @@ export default function OrderDetails() {
                       <div className="flex items-center gap-2 text-zinc-600">
                         <Package className="w-4 h-4 text-zinc-500 shrink-0" />
                         <span>
-                          Cuando te llegue tu {storeConfig.brandName}, ¡etiquétanos en{' '}
+                          Cuando te llegue tu pedido, ¡etiquétanos en{' '}
                           <strong>{storeConfig.instagramHandle || '@myfanbox'}</strong>!
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => setActiveView('invoice')}
-                        className="text-xs font-semibold text-zinc-900 underline cursor-pointer"
+                        className="text-xs font-semibold text-zinc-900 cursor-pointer"
                       >
-                        Abrir factura completa
+                        Abrir factura completa :D
                       </button>
                     </div>
                   </section>
@@ -838,7 +838,7 @@ export default function OrderDetails() {
 
                     <div className="flex flex-wrap gap-2">
                       <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getPayStatusBadgeClass(o.paymentStatus)}`}>
-                        Pago: {o.paymentStatus}
+                        Estado: {o.paymentStatus}
                       </span>
                       <span className={`px-2.5 py-1 rounded-lg border text-xs font-semibold ${getShipStatusBadgeClass(o.shippingStatus)}`}>
                         Envío: {o.shippingStatus}

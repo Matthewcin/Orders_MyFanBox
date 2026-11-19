@@ -10,54 +10,6 @@ interface ShippingStatusAnimationProps {
   carrier?: string;
 }
 
-const THEME_VARS: Record<ClientTheme, Record<string, string>> = {
-  light: {
-    '--mfb-bg-card': '#FFFFFF',
-    '--mfb-card-border': 'rgba(34, 34, 34, 0.08)',
-    '--mfb-card-shadow': '0 18px 40px rgba(34, 34, 34, 0.08), 0 4px 12px rgba(34, 34, 34, 0.04)',
-    '--mfb-ink': '#222222',
-    '--mfb-ink-muted': '#7A7788',
-    '--mfb-accent': '#C7BAFF',
-    '--mfb-accent-soft': 'rgba(199, 186, 255, 0.34)',
-    '--mfb-accent-deep': '#9E8CF2',
-    '--mfb-surface-fill': '#FFFFFF',
-    '--mfb-surface-alt': '#F1EFF8',
-    '--mfb-belt-fill': '#E6E3F2',
-    '--mfb-dust-fill': '#DEDAE9',
-    '--mfb-ground-muted': '#D5D1E4'
-  },
-  dark: {
-    '--mfb-bg-card': '#222222',
-    '--mfb-card-border': '#323232',
-    '--mfb-card-shadow': '0 18px 40px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(0, 0, 0, 0.28)',
-    '--mfb-ink': '#F4F4F6',
-    '--mfb-ink-muted': '#8C8C96',
-    '--mfb-accent': '#C7BAFF',
-    '--mfb-accent-soft': 'rgba(199, 186, 255, 0.24)',
-    '--mfb-accent-deep': '#9C8AE6',
-    '--mfb-surface-fill': '#222222',
-    '--mfb-surface-alt': '#2C2C30',
-    '--mfb-belt-fill': '#2A2A2E',
-    '--mfb-dust-fill': '#3A3A40',
-    '--mfb-ground-muted': '#3A3A40'
-  },
-  myfanbox: {
-    '--mfb-bg-card': '#231F33',
-    '--mfb-card-border': 'rgba(199, 186, 255, 0.26)',
-    '--mfb-card-shadow': '0 18px 42px rgba(8, 6, 18, 0.62), 0 0 26px rgba(199, 186, 255, 0.14)',
-    '--mfb-ink': '#F7F5FF',
-    '--mfb-ink-muted': '#9E96B8',
-    '--mfb-accent': '#C7BAFF',
-    '--mfb-accent-soft': 'rgba(199, 186, 255, 0.28)',
-    '--mfb-accent-deep': '#A694F5',
-    '--mfb-surface-fill': '#231F33',
-    '--mfb-surface-alt': '#2E2942',
-    '--mfb-belt-fill': '#2D2742',
-    '--mfb-dust-fill': '#413A5C',
-    '--mfb-ground-muted': '#3F3859'
-  }
-};
-
 function resolveAnimationStep(shippingStatus: string): 0 | 1 | 2 {
   const normalized = String(shippingStatus || '').trim().toLowerCase();
   if (normalized.includes('entregado')) return 2;
@@ -73,7 +25,6 @@ export default function ShippingStatusAnimation({
   carrier
 }: ShippingStatusAnimationProps) {
   const step = resolveAnimationStep(shippingStatus);
-  const vars = THEME_VARS[clientTheme] || THEME_VARS.myfanbox;
 
   const title = !active
     ? `Pedido ${String(paymentStatus || 'inactivo').toLowerCase()}`
@@ -95,10 +46,10 @@ export default function ShippingStatusAnimation({
 
   return (
     <div
+      data-theme={clientTheme}
       style={{
-        ...(vars as React.CSSProperties),
-        backgroundColor: 'var(--mfb-bg-card)',
-        border: '1px solid var(--mfb-card-border)',
+        backgroundColor: 'var(--mfb-surface)',
+        border: '1px solid var(--mfb-border)',
         boxShadow: 'var(--mfb-card-shadow)'
       }}
       className={`mfb-ship-card rounded-2xl px-5 py-6 sm:px-8 sm:py-7 flex flex-col items-center justify-center text-center transition-all duration-300 ${
@@ -321,73 +272,73 @@ export default function ShippingStatusAnimation({
 
             <g transform="translate(89, 8)">
               <g className="mfb-anim mfb-claw-1-arm">
-                <rect x="-5" y="-3" width="10" height="6" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-                <line x1="0" y1="3" x2="0" y2="21" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinecap="round" />
-                <rect x="-7" y="21" width="14" height="5" rx="2.5" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
+                <rect x="-5" y="-3" width="10" height="6" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+                <line x1="0" y1="3" x2="0" y2="21" stroke="var(--mfb-text)" strokeWidth="2" strokeLinecap="round" />
+                <rect x="-7" y="21" width="14" height="5" rx="2.5" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
                 <g className="mfb-anim mfb-claw-1-jaw-l">
-                  <path d="M-4 25 L-11 32 L-7 39" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M-4 25 L-11 32 L-7 39" stroke="var(--mfb-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </g>
                 <g className="mfb-anim mfb-claw-1-jaw-r">
-                  <path d="M4 25 L11 32 L7 39" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 25 L11 32 L7 39" stroke="var(--mfb-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </g>
               </g>
 
               <g className="mfb-anim mfb-claw-1-garment">
                 <g transform="translate(0, 44)">
-                  <path d="M-6 -10 C-6 -17, 6 -17, 6 -10 Z" fill="var(--mfb-accent-deep)" stroke="var(--mfb-ink)" strokeWidth="1.8" strokeLinejoin="round" />
-                  <path d="M-5.5 -10 L-13 -6 L-15.5 6.5 L-10.5 7.5 L-9 -0.5 L-9 11.5 L9 11.5 L9 -0.5 L10.5 7.5 L15.5 6.5 L13 -6 L5.5 -10 Q0 -6.5 -5.5 -10 Z" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
-                  <path d="M-4 -10 Q0 -13.5 4 -10" stroke="var(--mfb-ink)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-                  <line x1="-2.2" y1="-7.5" x2="-2.2" y2="-2.2" stroke="var(--mfb-ink)" strokeWidth="1.4" strokeLinecap="round" />
-                  <line x1="2.2" y1="-7.5" x2="2.2" y2="-2.2" stroke="var(--mfb-ink)" strokeWidth="1.4" strokeLinecap="round" />
-                  <path d="M-5.2 2.5 H5.2 L6.2 8.2 H-6.2 Z" fill="var(--mfb-accent-deep)" fillOpacity="0.35" stroke="var(--mfb-ink)" strokeWidth="1.5" strokeLinejoin="round" />
-                  <line x1="-14.2" y1="4.2" x2="-10.8" y2="5" stroke="var(--mfb-ink)" strokeWidth="1.4" strokeLinecap="round" />
-                  <line x1="14.2" y1="4.2" x2="10.8" y2="5" stroke="var(--mfb-ink)" strokeWidth="1.4" strokeLinecap="round" />
+                  <path d="M-6 -10 C-6 -17, 6 -17, 6 -10 Z" fill="var(--mfb-accent-deep)" stroke="var(--mfb-text)" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M-5.5 -10 L-13 -6 L-15.5 6.5 L-10.5 7.5 L-9 -0.5 L-9 11.5 L9 11.5 L9 -0.5 L10.5 7.5 L15.5 6.5 L13 -6 L5.5 -10 Q0 -6.5 -5.5 -10 Z" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
+                  <path d="M-4 -10 Q0 -13.5 4 -10" stroke="var(--mfb-text)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                  <line x1="-2.2" y1="-7.5" x2="-2.2" y2="-2.2" stroke="var(--mfb-text)" strokeWidth="1.4" strokeLinecap="round" />
+                  <line x1="2.2" y1="-7.5" x2="2.2" y2="-2.2" stroke="var(--mfb-text)" strokeWidth="1.4" strokeLinecap="round" />
+                  <path d="M-5.2 2.5 H5.2 L6.2 8.2 H-6.2 Z" fill="var(--mfb-accent-deep)" fillOpacity="0.35" stroke="var(--mfb-text)" strokeWidth="1.5" strokeLinejoin="round" />
+                  <line x1="-14.2" y1="4.2" x2="-10.8" y2="5" stroke="var(--mfb-text)" strokeWidth="1.4" strokeLinecap="round" />
+                  <line x1="14.2" y1="4.2" x2="10.8" y2="5" stroke="var(--mfb-text)" strokeWidth="1.4" strokeLinecap="round" />
                 </g>
               </g>
             </g>
 
             <g transform="translate(154, 8)">
               <g className="mfb-anim mfb-claw-2-arm">
-                <rect x="-5" y="-3" width="10" height="6" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-                <line x1="0" y1="3" x2="0" y2="21" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinecap="round" />
-                <rect x="-7" y="21" width="14" height="5" rx="2.5" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
+                <rect x="-5" y="-3" width="10" height="6" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+                <line x1="0" y1="3" x2="0" y2="21" stroke="var(--mfb-text)" strokeWidth="2" strokeLinecap="round" />
+                <rect x="-7" y="21" width="14" height="5" rx="2.5" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
                 <g className="mfb-anim mfb-claw-2-jaw-l">
-                  <path d="M-4 25 L-11 32 L-7 39" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M-4 25 L-11 32 L-7 39" stroke="var(--mfb-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </g>
                 <g className="mfb-anim mfb-claw-2-jaw-r">
-                  <path d="M4 25 L11 32 L7 39" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 25 L11 32 L7 39" stroke="var(--mfb-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </g>
               </g>
 
               <g className="mfb-anim mfb-claw-2-garment">
                 <g transform="translate(0, 44)">
-                  <path d="M-5.5 -9.5 Q0 -5 5.5 -9.5 L4.5 -11 Q0 -8.5 -4.5 -11 Z" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.5" strokeLinejoin="round" />
-                  <path d="M-5.5 -9.5 L-14 -5.5 L-11.5 0.5 L-8.5 -0.8 L-8.5 10.5 L8.5 10.5 L8.5 -0.8 L11.5 0.5 L14 -5.5 L5.5 -9.5 Q0 -5.2 -5.5 -9.5 Z" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
-                  <line x1="-8" y1="4.8" x2="8" y2="4.8" stroke="var(--mfb-ink)" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M-4.5 -8.5 Q0 -4.8 4.5 -8.5" stroke="var(--mfb-surface-fill)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-                  <rect x="1.5" y="-2.2" width="4.2" height="4.2" rx="0.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.3" />
+                  <path d="M-5.5 -9.5 Q0 -5 5.5 -9.5 L4.5 -11 Q0 -8.5 -4.5 -11 Z" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.5" strokeLinejoin="round" />
+                  <path d="M-5.5 -9.5 L-14 -5.5 L-11.5 0.5 L-8.5 -0.8 L-8.5 10.5 L8.5 10.5 L8.5 -0.8 L11.5 0.5 L14 -5.5 L5.5 -9.5 Q0 -5.2 -5.5 -9.5 Z" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
+                  <line x1="-8" y1="4.8" x2="8" y2="4.8" stroke="var(--mfb-text)" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M-4.5 -8.5 Q0 -4.8 4.5 -8.5" stroke="var(--mfb-surface)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+                  <rect x="1.5" y="-2.2" width="4.2" height="4.2" rx="0.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.3" />
                 </g>
               </g>
             </g>
 
             <g transform="translate(219, 8)">
-              <rect x="-15" y="14" width="30" height="5" rx="1.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-              <rect x="-15" y="23" width="30" height="5" rx="1.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
+              <rect x="-15" y="14" width="30" height="5" rx="1.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+              <rect x="-15" y="23" width="30" height="5" rx="1.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
               <g className="mfb-anim mfb-lid-press-arm">
-                <rect x="-5" y="-3" width="10" height="6" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-                <line x1="0" y1="3" x2="0" y2="49" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinecap="round" />
-                <rect x="-10" y="49" width="20" height="4.5" rx="1.5" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-                <rect className="mfb-anim mfb-press-lid-ghost" x="-19" y="54" width="38" height="6.5" rx="1.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.9" />
+                <rect x="-5" y="-3" width="10" height="6" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+                <line x1="0" y1="3" x2="0" y2="49" stroke="var(--mfb-text)" strokeWidth="2" strokeLinecap="round" />
+                <rect x="-10" y="49" width="20" height="4.5" rx="1.5" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+                <rect className="mfb-anim mfb-press-lid-ghost" x="-19" y="54" width="38" height="6.5" rx="1.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.9" />
               </g>
             </g>
 
             <g transform="translate(278, 8)">
               <g className="mfb-anim mfb-tape-sealer-head">
-                <rect x="-5" y="-3" width="10" height="6" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-                <line x1="0" y1="3" x2="0" y2="54" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinecap="round" />
-                <rect x="-8" y="54" width="16" height="9" rx="2.5" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-                <circle cx="0" cy="58.5" r="3" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.5" />
-                <rect x="-2.5" y="63" width="5" height="5" rx="1" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.4" />
+                <rect x="-5" y="-3" width="10" height="6" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+                <line x1="0" y1="3" x2="0" y2="54" stroke="var(--mfb-text)" strokeWidth="2" strokeLinecap="round" />
+                <rect x="-8" y="54" width="16" height="9" rx="2.5" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+                <circle cx="0" cy="58.5" r="3" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.5" />
+                <rect x="-2.5" y="63" width="5" height="5" rx="1" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.4" />
               </g>
             </g>
 
@@ -396,56 +347,56 @@ export default function ShippingStatusAnimation({
                 <g key={cls} className={`mfb-anim mfb-parcel-unit ${cls}`}>
                   <g transform="translate(0, 84)">
                     <g className="mfb-anim mfb-parcel-hoodie-peek">
-                      <path d="M-11 4 C-11 -4, -1 -4, -1 4 Z" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.7" strokeLinejoin="round" />
-                      <path d="M-8 1 C-6 -2, -3 -2, -2 1" stroke="var(--mfb-ink)" strokeWidth="1.3" strokeLinecap="round" fill="none" />
+                      <path d="M-11 4 C-11 -4, -1 -4, -1 4 Z" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.7" strokeLinejoin="round" />
+                      <path d="M-8 1 C-6 -2, -3 -2, -2 1" stroke="var(--mfb-text)" strokeWidth="1.3" strokeLinecap="round" fill="none" />
                     </g>
                     <g className="mfb-anim mfb-parcel-tee-peek">
-                      <path d="M-1 4 C0 -3, 12 -3, 12 4 Z" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.7" strokeLinejoin="round" />
-                      <path d="M3 0.5 Q6 3 9 0.5" stroke="var(--mfb-surface-fill)" strokeWidth="1.4" strokeLinecap="round" fill="none" />
+                      <path d="M-1 4 C0 -3, 12 -3, 12 4 Z" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.7" strokeLinejoin="round" />
+                      <path d="M3 0.5 Q6 3 9 0.5" stroke="var(--mfb-surface)" strokeWidth="1.4" strokeLinecap="round" fill="none" />
                     </g>
-                    <rect x="-17" y="4" width="34" height="24" rx="2" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinejoin="round" />
+                    <rect x="-17" y="4" width="34" height="24" rx="2" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2" strokeLinejoin="round" />
                     <line x1="-15.5" y1="8.5" x2="15.5" y2="8.5" stroke="var(--mfb-ground-muted)" strokeWidth="1.5" />
                     <rect x="-12" y="20" width="6.5" height="4" rx="1" fill="var(--mfb-accent-soft)" />
                     <g className="mfb-anim mfb-parcel-lid">
-                      <rect x="-19.5" y="0" width="39" height="6.5" rx="1.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinejoin="round" />
+                      <rect x="-19.5" y="0" width="39" height="6.5" rx="1.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2" strokeLinejoin="round" />
                     </g>
                     <g className="mfb-anim mfb-parcel-tape">
                       <rect x="-3" y="0" width="6" height="17" fill="var(--mfb-accent)" />
-                      <path d="M-3 0 V17 H3 V0" stroke="var(--mfb-ink)" strokeWidth="1.5" strokeLinejoin="round" />
+                      <path d="M-3 0 V17 H3 V0" stroke="var(--mfb-text)" strokeWidth="1.5" strokeLinejoin="round" />
                     </g>
                   </g>
                 </g>
               ))}
             </g>
 
-            <path d="M64 130 L58 144 H70 L74 130 Z" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
-            <path d="M286 130 L290 144 H302 L296 130 Z" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
-            <rect x="74" y="133" width="212" height="4" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.7" />
-            <rect x="36" y="112" width="288" height="20" rx="10" fill="var(--mfb-belt-fill)" stroke="var(--mfb-ink)" strokeWidth="2.2" strokeLinejoin="round" />
+            <path d="M64 130 L58 144 H70 L74 130 Z" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
+            <path d="M286 130 L290 144 H302 L296 130 Z" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
+            <rect x="74" y="133" width="212" height="4" rx="2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.7" />
+            <rect x="36" y="112" width="288" height="20" rx="10" fill="var(--mfb-belt-fill)" stroke="var(--mfb-text)" strokeWidth="2.2" strokeLinejoin="round" />
 
             <g clipPath="url(#mfbBeltRollerClip)">
               <g className="mfb-anim mfb-belt-rollers">
                 {[48, 76, 104, 132, 160, 188, 216, 244, 272, 300, 328].map((cx) => (
-                  <circle key={cx} cx={cx} cy="122" r="2.6" fill="var(--mfb-ink)" />
+                  <circle key={cx} cx={cx} cy="122" r="2.6" fill="var(--mfb-text)" />
                 ))}
               </g>
             </g>
 
             <g transform="translate(46, 122)">
-              <circle cx="0" cy="0" r="8.5" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2" />
+              <circle cx="0" cy="0" r="8.5" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2" />
               <g className="mfb-anim mfb-drum-rotor">
-                <circle cx="0" cy="0" r="2.5" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.4" />
-                <line x1="0" y1="-6.2" x2="0" y2="-3.5" stroke="var(--mfb-ink)" strokeWidth="1.6" strokeLinecap="round" />
-                <line x1="0" y1="3.5" x2="0" y2="6.2" stroke="var(--mfb-ink)" strokeWidth="1.6" strokeLinecap="round" />
+                <circle cx="0" cy="0" r="2.5" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.4" />
+                <line x1="0" y1="-6.2" x2="0" y2="-3.5" stroke="var(--mfb-text)" strokeWidth="1.6" strokeLinecap="round" />
+                <line x1="0" y1="3.5" x2="0" y2="6.2" stroke="var(--mfb-text)" strokeWidth="1.6" strokeLinecap="round" />
               </g>
             </g>
 
             <g transform="translate(314, 122)">
-              <circle cx="0" cy="0" r="8.5" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2" />
+              <circle cx="0" cy="0" r="8.5" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2" />
               <g className="mfb-anim mfb-drum-rotor">
-                <circle cx="0" cy="0" r="2.5" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.4" />
-                <line x1="0" y1="-6.2" x2="0" y2="-3.5" stroke="var(--mfb-ink)" strokeWidth="1.6" strokeLinecap="round" />
-                <line x1="0" y1="3.5" x2="0" y2="6.2" stroke="var(--mfb-ink)" strokeWidth="1.6" strokeLinecap="round" />
+                <circle cx="0" cy="0" r="2.5" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.4" />
+                <line x1="0" y1="-6.2" x2="0" y2="-3.5" stroke="var(--mfb-text)" strokeWidth="1.6" strokeLinecap="round" />
+                <line x1="0" y1="3.5" x2="0" y2="6.2" stroke="var(--mfb-text)" strokeWidth="1.6" strokeLinecap="round" />
               </g>
             </g>
           </svg>
@@ -459,9 +410,9 @@ export default function ShippingStatusAnimation({
             xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
           >
-            <line className="mfb-anim mfb-wind-line-1" x1="22" y1="66" x2="52" y2="66" stroke="var(--mfb-ink-muted)" strokeWidth="2" strokeLinecap="round" />
+            <line className="mfb-anim mfb-wind-line-1" x1="22" y1="66" x2="52" y2="66" stroke="var(--mfb-text-muted)" strokeWidth="2" strokeLinecap="round" />
             <line className="mfb-anim mfb-wind-line-2" x1="32" y1="47" x2="54" y2="47" stroke="var(--mfb-accent)" strokeWidth="2" strokeLinecap="round" />
-            <line className="mfb-anim mfb-wind-line-3" x1="26" y1="90" x2="48" y2="90" stroke="var(--mfb-ink-muted)" strokeWidth="1.8" strokeLinecap="round" />
+            <line className="mfb-anim mfb-wind-line-3" x1="26" y1="90" x2="48" y2="90" stroke="var(--mfb-text-muted)" strokeWidth="1.8" strokeLinecap="round" />
 
             <g className="mfb-anim mfb-dust-puff-1">
               <circle cx="116" cy="133" r="5" fill="var(--mfb-dust-fill)" />
@@ -480,71 +431,71 @@ export default function ShippingStatusAnimation({
             </g>
 
             <g>
-              <circle cx="122" cy="121" r="14" fill="var(--mfb-ink)" opacity="0.22" />
-              <circle cx="246" cy="121" r="14" fill="var(--mfb-ink)" opacity="0.22" />
+              <circle cx="122" cy="121" r="14" fill="var(--mfb-text)" opacity="0.22" />
+              <circle cx="246" cy="121" r="14" fill="var(--mfb-text)" opacity="0.22" />
             </g>
 
             <g className="mfb-anim mfb-truck-body">
-              <rect x="148" y="117" width="94" height="5.5" fill="var(--mfb-ink)" />
-              <path d="M72 30 H95 V119 H69 V33 A3 3 0 0 1 72 30 Z" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="2.1" strokeLinejoin="round" />
-              <rect x="74.5" y="38" width="17.5" height="81" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.8" strokeLinejoin="round" />
+              <rect x="148" y="117" width="94" height="5.5" fill="var(--mfb-text)" />
+              <path d="M72 30 H95 V119 H69 V33 A3 3 0 0 1 72 30 Z" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="2.1" strokeLinejoin="round" />
+              <rect x="74.5" y="38" width="17.5" height="81" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.8" strokeLinejoin="round" />
               {[49, 60, 71, 82, 93, 104].map((y) => (
-                <line key={y} x1="74.5" y1={y} x2="92" y2={y} stroke="var(--mfb-ink)" strokeWidth="1.7" />
+                <line key={y} x1="74.5" y1={y} x2="92" y2={y} stroke="var(--mfb-text)" strokeWidth="1.7" />
               ))}
-              <line x1="79.5" y1="112" x2="87" y2="112" stroke="var(--mfb-ink)" strokeWidth="2.2" strokeLinecap="round" />
-              <path d="M95 30 H209 A3 3 0 0 1 212 33 V119 H95 Z" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2.1" strokeLinejoin="round" />
-              <rect x="65" y="118" width="147" height="4.8" rx="1.6" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.9" />
+              <line x1="79.5" y1="112" x2="87" y2="112" stroke="var(--mfb-text)" strokeWidth="2.2" strokeLinecap="round" />
+              <path d="M95 30 H209 A3 3 0 0 1 212 33 V119 H95 Z" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2.1" strokeLinejoin="round" />
+              <rect x="65" y="118" width="147" height="4.8" rx="1.6" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.9" />
 
               <text
                 x="153"
                 y="82"
                 textAnchor="middle"
-                fill="var(--mfb-ink)"
+                fill="var(--mfb-text)"
                 fontFamily="'Plus Jakarta Sans', 'Inter', sans-serif"
-                fontSize="23"
+                fontSize="18"
                 fontWeight="800"
                 fontStyle="italic"
                 letterSpacing="-0.025em"
               >
-                Enviando
+                ¡En Camino!
               </text>
 
-              <rect x="212" y="47" width="7" height="75" fill="var(--mfb-ink)" />
-              <path d="M219 47 H248 C255 47 259 50 264 57 L274 72 L290 79 C295 81 297 86 297 92 V109 H299 C301 109 302 111 302 114 V118 C302 121 300 123 297 123 H219 V47 Z" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2.1" strokeLinejoin="round" />
-              <path d="M223 52 V108 C223 111 225 113 228 113 H245" stroke="var(--mfb-ink)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-              <path d="M225 53 H247 C252 53 255 55 258 60 L269 76 H225 Z" fill="var(--mfb-accent)" fillOpacity="0.88" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
-              <line x1="234" y1="70" x2="245" y2="58" stroke="var(--mfb-surface-fill)" strokeWidth="2" strokeLinecap="round" opacity="0.65" />
-              <line x1="268" y1="70" x2="272" y2="70" stroke="var(--mfb-ink)" strokeWidth="2" />
-              <rect x="270" y="59" width="5.5" height="13" rx="2" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-              <path d="M272 72 L276 78" stroke="var(--mfb-ink)" strokeWidth="1.6" strokeLinecap="round" />
-              <line x1="230" y1="87" x2="238" y2="87" stroke="var(--mfb-ink)" strokeWidth="2.4" strokeLinecap="round" />
-              <path d="M297 91 H291 C289 91 288 92.5 288 94.5 V100.5 C288 102.5 289 104 291 104 H297 Z" fill="var(--mfb-accent-soft)" stroke="var(--mfb-ink)" strokeWidth="1.8" strokeLinejoin="round" />
-              <line x1="287" y1="111" x2="299" y2="111" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinecap="round" />
-              <path d="M125 122 A19 19 0 0 1 163 122 Z" fill="var(--mfb-surface-fill)" />
-              <path d="M126 121 A18 18 0 0 1 162 121" stroke="var(--mfb-ink)" strokeWidth="3" strokeLinecap="round" fill="none" />
-              <path d="M249 122 A19 19 0 0 1 287 122 Z" fill="var(--mfb-surface-fill)" />
-              <path d="M250 121 A18 18 0 0 1 286 121" stroke="var(--mfb-ink)" strokeWidth="3" strokeLinecap="round" fill="none" />
+              <rect x="212" y="47" width="7" height="75" fill="var(--mfb-text)" />
+              <path d="M219 47 H248 C255 47 259 50 264 57 L274 72 L290 79 C295 81 297 86 297 92 V109 H299 C301 109 302 111 302 114 V118 C302 121 300 123 297 123 H219 V47 Z" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2.1" strokeLinejoin="round" />
+              <path d="M223 52 V108 C223 111 225 113 228 113 H245" stroke="var(--mfb-text)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+              <path d="M225 53 H247 C252 53 255 55 258 60 L269 76 H225 Z" fill="var(--mfb-accent)" fillOpacity="0.88" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
+              <line x1="234" y1="70" x2="245" y2="58" stroke="var(--mfb-surface)" strokeWidth="2" strokeLinecap="round" opacity="0.65" />
+              <line x1="268" y1="70" x2="272" y2="70" stroke="var(--mfb-text)" strokeWidth="2" />
+              <rect x="270" y="59" width="5.5" height="13" rx="2" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+              <path d="M272 72 L276 78" stroke="var(--mfb-text)" strokeWidth="1.6" strokeLinecap="round" />
+              <line x1="230" y1="87" x2="238" y2="87" stroke="var(--mfb-text)" strokeWidth="2.4" strokeLinecap="round" />
+              <path d="M297 91 H291 C289 91 288 92.5 288 94.5 V100.5 C288 102.5 289 104 291 104 H297 Z" fill="var(--mfb-accent-soft)" stroke="var(--mfb-text)" strokeWidth="1.8" strokeLinejoin="round" />
+              <line x1="287" y1="111" x2="299" y2="111" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinecap="round" />
+              <path d="M125 122 A19 19 0 0 1 163 122 Z" fill="var(--mfb-surface)" />
+              <path d="M126 121 A18 18 0 0 1 162 121" stroke="var(--mfb-text)" strokeWidth="3" strokeLinecap="round" fill="none" />
+              <path d="M249 122 A19 19 0 0 1 287 122 Z" fill="var(--mfb-surface)" />
+              <path d="M250 121 A18 18 0 0 1 286 121" stroke="var(--mfb-text)" strokeWidth="3" strokeLinecap="round" fill="none" />
             </g>
 
             <g transform="translate(144, 121)">
-              <circle cx="0" cy="0" r="13.5" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="3" />
+              <circle cx="0" cy="0" r="13.5" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="3" />
               <g className="mfb-anim mfb-wheel-spin">
-                <circle cx="0" cy="0" r="7.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-                <circle cx="0" cy="0" r="2.6" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.4" />
-                <path d="M0 -7.8 L0 -5 M6.8 3.9 L4.4 2.5 M-6.8 3.9 L-4.4 2.5" stroke="var(--mfb-ink)" strokeWidth="1.8" strokeLinecap="round" />
+                <circle cx="0" cy="0" r="7.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+                <circle cx="0" cy="0" r="2.6" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.4" />
+                <path d="M0 -7.8 L0 -5 M6.8 3.9 L4.4 2.5 M-6.8 3.9 L-4.4 2.5" stroke="var(--mfb-text)" strokeWidth="1.8" strokeLinecap="round" />
               </g>
             </g>
 
             <g transform="translate(268, 121)">
-              <circle cx="0" cy="0" r="13.5" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="3" />
+              <circle cx="0" cy="0" r="13.5" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="3" />
               <g className="mfb-anim mfb-wheel-spin">
-                <circle cx="0" cy="0" r="7.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-                <circle cx="0" cy="0" r="2.6" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.4" />
-                <path d="M0 -7.8 L0 -5 M6.8 3.9 L4.4 2.5 M-6.8 3.9 L-4.4 2.5" stroke="var(--mfb-ink)" strokeWidth="1.8" strokeLinecap="round" />
+                <circle cx="0" cy="0" r="7.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+                <circle cx="0" cy="0" r="2.6" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.4" />
+                <path d="M0 -7.8 L0 -5 M6.8 3.9 L4.4 2.5 M-6.8 3.9 L-4.4 2.5" stroke="var(--mfb-text)" strokeWidth="1.8" strokeLinecap="round" />
               </g>
             </g>
 
-            <line x1="26" y1="136" x2="334" y2="136" stroke="var(--mfb-ink)" strokeWidth="2.2" strokeLinecap="round" />
+            <line x1="26" y1="136" x2="334" y2="136" stroke="var(--mfb-text)" strokeWidth="2.2" strokeLinecap="round" />
           </svg>
         )}
 
@@ -573,46 +524,46 @@ export default function ShippingStatusAnimation({
 
             <g>
               <path className="mfb-anim mfb-sconce-glow-left" d="M106 48 L94 21 H134 L122 48 Z" fill="url(#mfbSconceVioletGlow)" />
-              <path d="M106 48 H122 A8 7 0 0 1 106 48 Z" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
+              <path d="M106 48 H122 A8 7 0 0 1 106 48 Z" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
             </g>
 
             <g>
               <path className="mfb-anim mfb-sconce-glow-right" d="M238 48 L226 21 H266 L254 48 Z" fill="url(#mfbSconceVioletGlow)" />
-              <path d="M238 48 H254 A8 7 0 0 1 238 48 Z" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
+              <path d="M238 48 H254 A8 7 0 0 1 238 48 Z" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
             </g>
 
-            <rect x="148" y="22" width="64" height="108" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="2.1" strokeLinejoin="round" />
-            <rect x="143" y="17" width="74" height="5" rx="1.4" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
-            <rect x="154" y="28" width="52" height="102" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinejoin="round" />
-            <rect x="161" y="36" width="15" height="39" rx="1.2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.6" />
-            <rect x="184" y="36" width="15" height="39" rx="1.2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.6" />
-            <rect x="161" y="82" width="15" height="24" rx="1.2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.6" />
-            <rect x="184" y="82" width="15" height="24" rx="1.2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.6" />
-            <rect x="198.5" y="75" width="4.2" height="13" rx="1.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.5" />
-            <circle cx="200.6" cy="83" r="2.7" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.7" />
+            <rect x="148" y="22" width="64" height="108" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="2.1" strokeLinejoin="round" />
+            <rect x="143" y="17" width="74" height="5" rx="1.4" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
+            <rect x="154" y="28" width="52" height="102" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2" strokeLinejoin="round" />
+            <rect x="161" y="36" width="15" height="39" rx="1.2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.6" />
+            <rect x="184" y="36" width="15" height="39" rx="1.2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.6" />
+            <rect x="161" y="82" width="15" height="24" rx="1.2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.6" />
+            <rect x="184" y="82" width="15" height="24" rx="1.2" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.6" />
+            <rect x="198.5" y="75" width="4.2" height="13" rx="1.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.5" />
+            <circle cx="200.6" cy="83" r="2.7" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.7" />
 
             <circle className="mfb-anim mfb-doorbell-ripple" cx="224" cy="62" r="7.5" stroke="var(--mfb-accent)" strokeWidth="2" fill="none" />
-            <rect x="219" y="57" width="10" height="10" rx="2" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="1.8" />
-            <circle cx="224" cy="62" r="1.8" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1" />
+            <rect x="219" y="57" width="10" height="10" rx="2" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="1.8" />
+            <circle cx="224" cy="62" r="1.8" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1" />
 
             <g>
               <g className="mfb-anim mfb-tree-left">
-                <line x1="100" y1="106" x2="100" y2="119" stroke="var(--mfb-ink)" strokeWidth="2" />
-                <path d="M100 68 C92 82 88 95 89 102 C90 109 95 111 100 111 C105 111 110 109 111 102 C112 95 108 82 100 68 Z" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinejoin="round" />
+                <line x1="100" y1="106" x2="100" y2="119" stroke="var(--mfb-text)" strokeWidth="2" />
+                <path d="M100 68 C92 82 88 95 89 102 C90 109 95 111 100 111 C105 111 110 109 111 102 C112 95 108 82 100 68 Z" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2" strokeLinejoin="round" />
               </g>
-              <path d="M93 119 H107 L105 134 H95 Z" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
+              <path d="M93 119 H107 L105 134 H95 Z" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
             </g>
 
             <g>
               <g className="mfb-anim mfb-tree-right">
-                <line x1="260" y1="106" x2="260" y2="119" stroke="var(--mfb-ink)" strokeWidth="2" />
-                <path d="M260 68 C252 82 248 95 249 102 C250 109 255 111 260 111 C265 111 270 109 271 102 C272 95 268 82 260 68 Z" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2" strokeLinejoin="round" />
+                <line x1="260" y1="106" x2="260" y2="119" stroke="var(--mfb-text)" strokeWidth="2" />
+                <path d="M260 68 C252 82 248 95 249 102 C250 109 255 111 260 111 C265 111 270 109 271 102 C272 95 268 82 260 68 Z" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2" strokeLinejoin="round" />
               </g>
-              <path d="M253 119 H267 L265 134 H255 Z" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
+              <path d="M253 119 H267 L265 134 H255 Z" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
             </g>
 
             <line x1="60" y1="134" x2="300" y2="134" stroke="var(--mfb-ground-muted)" strokeWidth="2" strokeLinecap="round" />
-            <rect x="130" y="130" width="100" height="4.8" rx="1.6" fill="var(--mfb-surface-alt)" stroke="var(--mfb-ink)" strokeWidth="1.9" strokeLinejoin="round" />
+            <rect x="130" y="130" width="100" height="4.8" rx="1.6" fill="var(--mfb-surface-alt)" stroke="var(--mfb-text)" strokeWidth="1.9" strokeLinejoin="round" />
 
             <g className="mfb-anim mfb-sparkle-a">
               <path d="M147 82 L148.4 86.6 L153 88 L148.4 89.4 L147 94 L145.6 89.4 L141 88 L145.6 86.6 Z" fill="var(--mfb-accent)" />
@@ -625,13 +576,13 @@ export default function ShippingStatusAnimation({
             </g>
 
             <g className="mfb-anim mfb-delivered-package">
-              <rect x="156" y="96" width="48" height="34" rx="2" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2.1" strokeLinejoin="round" />
-              <rect x="153" y="92" width="54" height="8" rx="1.8" fill="var(--mfb-surface-fill)" stroke="var(--mfb-ink)" strokeWidth="2.1" strokeLinejoin="round" />
+              <rect x="156" y="96" width="48" height="34" rx="2" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2.1" strokeLinejoin="round" />
+              <rect x="153" y="92" width="54" height="8" rx="1.8" fill="var(--mfb-surface)" stroke="var(--mfb-text)" strokeWidth="2.1" strokeLinejoin="round" />
               <rect x="176" y="92" width="8" height="25" fill="var(--mfb-accent)" />
-              <path d="M176 92 V117 H184 V92" stroke="var(--mfb-ink)" strokeWidth="1.7" strokeLinejoin="round" />
+              <path d="M176 92 V117 H184 V92" stroke="var(--mfb-text)" strokeWidth="1.7" strokeLinejoin="round" />
               <g className="mfb-anim mfb-package-tag">
-                <line x1="190" y1="98" x2="190" y2="102" stroke="var(--mfb-ink)" strokeWidth="1.5" />
-                <path d="M187.2 102 L190 99.8 L192.8 102 V110 H187.2 Z" fill="var(--mfb-accent)" stroke="var(--mfb-ink)" strokeWidth="1.5" strokeLinejoin="round" />
+                <line x1="190" y1="98" x2="190" y2="102" stroke="var(--mfb-text)" strokeWidth="1.5" />
+                <path d="M187.2 102 L190 99.8 L192.8 102 V110 H187.2 Z" fill="var(--mfb-accent)" stroke="var(--mfb-text)" strokeWidth="1.5" strokeLinejoin="round" />
               </g>
               <rect x="161" y="120" width="8" height="5" rx="1" fill="var(--mfb-accent-soft)" />
             </g>
@@ -640,13 +591,13 @@ export default function ShippingStatusAnimation({
       </div>
 
       <p
-        style={{ color: 'var(--mfb-ink)' }}
+        style={{ color: 'var(--mfb-text)' }}
         className="text-base sm:text-lg font-bold tracking-tight"
       >
         {title}
       </p>
       <p
-        style={{ color: 'var(--mfb-ink-muted)' }}
+        style={{ color: 'var(--mfb-text-muted)' }}
         className="text-xs sm:text-sm mt-1"
       >
         {subtitle}
