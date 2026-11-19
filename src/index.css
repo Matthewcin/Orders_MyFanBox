@@ -164,6 +164,10 @@ body {
   color: var(--mfb-text) !important;
 }
 
+[data-theme="light"] .mfb-brand-logo-default {
+  filter: invert(1);
+}
+
 .mfb-theme-root .bg-white {
   background-color: var(--mfb-surface) !important;
 }

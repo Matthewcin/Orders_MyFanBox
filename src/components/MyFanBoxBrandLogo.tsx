@@ -35,7 +35,8 @@ export default function MyFanBoxBrandLogo({
     e.target.value = '';
   };
 
-  const src = logoUrl && logoUrl.trim() ? logoUrl : '/favicon.svg';
+  const hasCustomLogo = Boolean(logoUrl && logoUrl.trim());
+  const src = hasCustomLogo ? String(logoUrl).trim() : '/logo.svg';
 
   return (
     <>
@@ -43,7 +44,7 @@ export default function MyFanBoxBrandLogo({
         onClick={() => onUploadLogo && fileInputRef.current?.click()}
         title={onUploadLogo ? 'Haz clic para cambiar el logo' : brandName}
         style={{
-          backgroundColor: '#F7F5FF',
+          backgroundColor: 'var(--mfb-surface-alt)',
           border: '1px solid var(--mfb-border)'
         }}
         className={`${sizeClass} shrink-0 flex items-center justify-center overflow-hidden shadow-2xs ${
@@ -53,7 +54,7 @@ export default function MyFanBoxBrandLogo({
         <img
           src={src}
           alt={brandName}
-          className="w-full h-full object-contain"
+          className={`w-full h-full object-contain ${hasCustomLogo ? '' : 'mfb-brand-logo-default'}`}
         />
       </div>
 
