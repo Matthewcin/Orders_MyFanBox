@@ -21,6 +21,16 @@ import { Product, ProductVariant, Order } from '../../types';
 import { ALL_GARMENT_SIZES, GARMENT_GENDERS, OFFICIAL_CATALOG_FALLBACK } from '../../utils/constants';
 import { isOrderActive } from '../../utils/helpers';
 
+const ORANGE_BADGE_STYLE: React.CSSProperties = {
+  backgroundColor: '#ea580c',
+  color: '#ffffff'
+};
+
+const ORANGE_SOFT_BOX_STYLE: React.CSSProperties = {
+  backgroundColor: 'rgba(249, 115, 22, 0.12)',
+  borderColor: 'rgba(249, 115, 22, 0.48)'
+};
+
 function inferSwatchColor(variant?: Partial<ProductVariant> | null): string {
   const txt = `${variant?.vinylColor || ''} ${variant?.name || ''}`.toLowerCase();
   if (txt.includes('negro') || txt.includes('black')) return '#1f1f24';
@@ -81,6 +91,7 @@ interface BentoCardProps {
   groupTitle: string;
   groupSubtitle: string;
   products: Product[];
+  allCatalog: Product[];
   orders: Order[];
   madeItems: Record<string, number>;
   setMadeItems: React.Dispatch<React.SetStateAction<Record<string, number>>>;
@@ -93,6 +104,7 @@ function BentoCategoryCard({
   groupTitle,
   groupSubtitle,
   products,
+  allCatalog,
   orders,
   madeItems,
   setMadeItems,
@@ -126,6 +138,17 @@ function BentoCategoryCard({
   const activeGender = isAcc ? 'Única' : normalizeInventoryGender(selectedGender);
 
   const activeOrders = useMemo(() => orders.filter(isOrderActive), [orders]);
+
+  const getProductSizes = (prod: Product) => {
+    const acc = isProductAccessory(prod);
+    return acc ? (prod.sizes?.length ? prod.sizes : ['Única']) : ALL_GARMENT_SIZES;
+  };
+
+  const getProductVariants = (prod: Product): ProductVariant[] => {
+    return prod.variants?.length
+      ? prod.variants
+      : [{ id: 'v-std', name: 'Estándar', extraPrice: 0, extraCost: 0 }];
+  };
 
   const getMadeCount = (prod: Product, variant: ProductVariant, size: string, gender: string) => {
     const acc = isProductAccessory(prod);
@@ -169,6 +192,31 @@ function BentoCategoryCard({
     return total;
   };
 
+  const getMissingForCombo = (prod: Product, variant: ProductVariant, size: string, gender: string) => {
+    const ord = getOrderedQtyForCombo(prod, variant, size, gender);
+    const md = getMadeCount(prod, variant, size, gender);
+    return Math.max(0, ord - md);
+  };
+
+  const getMissingForVariant = (prod: Product, variant: ProductVariant) => {
+    const acc = isProductAccessory(prod);
+    const szs = getProductSizes(prod);
+    const genders = acc ? ['Única'] : GARMENT_GENDERS;
+    let total = 0;
+    szs.forEach(sz => {
+      genders.forEach(g => {
+        total += getMissingForCombo(prod, variant, sz, g);
+      });
+    });
+    return total;
+  };
+
+  const getMissingForProduct = (prod: Product) => {
+    return getProductVariants(prod).reduce((sum, v) => sum + getMissingForVariant(prod, v), 0);
+  };
+
+  const groupTotalMissing = products.reduce((sum, p) => sum + getMissingForProduct(p), 0);
+
   if (!activeProduct || !activeVariant) return null;
 
   const blankName = activeVariant.blankOverride || activeProduct.blankName || 'Prenda Base';
@@ -183,7 +231,7 @@ function BentoCategoryCard({
     let sum = 0;
     activeOrders.forEach(o => {
       o.items.forEach(it => {
-        const p = products.find(pr => pr.id === it.productId);
+        const p = allCatalog.find(pr => pr.id === it.productId);
         if (!p) return;
         const v = p.variants?.find(vx => vx.id === it.variantId || vx.name === it.variantName) || p.variants?.[0];
         const bName = v?.blankOverride || p.blankName || 'Prenda Base';
@@ -196,7 +244,7 @@ function BentoCategoryCard({
       });
     });
     return sum;
-  }, [activeOrders, products, blankName, activeSize, activeGender]);
+  }, [activeOrders, allCatalog, blankName, activeSize, activeGender]);
 
   const boughtQty = getBoughtCount(blankName, activeSize, activeGender, isAcc);
   const missingToBuy = Math.max(0, requiredBlankQty - boughtQty);
@@ -239,9 +287,16 @@ function BentoCategoryCard({
   };
 
   return (
-    <section className="bg-white border border-zinc-200 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-2xs">
+    <section
+      className="bg-white border border-zinc-200 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-2xs"
+      style={
+        groupTotalMissing > 0
+          ? { boxShadow: 'inset 0 3px 0 #f97316' }
+          : undefined
+      }
+    >
       <div className="space-y-4">
-        {/* Cabecera de categoría */}
+        {/* Cabecera de categoría con contador naranja */}
         <div className="flex items-start justify-between gap-2">
           <div>
             <h2 className="text-sm sm:text-base font-bold text-zinc-900 flex items-center gap-2">
@@ -250,9 +305,20 @@ function BentoCategoryCard({
             </h2>
             <p className="text-[11px] text-zinc-500 mt-0.5">{groupSubtitle}</p>
           </div>
-          <span className="px-2 py-0.5 rounded-lg bg-zinc-50 border border-zinc-200 text-[10px] font-mono text-zinc-500 shrink-0">
-            {products.length} {products.length === 1 ? 'ref' : 'refs'}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {groupTotalMissing > 0 ? (
+              <span
+                style={ORANGE_BADGE_STYLE}
+                className="px-2.5 py-1 rounded-full text-[11px] font-bold font-mono shadow-2xs"
+              >
+                Faltan {groupTotalMissing}
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold">
+                ✓ Al día
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 1. Selector de Modelo */}
@@ -263,22 +329,32 @@ function BentoCategoryCard({
           <div className="flex flex-wrap gap-1.5">
             {products.map(p => {
               const selected = p.id === activeProduct.id;
+              const pMissing = getMissingForProduct(p);
               return (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => {
                     setSelectedProdId(p.id);
-                    const nextVars = p.variants?.length ? p.variants : [{ id: 'v-std', name: 'Estándar' }];
+                    const nextVars = getProductVariants(p);
                     setSelectedVariantId(nextVars[0].id);
                   }}
-                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                  style={!selected && pMissing > 0 ? ORANGE_SOFT_BOX_STYLE : undefined}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center gap-2 transition-all cursor-pointer ${
                     selected
                       ? 'bg-zinc-900 text-white border-zinc-900'
                       : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                   }`}
                 >
-                  {p.name}
+                  <span>{p.name}</span>
+                  {pMissing > 0 && (
+                    <span
+                      style={ORANGE_BADGE_STYLE}
+                      className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none"
+                    >
+                      {pMissing}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -294,11 +370,13 @@ function BentoCategoryCard({
             {variants.map(v => {
               const selected = v.id === activeVariant.id;
               const swatch = inferSwatchColor(v);
+              const vMissing = getMissingForVariant(activeProduct, v);
               return (
                 <button
                   key={v.id}
                   type="button"
                   onClick={() => setSelectedVariantId(v.id)}
+                  style={!selected && vMissing > 0 ? ORANGE_SOFT_BOX_STYLE : undefined}
                   className={`px-2.5 py-1.5 rounded-xl border text-xs font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer ${
                     selected
                       ? 'bg-zinc-900 text-white border-zinc-900'
@@ -310,6 +388,14 @@ function BentoCategoryCard({
                     style={{ backgroundColor: swatch }}
                   />
                   <span>{v.name}</span>
+                  {vMissing > 0 && (
+                    <span
+                      style={ORANGE_BADGE_STYLE}
+                      className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none"
+                    >
+                      {vMissing}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -338,32 +424,42 @@ function BentoCategoryCard({
                   (acc, sz) => acc + getMadeCount(activeProduct, activeVariant, sz, g),
                   0
                 );
-                const gMissing = availableSizes.reduce((acc, sz) => {
-                  const ord = getOrderedQtyForCombo(activeProduct, activeVariant, sz, g);
-                  const md = getMadeCount(activeProduct, activeVariant, sz, g);
-                  return acc + Math.max(0, ord - md);
-                }, 0);
+                const gMissing = availableSizes.reduce(
+                  (acc, sz) => acc + getMissingForCombo(activeProduct, activeVariant, sz, g),
+                  0
+                );
 
                 return (
                   <button
                     key={g}
                     type="button"
                     onClick={() => setSelectedGender(g)}
+                    style={!selected && gMissing > 0 ? ORANGE_SOFT_BOX_STYLE : undefined}
                     className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
                       selected
                         ? 'bg-zinc-900 text-white border-zinc-900'
                         : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                     }`}
                   >
-                    <div className="text-xs font-bold truncate">{g}</div>
-                    <div className="text-[10px] opacity-80 font-mono mt-0.5 flex items-center justify-between gap-1">
-                      <span>Stock: {gMade}</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold truncate">{g}</span>
+                      {gMissing > 0 && (
+                        <span
+                          style={ORANGE_BADGE_STYLE}
+                          className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none shrink-0"
+                        >
+                          {gMissing}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] opacity-80 font-mono mt-1 flex items-center justify-between gap-1">
+                      <span>Hechas: {gMade}</span>
                       {gMissing > 0 ? (
-                        <span className={selected ? 'underline font-bold' : 'text-amber-700 font-bold'}>
-                          -{gMissing}
+                        <span style={{ color: selected ? '#fed7aa' : '#ea580c' }} className="font-bold">
+                          Faltan {gMissing}
                         </span>
                       ) : gOrdered > 0 ? (
-                        <span className={selected ? 'opacity-90' : 'text-emerald-700 font-semibold'}>✓</span>
+                        <span className={selected ? 'opacity-90' : 'text-emerald-700 font-semibold'}>✓ OK</span>
                       ) : null}
                     </div>
                   </button>
@@ -373,7 +469,7 @@ function BentoCategoryCard({
           </div>
         )}
 
-        {/* 4. Selector de Talla (refleja el corte seleccionado) */}
+        {/* 4. Selector de Talla (resaltado en naranja si falta hacer) */}
         <div className="space-y-1.5">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             {isAcc ? '3. Talla' : `4. Talla (${activeGender})`}
@@ -389,19 +485,34 @@ function BentoCategoryCard({
                   key={sz}
                   type="button"
                   onClick={() => setSelectedSize(sz)}
-                  className={`min-w-[54px] px-2.5 py-1.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  style={!selected && szMiss > 0 ? ORANGE_SOFT_BOX_STYLE : undefined}
+                  className={`relative min-w-[64px] px-2.5 py-2 rounded-xl border text-center transition-all cursor-pointer ${
                     selected
                       ? 'bg-zinc-900 text-white border-zinc-900'
-                      : szMiss > 0
-                      ? 'bg-amber-50 border-amber-200 text-amber-900'
-                      : szMade > 0
+                      : szMade > 0 && szMiss === 0
                       ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                       : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
                   }`}
                 >
+                  {szMiss > 0 && (
+                    <span
+                      style={ORANGE_BADGE_STYLE}
+                      className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-bold inline-flex items-center justify-center shadow-2xs"
+                    >
+                      {szMiss}
+                    </span>
+                  )}
                   <div className="text-xs font-bold leading-none">{sz}</div>
-                  <div className="text-[9px] font-mono mt-1 opacity-85 leading-none">
-                    {szMade}/{szOrd}
+                  <div className="text-[10px] font-mono mt-1 leading-none">
+                    {szMiss > 0 ? (
+                      <span style={{ color: selected ? '#fed7aa' : '#ea580c' }} className="font-bold">
+                        -{szMiss}
+                      </span>
+                    ) : (
+                      <span className="opacity-75">
+                        {szMade}/{szOrd}
+                      </span>
+                    )}
                   </div>
                 </button>
               );
@@ -419,7 +530,10 @@ function BentoCategoryCard({
               </span>
             </div>
             {missingToMake > 0 ? (
-              <span className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold">
+              <span
+                style={ORANGE_BADGE_STYLE}
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+              >
                 Faltan {missingToMake} por hacer
               </span>
             ) : orderedQty > 0 ? (
@@ -511,7 +625,10 @@ function BentoCategoryCard({
                 </button>
               </div>
               <div className="text-[10px] text-zinc-500 truncate" title={blankName}>
-                Base: {blankName} {missingToBuy > 0 ? `· Faltan ${missingToBuy}` : ''}
+                Base: {blankName}{' '}
+                {missingToBuy > 0 && (
+                  <strong style={{ color: '#ea580c' }}>· Faltan {missingToBuy}</strong>
+                )}
               </div>
             </div>
           </div>
@@ -584,16 +701,38 @@ export default function BentoInventoryView() {
             <span>Inventario Bento por Categoría, Talla y Corte</span>
           </h1>
           <p className="text-xs text-zinc-500 mt-0.5">
-            El stock de <strong>Femenino</strong>, <strong>Masculino</strong> y <strong>Sin especificar</strong> se guarda completamente por separado y se sincroniza en vivo con NeonDB.
+            Cada categoría, modelo, color, corte y talla marca en <strong>naranja</strong> exactamente cuántas unidades faltan por hacer.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-semibold">
-            Por comprar: {shoppingNeeds.totalMissingToBuy}
+          <span
+            style={shoppingNeeds.totalMissingToBuy > 0 ? ORANGE_SOFT_BOX_STYLE : undefined}
+            className="px-3 py-1.5 rounded-xl border border-zinc-200 font-semibold text-zinc-900 inline-flex items-center gap-1.5"
+          >
+            <span>Por comprar:</span>
+            <span
+              style={shoppingNeeds.totalMissingToBuy > 0 ? ORANGE_BADGE_STYLE : undefined}
+              className={`px-1.5 py-0.5 rounded-full text-[11px] font-mono font-bold ${
+                shoppingNeeds.totalMissingToBuy === 0 ? 'bg-emerald-50 text-emerald-800' : ''
+              }`}
+            >
+              {shoppingNeeds.totalMissingToBuy}
+            </span>
           </span>
-          <span className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 font-semibold">
-            Por estampar: {productionMatrix.totalMissingToMake}
+          <span
+            style={productionMatrix.totalMissingToMake > 0 ? ORANGE_SOFT_BOX_STYLE : undefined}
+            className="px-3 py-1.5 rounded-xl border border-zinc-200 font-semibold text-zinc-900 inline-flex items-center gap-1.5"
+          >
+            <span>Por estampar:</span>
+            <span
+              style={productionMatrix.totalMissingToMake > 0 ? ORANGE_BADGE_STYLE : undefined}
+              className={`px-1.5 py-0.5 rounded-full text-[11px] font-mono font-bold ${
+                productionMatrix.totalMissingToMake === 0 ? 'bg-emerald-50 text-emerald-800' : ''
+              }`}
+            >
+              {productionMatrix.totalMissingToMake}
+            </span>
           </span>
         </div>
       </section>
@@ -605,6 +744,7 @@ export default function BentoInventoryView() {
             groupTitle={group.title}
             groupSubtitle={group.subtitle}
             products={group.products}
+            allCatalog={effectiveCatalog}
             orders={orders}
             madeItems={madeItems}
             setMadeItems={setMadeItems}
