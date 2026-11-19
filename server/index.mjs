@@ -27,10 +27,40 @@ if (!INITIAL_ADMIN_USER) throw new Error('MFB_ADMIN_USERNAME no puede estar vac�
 const pool = new Pool({
   connectionString: DATABASE_URL,
   max: 10,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 12_000,
+  idleTimeoutMillis: 15_000,
+  connectionTimeoutMillis: 20_000,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10_000,
   ssl: /localhost|127\.0\.0\.1/.test(DATABASE_URL) ? false : { rejectUnauthorized: true }
 });
+
+pool.on('error', (err) => {
+  console.warn('Conexión inactiva de NeonDB cerrada (se renovará automáticamente):', err.message);
+});
+
+const TRANSIENT_PG_CODES = new Set(['57P01', '57P02', '57P03', '08000', '08003', '08006', '08001']);
+
+async function withDbRetry(operation, retries = 2) {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await operation();
+    } catch (err) {
+      lastError = err;
+      const msg = String(err?.message || '').toLowerCase();
+      const isTransient =
+        TRANSIENT_PG_CODES.has(err?.code) ||
+        msg.includes('connection terminated') ||
+        msg.includes('econnreset') ||
+        msg.includes('timeout') ||
+        msg.includes('etimedout') ||
+        msg.includes('socket hang up');
+      if (!isTransient || attempt === retries) throw err;
+      await new Promise(resolve => setTimeout(resolve, 450 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
 
 app.disable('x-powered-by');
 app.use((req, res, next) => {
@@ -200,8 +230,10 @@ async function requireAdmin(req, res, next) {
   const session = verifySession(token);
   if (!session) return res.status(401).json({ error: 'Sesión inválida o vencida. Inicia sesión nuevamente.' });
   try {
-    const result = await pool.query(
-      "SELECT admin_username, updated_at FROM mfb_admin_config WHERE config_key = 'PRIMARY_ADMIN' LIMIT 1"
+    const result = await withDbRetry(() =>
+      pool.query(
+        "SELECT admin_username, updated_at FROM mfb_admin_config WHERE config_key = 'PRIMARY_ADMIN' LIMIT 1"
+      )
     );
     const admin = result.rows[0];
     const currentVersion = admin?.updated_at ? new Date(admin.updated_at).getTime() : 0;
@@ -229,12 +261,14 @@ function loginRateLimit(req, res, next) {
 }
 
 async function initializeDatabase() {
-  await pool.query(SCHEMA_SQL);
+  await withDbRetry(() => pool.query(SCHEMA_SQL));
 
-  await pool.query(
-    `INSERT INTO mfb_other_workspace (workspace_key, payload)
-     VALUES ('default', '{"products":[],"orders":[]}'::jsonb)
-     ON CONFLICT (workspace_key) DO NOTHING`
+  await withDbRetry(() =>
+    pool.query(
+      `INSERT INTO mfb_other_workspace (workspace_key, payload)
+       VALUES ('default', '{"products":[],"orders":[]}'::jsonb)
+       ON CONFLICT (workspace_key) DO NOTHING`
+    )
   );
 
   const existing = await pool.query("SELECT config_key FROM mfb_admin_config WHERE config_key = 'PRIMARY_ADMIN' LIMIT 1");
@@ -326,7 +360,7 @@ async function getAdminConfig() {
 
 app.get('/api/health', async (_req, res) => {
   try {
-    const result = await pool.query('SELECT 1 AS connected');
+    const result = await withDbRetry(() => pool.query('SELECT 1 AS connected'));
     res.json({ ok: true, database: 'connected', result: Number(result.rows[0].connected) });
   } catch (error) {
     console.error('Health check de NeonDB falló:', error.message);
@@ -339,8 +373,10 @@ app.post('/api/admin/login', loginRateLimit, async (req, res) => {
     const username = String(req.body?.username || '').trim();
     const password = String(req.body?.password || '');
     if (!username || !password || password.length > 1024) return res.status(400).json({ error: 'Completa usuario y contraseña.' });
-    const result = await pool.query(
-      "SELECT admin_username, password_hash, hide_default_hint, updated_at FROM mfb_admin_config WHERE config_key = 'PRIMARY_ADMIN' LIMIT 1"
+    const result = await withDbRetry(() =>
+      pool.query(
+        "SELECT admin_username, password_hash, hide_default_hint, updated_at FROM mfb_admin_config WHERE config_key = 'PRIMARY_ADMIN' LIMIT 1"
+      )
     );
     const admin = result.rows[0];
     const usernameMatches = admin && admin.admin_username === username;
@@ -367,13 +403,15 @@ app.post('/api/admin/login', loginRateLimit, async (req, res) => {
 
 app.get('/api/admin/bootstrap', requireAdmin, async (_req, res) => {
   try {
-    const [catalogResult, orderResult, inventoryResult, settingsResult, adminConfig] = await Promise.all([
-      pool.query('SELECT * FROM mfb_catalog ORDER BY id ASC'),
-      pool.query('SELECT * FROM mfb_orders ORDER BY created_at DESC NULLS LAST, id DESC'),
-      pool.query('SELECT item_key, kind, quantity FROM mfb_inventory_progress'),
-      pool.query("SELECT config_value FROM mfb_app_settings WHERE config_key = 'PRIMARY_SETTINGS' LIMIT 1"),
-      getAdminConfig()
-    ]);
+    const [catalogResult, orderResult, inventoryResult, settingsResult, adminConfig] = await withDbRetry(() =>
+      Promise.all([
+        pool.query('SELECT * FROM mfb_catalog ORDER BY id ASC'),
+        pool.query('SELECT * FROM mfb_orders ORDER BY created_at DESC NULLS LAST, id DESC'),
+        pool.query('SELECT item_key, kind, quantity FROM mfb_inventory_progress'),
+        pool.query("SELECT config_value FROM mfb_app_settings WHERE config_key = 'PRIMARY_SETTINGS' LIMIT 1"),
+        getAdminConfig()
+      ])
+    );
     const boughtSupplies = {};
     const madeItems = {};
     for (const row of inventoryResult.rows) {
@@ -519,11 +557,13 @@ app.put('/api/admin/config', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/init', requireAdmin, async (_req, res) => {
   try {
-    await pool.query(SCHEMA_SQL);
-    await pool.query(
-      `INSERT INTO mfb_other_workspace (workspace_key, payload)
-       VALUES ('default', '{"products":[],"orders":[]}'::jsonb)
-       ON CONFLICT (workspace_key) DO NOTHING`
+    await withDbRetry(() => pool.query(SCHEMA_SQL));
+    await withDbRetry(() =>
+      pool.query(
+        `INSERT INTO mfb_other_workspace (workspace_key, payload)
+         VALUES ('default', '{"products":[],"orders":[]}'::jsonb)
+         ON CONFLICT (workspace_key) DO NOTHING`
+      )
     );
     res.json({ ok: true, message: 'Las tablas de MyFanBox (incluido espacio aislado) están listas en NeonDB.' });
   } catch (error) {
@@ -564,8 +604,10 @@ app.get('/api/tracking/interrapidisimo', async (req, res) => {
 
 app.get('/api/admin/other-workspace', requireAdmin, async (_req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT payload, updated_at FROM mfb_other_workspace WHERE workspace_key = 'default' LIMIT 1"
+    const result = await withDbRetry(() =>
+      pool.query(
+        "SELECT payload, updated_at FROM mfb_other_workspace WHERE workspace_key = 'default' LIMIT 1"
+      )
     );
     const payload = asJson(result.rows[0]?.payload, { products: [], orders: [] });
     res.json({
@@ -575,7 +617,7 @@ app.get('/api/admin/other-workspace', requireAdmin, async (_req, res) => {
     });
   } catch (error) {
     console.error('Error al leer mfb_other_workspace:', error);
-    res.status(500).json({ error: 'No se pudo cargar el espacio aislado desde NeonDB.' });
+    res.status(503).json({ error: 'NeonDB está despertando o no respondió. Reintenta en unos segundos.' });
   }
 });
 
@@ -587,31 +629,39 @@ app.put('/api/admin/other-workspace', requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Formato inválido para el espacio aislado.' });
   }
 
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    await client.query('SELECT pg_advisory_xact_lock(771234992)');
-    const payload = { products, orders };
-    const result = await client.query(
-      `INSERT INTO mfb_other_workspace (workspace_key, payload, updated_at)
-       VALUES ('default', $1::jsonb, NOW())
-       ON CONFLICT (workspace_key)
-       DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
-       RETURNING updated_at`,
-      [JSON.stringify(payload)]
-    );
-    await client.query('COMMIT');
+    const payloadJson = JSON.stringify({ products, orders });
+    const updatedAt = await withDbRetry(async () => {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock(771234992)');
+        const result = await client.query(
+          `INSERT INTO mfb_other_workspace (workspace_key, payload, updated_at)
+           VALUES ('default', $1::jsonb, NOW())
+           ON CONFLICT (workspace_key)
+           DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
+           RETURNING updated_at`,
+          [payloadJson]
+        );
+        await client.query('COMMIT');
+        return result.rows[0]?.updated_at || null;
+      } catch (err) {
+        await client.query('ROLLBACK').catch(() => undefined);
+        throw err;
+      } finally {
+        client.release();
+      }
+    });
+
     res.json({
       ok: true,
       saved: { products: products.length, orders: orders.length },
-      updatedAt: result.rows[0]?.updated_at || null
+      updatedAt
     });
   } catch (error) {
-    await client.query('ROLLBACK').catch(() => undefined);
     console.error('Error al guardar mfb_other_workspace:', error);
-    res.status(500).json({ error: 'No se pudo guardar el espacio aislado en NeonDB.' });
-  } finally {
-    client.release();
+    res.status(503).json({ error: 'No se pudo guardar en NeonDB en este momento. Reintenta en unos segundos.' });
   }
 });
 
@@ -619,7 +669,9 @@ app.get('/api/orders/:uuid', async (req, res) => {
   const uuid = String(req.params.uuid || '').toLowerCase();
   if (!UUID_V4.test(uuid)) return res.status(400).json({ error: 'El código de seguimiento no es válido.' });
   try {
-    const result = await pool.query('SELECT * FROM mfb_orders WHERE uuid = $1 LIMIT 1', [uuid]);
+    const result = await withDbRetry(() =>
+      pool.query('SELECT * FROM mfb_orders WHERE uuid = $1 LIMIT 1', [uuid])
+    );
     if (!result.rows[0]) return res.status(404).json({ error: 'Pedido no encontrado.' });
     const order = mapOrder(result.rows[0]);
     // Datos estrictamente necesarios para seguimiento y comprobante público.

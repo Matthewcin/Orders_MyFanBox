@@ -75,10 +75,6 @@ interface OtherWorkspacePayload {
   orders: OtherOrder[];
 }
 
-function escapeSqlLiteral(value: string): string {
-  return value.replace(/'/g, "''");
-}
-
 function isOtherOrderActive(order: OtherOrder): boolean {
   return order.paymentStatus !== 'Cancelado' && order.paymentStatus !== 'Reembolsado';
 }
@@ -134,7 +130,7 @@ function getRowVisualStyle(order: OtherOrder) {
 }
 
 export default function OtherProductsView() {
-  const { executeNeonQuery, defaultCarrier, brandName, notify } = useAdmin();
+  const { adminToken, defaultCarrier, brandName, notify } = useAdmin();
 
   const [subTab, setSubTab] = useState<'orders' | 'catalog' | 'tasks'>('orders');
   const [products, setProducts] = useState<OtherProduct[]>([]);
@@ -142,8 +138,12 @@ export default function OtherProductsView() {
   const [search, setSearch] = useState('');
   const [shipFilter, setShipFilter] = useState('ALL');
   const [syncState, setSyncState] = useState<'loading' | 'synced' | 'saving' | 'local-only'>('loading');
+  const [lastSyncError, setLastSyncError] = useState('');
 
-  const isHydratedRef = useRef(false);
+  const canAutoSaveRef = useRef(false);
+  const lastSyncedJsonRef = useRef('');
+  const saveInFlightRef = useRef(false);
+  const pendingSaveRef = useRef<OtherWorkspacePayload | null>(null);
 
   // Modal de Pedido Aislado
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -195,56 +195,52 @@ export default function OtherProductsView() {
     }
   };
 
+  const requestWithRetry = useCallback(async (path: string, options: any = {}, retries = 2) => {
+    let lastErr: any;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await apiRequest(path, adminToken, options);
+      } catch (err: any) {
+        lastErr = err;
+        if (err?.status === 401 || err?.status === 400 || err?.status === 403 || attempt === retries) {
+          throw err;
+        }
+        await new Promise(resolve => setTimeout(resolve, 900 * (attempt + 1)));
+      }
+    }
+    throw lastErr;
+  }, [adminToken]);
+
   const ensureTableAndLoad = useCallback(async (showToast = false) => {
+    if (!adminToken) return;
     setSyncState('loading');
+    setLastSyncError('');
     try {
-      const initRes = await executeNeonQuery(`
-        CREATE TABLE IF NOT EXISTS mfb_other_workspace (
-          workspace_key TEXT PRIMARY KEY,
-          payload JSONB NOT NULL DEFAULT '{"products":[],"orders":[]}'::jsonb,
-          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
-      `);
+      const data = await requestWithRetry('/api/admin/other-workspace', {}, 2);
+      const nextProducts = Array.isArray(data.products) ? data.products : [];
+      const nextOrders = Array.isArray(data.orders) ? data.orders : [];
+      const snapshot = { products: nextProducts, orders: nextOrders };
 
-      if (!initRes.ok) {
-        const local = loadLocalBackup();
-        setProducts(local.products);
-        setOrders(local.orders);
-        setSyncState('local-only');
-        isHydratedRef.current = true;
-        if (showToast) notify('Modo respaldo local (revisa conexión NeonDB)', 'warning');
-        return;
-      }
+      // Guardamos el hash antes de actualizar el estado para evitar un PUT fantasma al cargar
+      lastSyncedJsonRef.current = JSON.stringify(snapshot);
+      canAutoSaveRef.current = true;
 
-      const selectRes = await executeNeonQuery(`
-        SELECT payload FROM mfb_other_workspace WHERE workspace_key = 'default' LIMIT 1;
-      `);
-
-      if (selectRes.ok && selectRes.data?.rows?.length > 0) {
-        const raw = selectRes.data.rows[0].payload;
-        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw || {};
-        const nextProducts = Array.isArray(parsed.products) ? parsed.products : [];
-        const nextOrders = Array.isArray(parsed.orders) ? parsed.orders : [];
-        setProducts(nextProducts);
-        setOrders(nextOrders);
-        persistLocalBackup({ products: nextProducts, orders: nextOrders });
-      } else {
-        const local = loadLocalBackup();
-        setProducts(local.products);
-        setOrders(local.orders);
-      }
-
+      setProducts(nextProducts);
+      setOrders(nextOrders);
+      persistLocalBackup(snapshot);
       setSyncState('synced');
-      isHydratedRef.current = true;
       if (showToast) notify('Espacio aislado sincronizado con NeonDB');
-    } catch {
+    } catch (err: any) {
+      // Si falla la carga, mostramos respaldo local sin activar auto-guardado para no pisar NeonDB
+      canAutoSaveRef.current = false;
       const local = loadLocalBackup();
       setProducts(local.products);
       setOrders(local.orders);
       setSyncState('local-only');
-      isHydratedRef.current = true;
+      setLastSyncError(err?.message || 'Sin respuesta de NeonDB');
+      if (showToast) notify(err?.message || 'Modo respaldo local (revisa conexión NeonDB)', 'warning');
     }
-  }, [executeNeonQuery, notify]);
+  }, [adminToken, notify, requestWithRetry]);
 
   useEffect(() => {
     ensureTableAndLoad(false);
@@ -252,32 +248,56 @@ export default function OtherProductsView() {
 
   const saveWorkspaceToNeon = useCallback(async (data: OtherWorkspacePayload, manual = false) => {
     persistLocalBackup(data);
-    setSyncState('saving');
-    try {
-      const jsonStr = escapeSqlLiteral(JSON.stringify(data));
-      const res = await executeNeonQuery(`
-        INSERT INTO mfb_other_workspace (workspace_key, payload, updated_at)
-        VALUES ('default', '${jsonStr}'::jsonb, NOW())
-        ON CONFLICT (workspace_key)
-        DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW();
-      `);
-      if (res.ok) {
-        setSyncState('synced');
-        if (manual) notify('Espacio aislado guardado en NeonDB');
-      } else {
-        setSyncState('local-only');
-        if (manual) notify(res.error || 'No se pudo guardar en NeonDB', 'error');
-      }
-    } catch {
-      setSyncState('local-only');
+    if (!adminToken) return;
+
+    const serialized = JSON.stringify(data);
+    if (!manual && serialized === lastSyncedJsonRef.current) {
+      return;
     }
-  }, [executeNeonQuery, notify]);
+
+    if (saveInFlightRef.current) {
+      pendingSaveRef.current = data;
+      return;
+    }
+
+    saveInFlightRef.current = true;
+    setSyncState('saving');
+    setLastSyncError('');
+    try {
+      await requestWithRetry(
+        '/api/admin/other-workspace',
+        {
+          method: 'PUT',
+          body: serialized
+        },
+        2
+      );
+      lastSyncedJsonRef.current = serialized;
+      canAutoSaveRef.current = true;
+      setSyncState('synced');
+      if (manual) notify('Espacio aislado guardado en NeonDB');
+    } catch (err: any) {
+      setSyncState('local-only');
+      setLastSyncError(err?.message || 'No se pudo guardar en NeonDB');
+      if (manual) notify(err?.message || 'No se pudo guardar en NeonDB', 'error');
+    } finally {
+      saveInFlightRef.current = false;
+      if (pendingSaveRef.current) {
+        const nextPayload = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        saveWorkspaceToNeon(nextPayload, false);
+      }
+    }
+  }, [adminToken, notify, requestWithRetry]);
 
   useEffect(() => {
-    if (!isHydratedRef.current) return;
+    if (!canAutoSaveRef.current) return;
+    const currentJson = JSON.stringify({ products, orders });
+    if (currentJson === lastSyncedJsonRef.current) return;
+
     const timer = setTimeout(() => {
       saveWorkspaceToNeon({ products, orders }, false);
-    }, 650);
+    }, 750);
     return () => clearTimeout(timer);
   }, [products, orders, saveWorkspaceToNeon]);
 
@@ -552,6 +572,7 @@ export default function OtherProductsView() {
 
         <div className="flex flex-wrap items-center gap-2">
           <span
+            title={lastSyncError || 'Estado de sincronización con NeonDB'}
             className={`h-9 px-3 rounded-xl border text-xs font-medium inline-flex items-center gap-1.5 ${
               syncState === 'synced'
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
@@ -571,6 +592,16 @@ export default function OtherProductsView() {
                 : 'Solo respaldo local'}
             </span>
           </span>
+
+          {syncState === 'local-only' && canAutoSaveRef.current && (
+            <button
+              type="button"
+              onClick={() => saveWorkspaceToNeon({ products, orders }, true)}
+              className="h-9 px-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-xs font-semibold text-amber-900 inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Reintentar guardado</span>
+            </button>
+          )}
 
           <button
             type="button"
